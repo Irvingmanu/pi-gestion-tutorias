@@ -11,5 +11,7 @@
 <a href="hello-servlet">Hello Servlet</a>
 <a href="alumno/agenda.jsp">Acuerdos</a>
 <a href="coordinador/gestion-tutores.jsp">Gestion de tutores</a>
+<a href="coordinador/perfil.jsp">Perfil de Coordinador</a>
+<a href="coordinador/areas-apoyo.jsp">Areas de Apoyo</a>
 </body>
 </html>
