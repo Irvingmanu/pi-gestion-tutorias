@@ -9,7 +9,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">o
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - UTEZ</title>
     <link href="../assets/css/bootstrap.css" rel="stylesheet">
@@ -17,7 +17,7 @@
     <style>
         @font-face {
             font-family: 'SN Pro';
-            src: url('../assets/fonts/SNPro-Regular.woff2') format('woff2'); /* Cambia la ruta a donde guardes tu fuente */
+            src: url('../assets/fonts/SNPro-Regular.woff2') format('woff2');
             font-weight: 400;
         }
         @font-face {
@@ -36,6 +36,7 @@
             background-color: #F2F2F2;
             font-family: 'SN Pro', system-ui, -apple-system, sans-serif !important;
         }
+
     </style>
 </head>
 <body>
@@ -51,24 +52,24 @@
         <div class="nav flex-column w-100 text-center gap-3">
             <a href="#" class="nav-link text-dark rounded-4 p-3 d-flex flex-column align-items-center" style="background-color: #F2F2F2;">
                 <img src="../assets/img/alumno/calendario.png" alt="Agenda" width="40" class="mb-2">
-                <span class="fs-6 fw-semibold">Agenda</span>
+                <span class="fs-5 fw-semibold">Agenda</span>
             </a>
 
             <a href="solicitud.jsp" class="nav-link text-dark p-3 d-flex flex-column align-items-center">
                 <img src="../assets/img/alumno/solicitud.png" alt="Solicitud" width="40" class="mb-2">
-                <span class="fs-6 fw-medium">Solicitud</span>
+                <span class="fs-5 fw-medium">Solicitud</span>
             </a>
 
             <a href="acuerdos.jsp" class="nav-link text-dark p-3 d-flex flex-column align-items-center">
                 <img src="../assets/img/alumno/acuerdos.png" alt="Acuerdos" width="40" class="mb-2">
-                <span class="fs-6 fw-medium">Acuerdos</span>
+                <span class="fs-5 fw-medium">Acuerdos</span>
             </a>
         </div>
 
         <div class="mt-auto w-100 text-center mb-3">
             <a href="perfil.jsp" class="nav-link text-dark p-3 d-flex flex-column align-items-center">
                 <img src="../assets/img/alumno/perfil.png" alt="Perfil" width="40" class="mb-2">
-                <span class="fs-6 fw-medium">Perfil</span>
+                <span class="fs-5 fw-medium">Perfil</span>
             </a>
         </div>
     </div>

@@ -10,5 +10,6 @@
 <br/>
 <a href="hello-servlet">Hello Servlet</a>
 <a href="alumno/agenda.jsp">Acuerdos</a>
+<a href="coordinador/gestion-tutores.jsp">Gestion de tutores</a>
 </body>
 </html>
