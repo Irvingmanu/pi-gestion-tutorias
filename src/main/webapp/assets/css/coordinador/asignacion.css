@@ -1,0 +1,17 @@
+/* ==========================================================================
+   ESTILOS PROPIOS DE "Asignacion" (Figma node 395:870)
+   Reutiliza el sistema base (sidebar, --radius-figma, --shadow-figma,
+   --utez-green, .campo-label, .campo-buscar, .campo-select, .btn-figma)
+   definido en assets/css/coordinador/gestion-grupos.css
+
+   Tipografia: sin font-size fijos en px. Los tamaños de esta vista se
+   resuelven con utilidades de Bootstrap (fs-5, fs-6) en el HTML.
+   ========================================================================== */
+
+/* Columna central del formulario — nodo 1231:1223 (w:519px), centrada en
+   el contenedor principal igual que en el diseño de Figma */
+.asignacion-form-wrap {
+    max-width: 520px;
+    width: 100%;
+    margin: 0 auto;
+}

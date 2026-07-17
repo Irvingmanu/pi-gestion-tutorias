@@ -1,0 +1,178 @@
+/* ==========================================================================
+   FUENTES SN PRO
+   Este archivo vive en: assets/css/auth.css
+   Las fuentes viven en: assets/fonts/  -> se suben UN nivel (../)
+   ========================================================================== */
+@font-face {
+    font-family: 'SN Pro';
+    src: url('../fonts/SNPro-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'SN Pro';
+    src: url('../fonts/SNPro-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'SN Pro';
+    src: url('../fonts/SNPro-Semibold.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ==========================================================================
+   VALORES EXTRAIDOS DE FIGMA (node 286:4415 "Iniciar_Sesion")
+   ========================================================================== */
+:root {
+    --utez-green: #008B74;
+    --gris-fondo: #F2F2F2;
+    --borde-campo: #000000;
+    --placeholder-color: #787878;
+    --texto-secundario: rgba(76, 69, 70, 0.5);
+    --texto: #000000;
+
+    /* Redondeo unico usado en TODOS los contenedores del diseño */
+    --radius-figma: 20px;
+
+    /* Sombra real de la tarjeta (drop-shadow + inset), tomada del nodo 824:426 */
+    --shadow-figma: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+}
+
+body.auth-body {
+    font-family: 'SN Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--gris-fondo);
+    color: var(--texto);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 574px;
+    background-color: #ffffff;
+    border-radius: var(--radius-figma);
+    box-shadow: var(--shadow-figma), inset 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+    padding: 2.5rem 3rem 3rem;
+}
+
+.auth-logo {
+    max-width: 300px;
+    width: 100%;
+}
+
+.auth-label {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--texto);
+    margin-bottom: 0.5rem;
+}
+
+.auth-title {
+    font-weight: 600;
+    font-size: 1.6rem;
+    color: var(--texto);
+}
+
+.auth-subtitle {
+    font-size: 1rem;
+    color: var(--texto-secundario);
+    margin-bottom: 0;
+}
+
+.auth-field {
+    position: relative;
+    background-color: #ffffff;
+    border: 1px solid var(--borde-campo);
+    border-radius: var(--radius-figma);
+    height: 49px;
+}
+
+.auth-field .form-control,
+.auth-field .form-select {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    height: 100%;
+}
+
+.auth-field .form-control::placeholder {
+    color: var(--placeholder-color);
+}
+
+.auth-field.auth-field--password {
+    background-color: rgba(245, 245, 245, 0.2);
+}
+
+.auth-field.auth-field--password .form-control::placeholder {
+    color: var(--texto-secundario);
+}
+
+/* Icono fijo a la izquierda (usuario/candado), no debe deformar el input ni capturar clicks */
+.auth-icon-left {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    pointer-events: none;
+}
+
+/* El texto del input nunca debe encimarse con el icono izquierdo */
+.auth-field .auth-input {
+    padding-left: 48px;
+}
+
+/* Espacio a la derecha para no encimarse con el boton del ojo */
+.auth-field--password .auth-input {
+    padding-right: 44px;
+}
+
+.auth-toggle-password {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: transparent;
+    border: none;
+    padding: 0;
+    line-height: 0;
+    cursor: pointer;
+}
+
+.auth-toggle-password .auth-field-icon {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+}
+
+.auth-forgot-link {
+    color: var(--texto-secundario);
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.auth-forgot-link:hover {
+    color: var(--texto-secundario);
+    text-decoration: underline;
+}
+
+.auth-btn-login {
+    background-color: var(--utez-green);
+    border: none;
+    border-radius: var(--radius-figma);
+    height: 64px;
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 1.4rem;
+}
+
+.auth-btn-login:hover,
+.auth-btn-login:focus {
+    background-color: #00745f;
+    color: #ffffff;
+}

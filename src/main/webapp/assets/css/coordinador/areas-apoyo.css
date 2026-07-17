@@ -1,0 +1,56 @@
+/* ==========================================================================
+   ESTILOS PROPIOS DE "Areas_Apoyo" (Figma node 263:2411)
+   Reutiliza el sistema base (sidebar, --radius-figma, --shadow-figma) definido
+   en assets/css/coordinador/gestion-grupos.css
+
+   Nota de tipografia: a proposito NO se fijan font-size en px aqui. Los
+   tamaños de texto de esta vista se resuelven con las utilidades de
+   Bootstrap (fs-1..fs-6, fw-*) directamente en el HTML; este archivo solo
+   define familia de fuente (heredada de body), color, fondo, borde,
+   redondeo y sombra.
+   ========================================================================== */
+
+/* Tarjeta de area de apoyo — nodos 331:3324 / 862:433 / 862:435 / 862:437
+   (borde real #8E8E8E, fondo real #F9F9F9, sombra real extraida de Figma) */
+.card-area {
+    background-color: #F9F9F9;
+    border: 1px solid #8E8E8E;
+    border-radius: var(--radius-figma);
+    box-shadow: var(--shadow-figma), inset var(--shadow-figma);
+    height: 100%;
+    /* El padding interno ya no se fija aqui: se controla con la
+       utilidad .p-3 de Bootstrap directamente en el HTML */
+}
+
+/* Icono del area: tamaño fijo y object-fit:contain para que nunca se
+   deforme, sin importar el aspect-ratio original del asset en Figma.
+   Reducido de 64px a 40px para una escala de escritorio compacta. */
+.icon-area {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+
+/* Botones de accion (Editar / Eliminar / Nueva área):
+   se apoyan en la clase .btn de Bootstrap (padding, cursor, transicion)
+   y solo agregan color de marca + el redondeo de 20px del sistema */
+.btn-utez-primary,
+.btn-utez-danger {
+    border: none;
+    color: #ffffff;
+    border-radius: var(--radius-figma);
+}
+.btn-utez-primary {
+    background-color: var(--utez-green);
+}
+.btn-utez-primary:hover {
+    background-color: #00735F;
+    color: #ffffff;
+}
+.btn-utez-danger {
+    background-color: #CC5052;
+}
+.btn-utez-danger:hover {
+    background-color: #B84447;
+    color: #ffffff;
+}

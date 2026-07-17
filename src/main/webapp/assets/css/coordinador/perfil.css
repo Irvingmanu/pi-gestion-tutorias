@@ -1,0 +1,47 @@
+/* ==========================================================================
+   ESTILOS PROPIOS DE "Perfil_Coordinador" (Figma node 263:2582)
+   Reutiliza el sistema base (sidebar, --radius-figma, --shadow-figma,
+   --utez-green) definido en assets/css/coordinador/gestion-grupos.css
+
+   Nota de tipografia: a proposito NO se fijan font-size en px aqui (la
+   tarjeta original de Figma esta aplanada como imagen, sin valores de
+   texto reutilizables). Los tamaños se resuelven con las utilidades de
+   Bootstrap (fs-5, fs-6, h5) directamente en el HTML.
+   ========================================================================== */
+
+/* Tarjeta principal de perfil — nodo 836:501 ("Group 19", aplanado a imagen
+   en Figma). Se reutiliza el mismo radio y la misma sombra real (proyectada
+   + interna) ya extraidos del panel lateral, para mantener un solo
+   lenguaje visual de "tarjeta" en todo el sistema */
+.perfil-card {
+    background-color: #ffffff;
+    border-radius: var(--radius-figma);
+    box-shadow: var(--shadow-figma), inset var(--shadow-figma);
+}
+
+/* Avatar circular — nodo 836:507 (96x96 en Figma, reducido a escala
+   compacta de escritorio, igual criterio que los iconos de Areas de Apoyo) */
+.perfil-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: #D9D9D9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+.perfil-avatar img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.perfil-card ul {
+    list-style: disc;
+    padding-left: 1.2rem;
+    margin-bottom: 0;
+}
+.perfil-card li {
+    margin-bottom: 4px;
+}

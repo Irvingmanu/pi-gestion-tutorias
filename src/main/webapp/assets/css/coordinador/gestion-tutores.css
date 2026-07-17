@@ -1,0 +1,65 @@
+/* ==========================================================================
+   ESTILOS PROPIOS DE "Gestion_Tutores" (Figma node 258:1126)
+   Reutiliza el sistema base (sidebar, tipografia, botones, tabla) definido
+   en assets/css/coordinador/gestion-grupos.css
+   ========================================================================== */
+
+/* Buscar tutor — nodo 602:1051. Alto ya no fijo (ver .campo-buscar en
+   gestion-grupos.css); solo se conserva el ancho maximo proporcional */
+.campo-buscar-tutor {
+    max-width: 451px;
+}
+
+/* Anchos exactos de columna de la tabla — nodo 1044:1698 (.Row encabezado)
+   suman 1152px, igual que el contenedor en Figma */
+.col-nomina    { width: 96px; }
+.col-nombre-t  { width: 256px; }
+.col-correo-t  { width: 256px; }
+.col-telefono  { width: 128px; }
+.col-academia  { width: 96px; }
+.col-acciones-t{ width: 320px; }
+
+/* ==========================================================================
+   FORMULARIO DE TUTOR (Nuevo/Editar) — nodo Figma 602:1055
+   Usa las variables base (--radius-figma, --borde-campo, --placeholder-color)
+   definidas en assets/css/coordinador/gestion-grupos.css
+   ========================================================================== */
+
+/* Columna del formulario, centrada debajo del banner (max. 600px) */
+.form-wrap-tutor {
+    max-width: 600px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Inputs de texto — estructura nativa .form-control de Bootstrap, se ajusta
+   borde y radius (quita el focus azul por defecto de Bootstrap) */
+.form-control-tutor {
+    border: 1px solid var(--borde-campo);
+    border-radius: var(--radius-figma) !important;
+}
+.form-control-tutor:focus {
+    border-color: var(--borde-campo);
+    box-shadow: none;
+}
+.form-control-tutor::placeholder {
+    color: var(--placeholder-color);
+    opacity: 1;
+}
+
+/* Boton "Cancelar" — color real extraido de Figma (#CC5052) */
+.btn-cancelar-tutor {
+    background-color: #CC5052;
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-figma);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem 0.75rem;
+}
+.btn-cancelar-tutor:hover {
+    color: #ffffff;
+    background-color: #B33F41;
+}

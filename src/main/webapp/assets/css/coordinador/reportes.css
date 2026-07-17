@@ -1,0 +1,85 @@
+/* ==========================================================================
+   ESTILOS PROPIOS DE "Reportes_Globales" (Figma node 858:826)
+   Reutiliza el sistema base (sidebar, --radius-figma, --shadow-figma,
+   --utez-green, .campo-label, .campo-select, .btn-figma) definido en
+   assets/css/coordinador/gestion-grupos.css
+
+   Tipografia: sin font-size fijos en px. Los tamaños de esta vista se
+   resuelven con utilidades de Bootstrap (fs-5, fs-6, h5) en el HTML.
+   ========================================================================== */
+
+/* Icono cuadrado de las tarjetas de estadisticas (Alumnos Atendidos,
+   Canalizados, Pidieron Tutorías, Pendientes) — nodos 962:447 / 962:450 /
+   962:461 / 858:972, reducidos de 64px a 48px para la escala compacta */
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    background-color: var(--utez-green);
+    border-radius: var(--radius-figma);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+/* Los SVG de Bootstrap Icons son negros por defecto; se fuerzan a blanco
+   con un filtro para no depender de assets nuevos descargados de Figma */
+.stat-icon img {
+    width: 26px;
+    height: 26px;
+    filter: brightness(0) invert(1);
+}
+
+/* ==========================================================================
+   GRAFICAS
+   ========================================================================== */
+.grafica-titulo {
+    font-weight: 500;
+}
+
+/* Contenedor de la dona — nodo 891:473 (~241x245 en Figma) */
+.grafica-dona-wrap {
+    width: 220px;
+    height: 220px;
+    flex: 0 0 auto;
+}
+
+/* Contenedor de barras — nodo 962:460 (~412x184 en Figma) */
+.grafica-barras-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 412px;
+    height: 200px;
+}
+
+/* Puntos de color de la leyenda de la dona — colores reales tomados de
+   Figma con la MCP (ver valores en el bloque <script>) */
+.legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    flex: 0 0 auto;
+}
+
+/* Boton "Exportar PDF / Excel" — nodo 858:920. Color y sombra reales
+   extraidos de Figma (distintos del verde/sombra usados en el resto del
+   sistema) */
+.btn-exportar {
+    background-color: #008A7B;
+    color: #ffffff;
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0px 4px 6px -1px rgba(0, 0, 0, 0.1), 0px 2px 4px -2px rgba(0, 0, 0, 0.1);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.btn-exportar img {
+    width: 18px;
+    height: 18px;
+    filter: brightness(0) invert(1);
+}
+.btn-exportar:hover {
+    background-color: #00786B;
+    color: #ffffff;
+}
