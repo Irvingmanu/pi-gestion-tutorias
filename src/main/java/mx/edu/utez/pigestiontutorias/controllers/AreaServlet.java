@@ -26,17 +26,59 @@ public class AreaServlet extends HttpServlet {
             return;
         }
 
+        String nombre = request.getParameter("nombreArea");
+        String encargado = request.getParameter("encargado");
+        String correo = request.getParameter("correo");
+
+        // 1. VALIDACIÓN: Campos vacíos (CORREGIDO con llaves explícitas y redirección por sesión)
+        if (nombre == null || nombre.trim().isEmpty() ||
+                encargado == null || encargado.trim().isEmpty() ||
+                correo == null || correo.trim().isEmpty()) {
+
+            request.getSession().setAttribute("errorSession", "Todos los campos tienen que ser obligatorios.");
+            response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
+            return;
+        }
+
+        nombre = nombre.trim();
+        encargado = encargado.trim();
+        correo = correo.trim();
+
+        // 2. VALIDACIÓN: Formato de correo electrónico
+        String regexEmail = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$";
+        if (!correo.matches(regexEmail)) {
+            request.getSession().setAttribute("errorSession", "El formato del correo electrónico no es válido.");
+            response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
+            return;
+        }
+
         boolean esEdicion = "editar".equals(accion) || (idAreaParam != null && !idAreaParam.isEmpty());
 
-        Area area = new Area();
-        area.setNombre(request.getParameter("nombreArea"));
-        area.setEncargado(request.getParameter("encargado"));
-        area.setCorreoContacto(request.getParameter("correo"));
-
         if (esEdicion) {
-            area.setIdArea(Integer.parseInt(idAreaParam));
+            int idArea = Integer.parseInt(idAreaParam);
+
+            if (areaDAO.Duplicado(nombre, correo, idArea)) {
+                request.getSession().setAttribute("errorSession", "El nombre del área o correo ya pertenece a otro registro.");
+                response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
+                return;
+            }
+            Area area = new Area();
+            area.setIdArea(idArea);
+            area.setNombre(nombre);
+            area.setEncargado(encargado);
+            area.setCorreoContacto(correo);
             areaDAO.update(area);
         } else {
+            if (areaDAO.existeNombreCorreo(nombre, correo)) {
+                request.getSession().setAttribute("errorSession", "El nombre del área o correo electrónico ya se encuentran registrados.");
+                response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
+                return;
+            }
+
+            Area area = new Area();
+            area.setNombre(nombre);
+            area.setEncargado(encargado);
+            area.setCorreoContacto(correo);
             areaDAO.create(area);
         }
 

@@ -7,6 +7,12 @@
 
     AreaDAO areaDAO = new AreaDAO();
     List<Area> listaAreas = areaDAO.getAll();
+
+    // Capturamos el error guardado en la sesión
+    String error = (String) session.getAttribute("errorSession");
+    if (error != null) {
+        session.removeAttribute("errorSession"); // Lo limpiamos para que no vuelva a salir
+    }
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -29,6 +35,14 @@
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">
 
         <h2 class="titulo-principal h5 mb-3 mt-2">Sistema de Gestión de Tutorías</h2>
+
+        <%-- ALERTA DE ERROR SI EXISTE UN DUPLICADO --%>
+        <% if (error != null) { %>
+        <div class="alert alert-danger alert-dismissible fade show fw-medium mb-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> <%= error %>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+        </div>
+        <% } %>
 
         <div class="banner-grupos h5 mb-3">
             Áreas de Apoyo
