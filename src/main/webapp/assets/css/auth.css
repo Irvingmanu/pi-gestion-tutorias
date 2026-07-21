@@ -134,7 +134,7 @@ body.auth-body {
 
 .auth-toggle-password {
     position: absolute;
-    right: 12px;
+    right: 36px;
     top: 50%;
     transform: translateY(-50%);
     background-color: transparent;
