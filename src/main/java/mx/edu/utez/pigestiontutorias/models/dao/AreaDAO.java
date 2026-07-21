@@ -110,4 +110,47 @@ public class AreaDAO implements Dao<Area, Integer> {
             return false;
         }
     }
+
+    public boolean existeNombreCorreo(String nombre, String correo) {
+        boolean existe = false;
+        String sql = "SELECT COUNT(*) FROM AREA_APOYO WHERE nombre = ? OR CORREO_CONTACTO = ?";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, nombre);
+            ps.setString(2, correo);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    existe = rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return existe;
+    }
+
+    public boolean Duplicado(String nombre, String correo, Integer idArea) {
+        int id = (idArea != null) ? idArea : 0;
+        String sql = "SELECT COUNT(*) FROM AREA_APOYO WHERE (NOMBRE = ? OR CORREO_CONTACTO = ?) AND ID_AREA != ?";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, nombre);
+            ps.setString(2, correo);
+            ps.setInt(3, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }
