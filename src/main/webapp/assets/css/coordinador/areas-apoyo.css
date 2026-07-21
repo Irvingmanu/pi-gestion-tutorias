@@ -54,3 +54,66 @@
     background-color: #B84447;
     color: #ffffff;
 }
+
+/* ==========================================================================
+   ESTILOS PARA EL FORMULARIO DE REGISTRO / EDICIÓN DE ÁREAS
+   ========================================================================== */
+
+.form-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.rounded-input {
+    border-radius: var(--radius-figma);
+    border: 1px solid #000;
+    padding: 10px 20px;
+}
+
+/* Botones personalizados del formulario */
+.btn-custom-cancel {
+    background-color: #c95151;
+    color: white;
+    border-radius: var(--radius-figma);
+    padding: 10px 30px;
+    border: none;
+    transition: background-color 0.2s ease;
+}
+
+.btn-custom-cancel:hover {
+    background-color: #b04343;
+    color: white;
+}
+
+.btn-custom-save {
+    background-color: var(--utez-green, #007f66);
+    color: white;
+    border-radius: var(--radius-figma);
+    padding: 10px 30px;
+    border: none;
+    transition: background-color 0.2s ease;
+}
+
+.btn-custom-save:hover {
+    background-color: #006652;
+    color: white;
+}
+
+/* Fuerza para el modal de SweetAlert2 (Rojo y con redondeado del sistema) */
+.swal2-styled.swal2-confirm {
+    background-color: #c95151 !important;
+    border-color: #c95151 !important;
+    border-radius: var(--radius-figma) !important;
+    padding: 10px 50px !important;
+    font-weight: 500 !important;
+    box-shadow: none !important;
+}
+
+.swal2-icon.swal2-error {
+    border-color: #c95151 !important;
+    color: #c95151 !important;
+}
+
+.swal2-icon.swal2-error [class^='swal2-x-mark-line'] {
+    background-color: #c95151 !important;
+}

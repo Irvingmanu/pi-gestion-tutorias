@@ -21,7 +21,13 @@ public class AreaServlet extends HttpServlet {
         String accion = request.getParameter("accion");
 
         if ("eliminar".equals(accion)) {
-            areaDAO.delete(Integer.parseInt(idAreaParam));
+            try {
+                if (idAreaParam != null && !idAreaParam.isEmpty()) {
+                    areaDAO.delete(Integer.parseInt(idAreaParam));
+                }
+            } catch (Throwable t) {
+                request.getSession().setAttribute("errorSession", "Error al intentar eliminar el registro.");
+            }
             response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
             return;
         }
@@ -30,13 +36,17 @@ public class AreaServlet extends HttpServlet {
         String encargado = request.getParameter("encargado");
         String correo = request.getParameter("correo");
 
-        // 1. VALIDACIÓN: Campos vacíos (CORREGIDO con llaves explícitas y redirección por sesión)
+        // VALIDACIÓN: Campos vacíos
         if (nombre == null || nombre.trim().isEmpty() ||
                 encargado == null || encargado.trim().isEmpty() ||
                 correo == null || correo.trim().isEmpty()) {
 
             request.getSession().setAttribute("errorSession", "Todos los campos tienen que ser obligatorios.");
-            response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
+            String redir = "/coordinador/formulario-area.jsp?accion=" + ("editar".equals(accion) ? "editar" : "nueva");
+            if (idAreaParam != null && !idAreaParam.isEmpty()) {
+                redir += "&idArea=" + idAreaParam;
+            }
+            response.sendRedirect(request.getContextPath() + redir);
             return;
         }
 
@@ -44,66 +54,70 @@ public class AreaServlet extends HttpServlet {
         encargado = encargado.trim();
         correo = correo.trim();
 
-        // 2. VALIDACIÓN: Formato de correo electrónico
+        // VALIDACIÓN: Formato de correo
         String regexEmail = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,6}$";
         if (!correo.matches(regexEmail)) {
             request.getSession().setAttribute("errorSession", "El formato del correo electrónico no es válido.");
-            response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
+            String redir = "/coordinador/formulario-area.jsp?accion=" + ("editar".equals(accion) ? "editar" : "nueva");
+            if (idAreaParam != null && !idAreaParam.isEmpty()) {
+                redir += "&idArea=" + idAreaParam;
+            }
+            response.sendRedirect(request.getContextPath() + redir);
             return;
         }
 
-        boolean esEdicion = "editar".equals(accion) || (idAreaParam != null && !idAreaParam.isEmpty());
+        boolean esEdicion = "editar".equals(accion);
 
-        if (esEdicion) {
-            int idArea = Integer.parseInt(idAreaParam);
+        try {
+            if (esEdicion) {
+                int idArea = Integer.parseInt(idAreaParam);
 
-            if (areaDAO.Duplicado(nombre, correo, idArea)) {
-                request.getSession().setAttribute("errorSession", "El nombre del área o correo ya pertenece a otro registro.");
-                response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
-                return;
+                if (areaDAO.Duplicado(nombre, correo, idArea)) {
+                    request.getSession().setAttribute("errorSession", "El nombre del área o correo ya pertenece a otro registro.");
+                    response.sendRedirect(request.getContextPath() + "/coordinador/formulario-area.jsp?accion=editar&idArea=" + idArea);
+                    return;
+                }
+                Area area = new Area();
+                area.setIdArea(idArea);
+                area.setNombre(nombre);
+                area.setEncargado(encargado);
+                area.setCorreoContacto(correo);
+                areaDAO.update(area);
+            } else {
+                if (areaDAO.existeNombreCorreo(nombre, correo)) {
+                    request.getSession().setAttribute("errorSession", "El nombre del área o correo electrónico ya se encuentran registrados.");
+                    response.sendRedirect(request.getContextPath() + "/coordinador/formulario-area.jsp?accion=nueva");
+                    return;
+                }
+
+                Area area = new Area();
+                area.setNombre(nombre);
+                area.setEncargado(encargado);
+                area.setCorreoContacto(correo);
+                areaDAO.create(area);
             }
-            Area area = new Area();
-            area.setIdArea(idArea);
-            area.setNombre(nombre);
-            area.setEncargado(encargado);
-            area.setCorreoContacto(correo);
-            areaDAO.update(area);
-        } else {
-            if (areaDAO.existeNombreCorreo(nombre, correo)) {
-                request.getSession().setAttribute("errorSession", "El nombre del área o correo electrónico ya se encuentran registrados.");
-                response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
-                return;
-            }
-
-            Area area = new Area();
-            area.setNombre(nombre);
-            area.setEncargado(encargado);
-            area.setCorreoContacto(correo);
-            areaDAO.create(area);
+            response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
+        } catch (Throwable t) {
+            request.getSession().setAttribute("errorSession", "Error crítico en la base de datos.");
+            response.sendRedirect(request.getContextPath() + "/coordinador/formulario-area.jsp?accion=" + (esEdicion ? "editar" : "nueva") + (idAreaParam != null ? "&idArea=" + idAreaParam : ""));
         }
-
-        response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
     }
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String accion = request.getParameter("accion");
 
-        if ("eliminar".equals(accion)) {
-            int idArea = Integer.parseInt(request.getParameter("idArea"));
-            areaDAO.delete(idArea);
-            response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
-            return;
-        }
-
         if ("prepararEdicion".equals(accion)) {
-            int idArea = Integer.parseInt(request.getParameter("idArea"));
-            Area areaEdit = areaDAO.getById(idArea);
-            request.setAttribute("areaEdit", areaEdit);
-            request.getRequestDispatcher("/coordinador/formulario-area.jsp").forward(request, response);
-            return;
+            try {
+                int idArea = Integer.parseInt(request.getParameter("idArea"));
+                Area areaEdit = areaDAO.getById(idArea);
+                request.setAttribute("areaEdit", areaEdit);
+                request.getRequestDispatcher("/coordinador/formulario-area.jsp?accion=editar").forward(request, response);
+                return;
+            } catch (Throwable t) {
+                request.getSession().setAttribute("errorSession", "Error al cargar los datos para edición.");
+            }
         }
-
         response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
     }
 }
