@@ -1,0 +1,145 @@
+/* ==========================================================================
+   FUENTES SN PRO
+   Este archivo vive en: assets/css/global.css
+   Las fuentes viven en: assets/fonts/  -> se suben UN nivel (../)
+   ========================================================================== */
+@font-face {
+    font-family: 'SN Pro';
+    src: url('../fonts/SNPro-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'SN Pro';
+    src: url('../fonts/SNPro-Medium.woff2') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+@font-face {
+    font-family: 'SN Pro';
+    src: url('../fonts/SNPro-Semibold.woff2') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ==========================================================================
+   VALORES GLOBALES EXTRAIDOS DE FIGMA
+   Usados por gestion-grupos.css, navbar.css, perfil.css y alertas.css
+   ========================================================================== */
+:root {
+    --utez-green: #008B74;
+    --gris-fondo: #F2F2F2;
+    --borde-tabla: #B9B9B9;
+    --header-tabla: rgba(0, 0, 0, 0.06);
+    --borde-campo: #000000;
+    --placeholder-color: #787878;
+    --texto: #000000;
+
+    /* Redondeo unico usado en TODOS los contenedores del diseño */
+    --radius-figma: 20px;
+
+    /* Sombra real del panel lateral (drop-shadow + inset), tomada del nodo 1110:1518 */
+    --shadow-figma: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
+}
+
+body {
+    font-family: 'SN Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: var(--gris-fondo);
+    color: var(--texto);
+}
+
+.rounded-figma {
+    border-radius: var(--radius-figma) !important;
+}
+
+/* ==========================================================================
+   COMPONENTES DE UI COMPARTIDOS
+   Usados por mas de una vista (gestion-grupos.jsp, formulario-alumno.jsp,
+   perfil.jsp, etc.): encabezado de pagina, banner de seccion, botones y
+   formularios con la identidad visual "figma" comun a todo el sistema.
+   ========================================================================== */
+
+/* ENCABEZADO
+   Tamaño de fuente: ya NO se fija en px aqui. Se resuelve con las
+   utilidades de Bootstrap (clase .h5) directamente en el HTML; este
+   archivo solo define lo no-tipografico (peso, alineacion, color, fondo,
+   padding, redondeo). */
+.titulo-principal {
+    font-weight: 500;
+    text-align: center;
+}
+
+/* Banner de seccion — nodo 1061:10113/1061:10114 */
+.banner-grupos {
+    background-color: var(--utez-green);
+    color: #ffffff;
+    text-align: center;
+    font-weight: 600;
+    padding: 10px 20px;
+    border-radius: var(--radius-figma);
+}
+
+/* BOTONES — nodos 1061:10115 (Agregar) y 1061:10116 (Guardar)
+   Ancho/alto ya no fijos: el tamaño lo da el padding estandar de .btn,
+   igual que cualquier boton normal de Bootstrap */
+.btn-figma {
+    background-color: var(--utez-green);
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-figma);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem 0.75rem;
+}
+.btn-figma:hover {
+    color: #ffffff;
+    background-color: #00735F;
+}
+
+/* Boton "Cancelar" — color real extraido de Figma (#CC5052) */
+.btn-cancelar-figma {
+    background-color: #CC5052;
+    color: #ffffff;
+    border: none;
+    border-radius: var(--radius-figma);
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.375rem 0.75rem;
+}
+.btn-cancelar-figma:hover {
+    color: #ffffff;
+    background-color: #B33F41;
+}
+
+/* FORMULARIOS COMPARTIDOS (Nueva/Editar Área, Nuevo/Editar Tutor, Nuevo/Editar Alumno)
+   Usados por formulario-area.jsp, formulario-tutor.jsp y formulario-alumno.jsp */
+
+/* Columna del formulario, centrada en el contenedor principal */
+.form-wrap-figma {
+    max-width: 520px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+/* Inputs de texto — estructura nativa .form-control de Bootstrap, solo se
+   ajustan borde y radius para conservar la identidad visual (border-radius
+   20px en todos los campos, tal como en el resto del sistema) */
+.form-control-figma {
+    border: 1px solid var(--borde-campo);
+    border-radius: var(--radius-figma) !important;
+}
+.form-control-figma:focus {
+    border-color: var(--borde-campo);
+    box-shadow: none;
+}
+.form-control-figma::placeholder {
+    color: var(--placeholder-color);
+    opacity: 1;
+}

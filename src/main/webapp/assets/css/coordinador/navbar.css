@@ -1,0 +1,72 @@
+/* ==========================================================================
+   BARRA LATERAL — nodo 1110:1517 (w:192px, h:960px)
+   Depende de las variables globales definidas en assets/css/global.css
+   (--radius-figma, --shadow-figma, --texto, --gris-fondo)
+   ========================================================================== */
+.sidebar-grupos {
+    width: 168px;
+    min-width: 168px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: var(--radius-figma);
+    box-shadow: var(--shadow-figma), inset var(--shadow-figma);
+    padding: 16px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sidebar-grupos .sidebar-logo {
+    display: flex;
+    justify-content: center;
+    padding: 10px 0 20px;
+}
+.sidebar-grupos .sidebar-logo img {
+    width: 70%;
+    max-width: 100px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+/* nodos FrameTutores / FrameGrupos / etc.: version compacta (icono reducido ~38%, padding y fuente ajustados) */
+.nav-item-grupos {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 4px;
+    border-radius: var(--radius-figma);
+    text-decoration: none;
+    color: var(--texto);
+    font-size: 0.95rem; /* ~15px, equivalente a fs-6 de Bootstrap */
+    font-weight: 400;
+    text-align: center;
+    background-color: transparent;
+    transition: all 0.2s ease-in-out;
+}
+.nav-item-grupos img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+}
+.nav-item-grupos:hover {
+    color: var(--texto);
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+/* Protección: el hover normal no debe pisar el fondo del item .active */
+.nav-item-grupos:not(.active):hover {
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+/* Estado activo (nodo FrameGrupos): fondo gris #F2F2F2, tal como en el archivo */
+.nav-item-grupos.active {
+    background-color: var(--gris-fondo);
+}
+.nav-item-grupos.active:hover {
+    background-color: var(--gris-fondo);
+}
+.nav-item-grupos:not(.active) {
+    background-color: #ffffff;
+}
