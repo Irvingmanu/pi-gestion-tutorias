@@ -1,0 +1,367 @@
+/* ==========================================================================
+   SISTEMA DE ALERTAS Y CONFIRMACIONES
+   Valores extraidos de Figma (node 1379:1206 "Alerta Exito")
+   ========================================================================== */
+:root {
+    --alerta-bg: #ffffff;
+    --alerta-radius: 20px;
+    --alerta-shadow: 0px 20px 25px -5px rgba(0, 0, 0, 0.1), 0px 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+    --alerta-color-exito: #008B74;
+    --alerta-color-exito-borde: #E1F3E9;
+
+    --alerta-color-error: #DC2626;
+    --alerta-color-error-borde: #FBE2E1;
+
+    --alerta-color-advertencia: #D97706;
+    --alerta-color-advertencia-borde: #FCEED3;
+
+    --alerta-titulo-color: #444444;
+    --alerta-mensaje-color: #6B7280;
+
+    --alerta-btn-radius: 40px;
+    --alerta-btn-shadow: 0px 4px 2px rgba(0, 0, 0, 0.25);
+    --alerta-btn-color-texto: #ffffff;
+
+    --confirmacion-titulo-color: #111827;
+    --confirmacion-mensaje-color: #64748B;
+
+    --confirmacion-color-critico-icono: #EF4444;
+    --confirmacion-color-critico-boton: #FF383C;
+    --confirmacion-shadow-critico: 0px 10px 15px -3px #FECACA, 0px 4px 6px -4px #FECACA;
+
+    --confirmacion-color-advertencia-icono: #F59E0B;
+    --confirmacion-color-advertencia-boton: #F59E0B;
+    --confirmacion-shadow-advertencia: 0px 10px 15px -3px #FDE68A, 0px 4px 6px -4px #FDE68A;
+
+    --confirmacion-btn-cancelar-bg: #ECF3FA;
+    --confirmacion-btn-cancelar-color: #000000;
+    --confirmacion-btn-radius: 999px;
+
+    --toast-borde: #BCC9C4;
+    --toast-shadow: 0px 8px 24px 0px rgba(0, 0, 0, 0.1);
+    --toast-radius: 8px;
+    --toast-titulo-color: #0B1C30;
+    --toast-mensaje-color: #3D4945;
+    --toast-barra-alto: 4px;
+}
+
+.alerta-card {
+    background-color: var(--alerta-bg);
+    border: none;
+    border-radius: var(--alerta-radius);
+    box-shadow: var(--alerta-shadow);
+    overflow: hidden;
+}
+
+.alerta-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    padding: 32px;
+    font-family: 'SN Pro', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.alerta-icono-wrap {
+    margin-bottom: 24px;
+}
+
+.alerta-icono {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 96px;
+    height: 96px;
+    border-radius: 9999px;
+}
+
+.alerta-icono img {
+    width: 48px;
+    height: 48px;
+    display: block;
+}
+
+.alerta-icono--exito {
+    background-color: var(--alerta-color-exito);
+    border: 1px solid var(--alerta-color-exito-borde);
+}
+
+.alerta-icono--error {
+    background-color: var(--alerta-color-error);
+    border: 1px solid var(--alerta-color-error-borde);
+}
+
+.alerta-icono--advertencia {
+    background-color: var(--alerta-color-advertencia);
+    border: 1px solid var(--alerta-color-advertencia-borde);
+}
+
+.alerta-texto {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 32px;
+}
+
+.alerta-titulo {
+    margin: 0;
+    font-weight: 700;
+    font-size: 30px;
+    line-height: 36px;
+    color: var(--alerta-titulo-color);
+    text-align: center;
+}
+
+.alerta-mensaje {
+    margin: 0;
+    font-weight: 400;
+    font-size: 27px;
+    line-height: 28px;
+    color: var(--alerta-mensaje-color);
+    text-align: center;
+}
+
+.alerta-botones {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+}
+
+.alerta-btn {
+    width: 100%;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--alerta-btn-radius);
+    font-weight: 700;
+    font-size: 27px;
+    line-height: 28px;
+    text-transform: uppercase;
+    letter-spacing: 0.45px;
+    color: var(--alerta-btn-color-texto);
+    cursor: pointer;
+}
+
+.alerta-btn-exito {
+    background-color: var(--alerta-color-exito);
+    box-shadow: var(--alerta-btn-shadow);
+}
+
+.alerta-btn-error {
+    background-color: var(--alerta-color-error);
+    box-shadow: var(--alerta-btn-shadow);
+}
+
+.alerta-btn-advertencia {
+    background-color: var(--alerta-color-advertencia);
+    box-shadow: var(--alerta-btn-shadow);
+}
+
+.alerta-btn-secundario {
+    display: none;
+    background-color: transparent;
+    color: var(--alerta-mensaje-color);
+    box-shadow: none;
+    border: 1px solid #d1d5db;
+}
+
+/* ==========================================================================
+   MODAL DE CONFIRMACION
+   Valores extraidos de Figma (node 1541:1277 "Pregunta Critica")
+   ========================================================================== */
+.confirmacion-icono-wrap {
+    margin-bottom: 24px;
+}
+
+.confirmacion-icono {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 9999px;
+}
+
+.confirmacion-icono img {
+    width: 32px;
+    height: 32px;
+    display: block;
+}
+
+.confirmacion-icono--critica {
+    background-color: var(--confirmacion-color-critico-icono);
+    box-shadow: var(--confirmacion-shadow-critico);
+}
+
+.confirmacion-icono--advertencia {
+    background-color: var(--confirmacion-color-advertencia-icono);
+    box-shadow: var(--confirmacion-shadow-advertencia);
+}
+
+.confirmacion-titulo {
+    margin: 0 0 12px;
+    font-weight: 700;
+    font-size: 24px;
+    line-height: 32px;
+    color: var(--confirmacion-titulo-color);
+    text-align: center;
+}
+
+.confirmacion-mensaje {
+    margin: 0 0 32px;
+    padding: 0 8px;
+    font-weight: 400;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--confirmacion-mensaje-color);
+    text-align: center;
+}
+
+.confirmacion-botones {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    width: 100%;
+}
+
+.btn-confirmar-cancelar {
+    border: none;
+    cursor: pointer;
+    padding: 8px 24px;
+    border-radius: var(--confirmacion-btn-radius);
+    background-color: var(--confirmacion-btn-cancelar-bg);
+    color: var(--confirmacion-btn-cancelar-color);
+    font-weight: 700;
+    font-size: 24px;
+}
+
+.btn-confirmar {
+    border: none;
+    cursor: pointer;
+    padding: 8px 24px;
+    border-radius: var(--confirmacion-btn-radius);
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 24px;
+}
+
+.btn-confirmar-critico {
+    background-color: var(--confirmacion-color-critico-boton);
+}
+
+.btn-confirmar-advertencia {
+    background-color: var(--confirmacion-color-advertencia-boton);
+}
+
+/* ==========================================================================
+   TOAST DE NOTIFICACION
+   Valores extraidos de Figma (node 1547:1536 "Success Toast Notification")
+   ========================================================================== */
+.toast-alerta {
+    position: relative;
+    width: 360px;
+    max-width: 100%;
+    background-color: var(--alerta-bg);
+    border: 1px solid var(--toast-borde);
+    border-radius: var(--toast-radius);
+    box-shadow: var(--toast-shadow);
+    overflow: hidden;
+}
+
+.toast-alerta-cuerpo {
+    display: flex;
+    align-items: flex-start;
+    gap: 24px;
+    padding: 24px;
+}
+
+.toast-alerta-icono {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 9999px;
+    flex-shrink: 0;
+}
+
+.toast-alerta-icono img {
+    width: 24px;
+    height: 24px;
+    display: block;
+}
+
+.toast-alerta-icono--exito {
+    background-color: var(--alerta-color-exito);
+    border: 1px solid var(--alerta-color-exito-borde);
+}
+
+.toast-alerta-icono--error {
+    background-color: var(--alerta-color-error);
+    border: 1px solid var(--alerta-color-error-borde);
+}
+
+.toast-alerta-icono--advertencia {
+    background-color: var(--alerta-color-advertencia);
+    border: 1px solid var(--alerta-color-advertencia-borde);
+}
+
+.toast-alerta-contenido {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1 0 0;
+    min-width: 0;
+}
+
+.toast-alerta-titulo {
+    margin: 0;
+    font-family: 'Hanken Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    line-height: 25px;
+    color: var(--toast-titulo-color);
+}
+
+.toast-alerta-mensaje {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 400;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--toast-mensaje-color);
+}
+
+.toast-alerta-cerrar {
+    flex-shrink: 0;
+}
+
+@keyframes shrink-progress {
+    from {
+        width: 100%;
+    }
+    to {
+        width: 0%;
+    }
+}
+
+.toast-progress-bar {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: var(--toast-barra-alto);
+    width: 100%;
+    background-color: var(--alerta-color-exito);
+    animation: shrink-progress 4s linear;
+}
+
+.toast-progress-bar--error {
+    background-color: var(--alerta-color-error);
+}
+
+.toast-progress-bar--advertencia {
+    background-color: var(--alerta-color-advertencia);
+}

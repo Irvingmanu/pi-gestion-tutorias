@@ -19,7 +19,7 @@
         <img src="<%= ctx %>/assets/img/coordinador/tutores.png" alt="Tutores">
         <span>Tutores</span>
     </a>
-    <a href="<%= ctx %>/coordinador/gestion-grupos.jsp" class="nav-item-grupos<%= "grupos".equals(paginaActiva) ? " active" : "" %>">
+    <a href="<%= ctx %>/AlumnoServlet" class="nav-item-grupos<%= "grupos".equals(paginaActiva) ? " active" : "" %>">
         <img src="<%= ctx %>/assets/img/coordinador/grupos.png" alt="Grupos">
         <span>Grupos</span>
     </a>
