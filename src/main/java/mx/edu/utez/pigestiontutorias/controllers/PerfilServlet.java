@@ -1,13 +1,12 @@
 package mx.edu.utez.pigestiontutorias.controllers;
 
-import mx.edu.utez.pigestiontutorias.models.Coordinador;
-import mx.edu.utez.pigestiontutorias.models.dao.CoordinadorDAO;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import mx.edu.utez.pigestiontutorias.models.Coordinador;
+import mx.edu.utez.pigestiontutorias.models.dao.CoordinadorDAO;
 
 import java.io.IOException;
 

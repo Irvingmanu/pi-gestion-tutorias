@@ -7,12 +7,6 @@
 
     AreaDAO areaDAO = new AreaDAO();
     List<Area> listaAreas = areaDAO.getAll();
-
-    // Capturamos el error guardado en la sesión
-    String error = (String) session.getAttribute("errorSession");
-    if (error != null) {
-        session.removeAttribute("errorSession"); // Lo limpiamos para que no vuelva a salir
-    }
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -20,38 +14,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Áreas de Apoyo</title>
-    <link href="../assets/css/bootstrap.css" rel="stylesheet">
-    <link href="../assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
-    <link href="../assets/css/coordinador/areas-apoyo.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/coordinador/areas-apoyo.css" rel="stylesheet">
 </head>
 <body>
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
-    <!--  BARRA LATERAL -->
+    <!-- ==================== BARRA LATERAL ==================== -->
     <jsp:include page="../includes/navbar.jsp" />
 
-    <!-- CONTENIDO PRINCIPAL -->
+    <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">
 
         <h2 class="titulo-principal h5 mb-3 mt-2">Sistema de Gestión de Tutorías</h2>
-
-        <%-- ALERTA DE ERROR SI EXISTE UN DUPLICADO --%>
-        <% if (error != null) { %>
-        <div class="alert alert-danger alert-dismissible fade show fw-medium mb-3" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i> <%= error %>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-        </div>
-        <% } %>
 
         <div class="banner-grupos h5 mb-3">
             Áreas de Apoyo
         </div>
 
         <div class="d-flex justify-content-end mb-3">
-            <a href="formulario-area.jsp?accion=nueva" class="btn btn-utez-primary fw-medium px-3 py-1">Nueva área</a>
+            <a href="<%= request.getContextPath() %>/coordinador/nueva-area.jsp" class="btn btn-utez-primary fw-medium px-3 py-1">Nueva área</a>
         </div>
 
+        <!-- Tarjetas de areas de apoyo, pintadas dinamicamente desde AREA_APOYO -->
         <% if (listaAreas.isEmpty()) { %>
         <div class="alert alert-info text-center">
             No hay áreas de apoyo registradas todavía.
@@ -62,7 +50,7 @@
             <% for (Area area : listaAreas) { %>
             <div class="col">
                 <div class="card-area p-3 text-center d-flex flex-column">
-                    <img src="../assets/img/coordinador/areas.png" alt="<%= area.getNombre() %>" class="icon-area mx-auto mb-2">
+                    <img src="<%= request.getContextPath() %>/assets/img/coordinador/personas.png" alt="<%= area.getNombre() %>" class="icon-area mx-auto mb-2">
                     <p class="fs-6 fw-bold mb-1"><%= area.getNombre() %></p>
                     <p class="small text-muted mb-2">
                         <%= area.getEncargado() %><br>
@@ -83,6 +71,7 @@
 
 </div>
 
+<!-- ==================== MODAL ELIMINAR ==================== -->
 <div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
@@ -105,7 +94,7 @@
     </div>
 </div>
 
-<script src="../assets/js/bootstrap.js"></script>
-<script src="../assets/js/coordinador/areas.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/coordinador/areas.js"></script>
 </body>
 </html>

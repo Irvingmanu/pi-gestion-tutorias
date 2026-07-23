@@ -118,6 +118,18 @@ body {
     background-color: #B33F41;
 }
 
+/* Variante compacta de .btn-figma / .btn-cancelar-figma — botones cuadrados
+   "+"/"-" usados en secciones con filas dinamicas (ej. Sub-Categorias en
+   Nueva Área de Apoyo). Se combinan con la clase base para heredar color/hover. */
+.btn-figma-sm,
+.btn-cancelar-figma-sm {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    font-size: 1.25rem;
+    line-height: 1;
+}
+
 /* FORMULARIOS COMPARTIDOS (Nueva/Editar Área, Nuevo/Editar Tutor, Nuevo/Editar Alumno)
    Usados por formulario-area.jsp, formulario-tutor.jsp y formulario-alumno.jsp */
 

@@ -1,15 +1,16 @@
-document.querySelectorAll('.toggle-password-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const targetId = btn.getAttribute('data-target');
-        const input = document.getElementById(targetId);
-        const icon = btn.querySelector('.toggle-icon');
+// Alterna la visibilidad del campo de contraseña en el login
+document.addEventListener('DOMContentLoaded', function () {
+    const toggleBtn = document.getElementById('togglePassword');
+    const passwordInput = document.getElementById('password');
+    const toggleIcon = document.getElementById('toggleIcon');
 
-        if (input.type === 'password') {
-            input.type = 'text';
-            icon.src = 'assets/img/login/ojoMostrar.png';
-        } else {
-            input.type = 'password';
-            icon.src = 'assets/img/login/ojoOcultar.png';
-        }
-    });
+    if (toggleBtn && passwordInput && toggleIcon) {
+        toggleBtn.addEventListener('click', function () {
+            const esOculta = passwordInput.type === 'password';
+            passwordInput.type = esOculta ? 'text' : 'password';
+            toggleIcon.src = esOculta
+                ? 'assets/img/login/ojoMostrar.png'
+                : 'assets/img/login/ojoOcultar.png';
+        });
+    }
 });

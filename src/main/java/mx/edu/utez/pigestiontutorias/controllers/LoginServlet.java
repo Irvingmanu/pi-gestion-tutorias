@@ -2,7 +2,10 @@ package mx.edu.utez.pigestiontutorias.controllers;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.*;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import mx.edu.utez.pigestiontutorias.models.Usuario;
 import mx.edu.utez.pigestiontutorias.models.dao.UsuarioDao;
 
@@ -21,9 +24,9 @@ public class LoginServlet extends HttpServlet {
     );
 
     private static final Map<String, String> DESTINOS = Map.of(
-            "coordinador", "coordinador/perfil.jsp",
-            "tutor", "tutor/perfil.jsp",
-            "alumno", "alumno/perfil.jsp"
+            "coordinador", "TutoresServlet",
+            "tutor", "TutoriaServlet",
+            "alumno", "AgendaServlet"
     );
 
     @Override
@@ -61,6 +64,6 @@ public class LoginServlet extends HttpServlet {
         session.setAttribute("idUsuario", usuario.getIdUsuario());
         session.setAttribute("rol", usuario.getRol());
 
-        response.sendRedirect(DESTINOS.get(opcion));
+        response.sendRedirect(request.getContextPath() + "/" + DESTINOS.get(opcion));
     }
 }

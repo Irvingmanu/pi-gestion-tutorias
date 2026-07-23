@@ -31,8 +31,10 @@
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
+    <!-- ==================== BARRA LATERAL ==================== -->
     <jsp:include page="../includes/navbar.jsp" />
 
+    <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">
 
         <h2 class="titulo-principal h5 mb-3 mt-2">Sistema de Gestión de Tutorías</h2>
@@ -41,6 +43,7 @@
             <%= tituloBanner %>
         </div>
 
+        <!-- Formulario de nuevo/edicion de tutor -->
         <form class="form-wrap-tutor mt-3">
 
             <div class="mb-4">

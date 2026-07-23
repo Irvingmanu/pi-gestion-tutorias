@@ -35,7 +35,7 @@
         <img src="<%= ctx %>/assets/img/coordinador/areas.png" alt="Áreas">
         <span>Áreas</span>
     </a>
-    <a href="<%= ctx %>/coordinador/perfil.jsp" class="nav-item-grupos mt-auto<%= "perfil".equals(paginaActiva) ? " active" : "" %>">
+    <a href="<%= ctx %>/PerfilServlet" class="nav-item-grupos mt-auto<%= "perfil".equals(paginaActiva) ? " active" : "" %>">
         <img src="<%= ctx %>/assets/img/coordinador/perfil.png" alt="Perfil">
         <span>Perfil</span>
     </a>

@@ -39,7 +39,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - <%= tituloBanner %></title>
     <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
     <link href="<%= request.getContextPath() %>/assets/css/alertas.css" rel="stylesheet">
 </head>
 <body>
@@ -97,7 +98,7 @@
                                value="<%= alumnoFormulario != null ? alumnoFormulario.getMatricula() : "" %>" placeholder="Escribe la matrícula"
                                pattern="^[a-zA-Z0-9]+$" title="La matrícula solo debe contener letras y números, sin espacios ni símbolos."
                                oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')"
-                            <%= esEdicion ? "readonly" : "" %> required>
+                               <%= esEdicion ? "readonly" : "" %> required>
                     </div>
 
                     <div class="mb-4">

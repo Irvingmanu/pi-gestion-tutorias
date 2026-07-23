@@ -1,23 +1,47 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
-<%
-    request.setAttribute("paginaActiva", "reportes");
-%>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión de Tutorías - Reportes Globales</title>
-    <link href="../assets/css/bootstrap.css" rel="stylesheet">
-    <link href="../assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
-    <link href="../assets/css/coordinador/reportes.css" rel="stylesheet">
+    <title>Sistema de Gestión de Tutorías - Reportes</title>
+    <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/coordinador/reportes.css" rel="stylesheet">
 </head>
 <body>
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
-    <!-- ==================== BARRA LATERAL ==================== -->
-    <jsp:include page="../includes/navbar.jsp" />
+    <!-- ==================== BARRA LATERAL (Tutor) ==================== -->
+    <aside class="sidebar-grupos">
+        <div class="sidebar-logo">
+            <img src="<%= request.getContextPath() %>/assets/img/tutor/logoUtez.png" alt="UTEZ">
+        </div>
+
+        <a href="<%= request.getContextPath() %>/tutor/registro-individual.jsp" class="nav-item-grupos">
+            <img src="<%= request.getContextPath() %>/assets/img/tutor/tutoriaIndividual.png" alt="Tutoría Individual">
+            <span>Tutoría Individual</span>
+        </a>
+        <a href="<%= request.getContextPath() %>/tutor/registro-grupal.jsp" class="nav-item-grupos">
+            <img src="<%= request.getContextPath() %>/assets/img/tutor/tutoriaGrupal.png" alt="Tutoría Grupal">
+            <span>Tutoría Grupal</span>
+        </a>
+        <a href="<%= request.getContextPath() %>/tutor/solicitudes.jsp" class="nav-item-grupos">
+            <img src="<%= request.getContextPath() %>/assets/img/tutor/solicitudes.png" alt="Solicitudes">
+            <span>Solicitudes</span>
+        </a>
+        <a href="<%= request.getContextPath() %>/tutor/reportes.jsp" class="nav-item-grupos active">
+            <img src="<%= request.getContextPath() %>/assets/img/tutor/reportes.png" alt="Reportes">
+            <span>Reportes</span>
+        </a>
+        <a href="<%= request.getContextPath() %>/tutor/perfil.jsp" class="nav-item-grupos mt-auto">
+            <img src="<%= request.getContextPath() %>/assets/img/tutor/perfil.png" alt="Perfil">
+            <span>Perfil</span>
+        </a>
+    </aside>
 
     <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">
@@ -25,20 +49,11 @@
         <h2 class="titulo-principal h5 mb-3 mt-2">Sistema de Gestión de Tutorías</h2>
 
         <div class="banner-grupos h5 mb-3">
-            Reportes Globales
+            Reportes
         </div>
 
-        <!-- Filtros: Carrera / Cuatrimestre -->
+        <!-- Filtros: Cuatrimestre / Grupo -->
         <div class="row g-3 mb-3">
-            <div class="col-md-6">
-                <label class="campo-label fs-6" for="carrera">Carrera</label>
-                <select id="carrera" class="form-select campo-select">
-                    <option selected>Seleccione la carrera</option>
-                    <option>Desarrollo de Software Multiplataforma</option>
-                    <option>Mantenimiento Industrial</option>
-                    <option>Tecnologías de la Información</option>
-                </select>
-            </div>
             <div class="col-md-6">
                 <label class="campo-label fs-6" for="cuatrimestre">Cuatrimestre</label>
                 <select id="cuatrimestre" class="form-select campo-select">
@@ -48,10 +63,6 @@
                     <option>3°</option>
                 </select>
             </div>
-        </div>
-
-        <!-- Filtros: Grupo / Buscar -->
-        <div class="row g-3 mb-4 align-items-end">
             <div class="col-md-6">
                 <label class="campo-label fs-6" for="grupo">Grupo</label>
                 <select id="grupo" class="form-select campo-select">
@@ -59,6 +70,19 @@
                     <option>A</option>
                     <option>B</option>
                     <option>C</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Filtros: Carrera / Buscar -->
+        <div class="row g-3 mb-4 align-items-end">
+            <div class="col-md-6">
+                <label class="campo-label fs-6" for="carrera">Carrera</label>
+                <select id="carrera" class="form-select campo-select">
+                    <option selected>Seleccione la carrera</option>
+                    <option>Desarrollo de Software Multiplataforma</option>
+                    <option>Mantenimiento Industrial</option>
+                    <option>Tecnologías de la Información</option>
                 </select>
             </div>
             <div class="col-md-6 text-end">
@@ -70,7 +94,7 @@
         <div class="row g-3 mb-4">
             <div class="col-md-6 d-flex align-items-center gap-2">
                 <div class="stat-icon">
-                    <img src="../assets/img/coordinador/atendidos.png" alt="">
+                    <img src="<%= request.getContextPath() %>/assets/img/coordinador/atendidos.png" alt="">
                 </div>
                 <div>
                     <p class="fs-6 fw-medium mb-0">Alumnos Atendidos</p>
@@ -79,28 +103,28 @@
             </div>
             <div class="col-md-6 d-flex align-items-center gap-2">
                 <div class="stat-icon">
-                    <img src="../assets/img/coordinador/canalizados.png" alt="">
+                    <img src="<%= request.getContextPath() %>/assets/img/coordinador/canalizados.png" alt="">
                 </div>
                 <div>
-                    <p class="fs-6 fw-medium mb-0">Canalizados</p>
+                    <p class="fs-6 fw-medium mb-0">Canalizaciones</p>
                     <p class="fs-6 mb-0">75</p>
                 </div>
             </div>
             <div class="col-md-6 d-flex align-items-center gap-2">
                 <div class="stat-icon">
-                    <img src="../assets/img/coordinador/pidieronTutoria.png" alt="">
+                    <img src="<%= request.getContextPath() %>/assets/img/coordinador/pidieronTutoria.png" alt="">
                 </div>
                 <div>
-                    <p class="fs-6 fw-medium mb-0">Pidieron Tutorías</p>
+                    <p class="fs-6 fw-medium mb-0">Grupos Atendidos</p>
                     <p class="fs-6 mb-0">23</p>
                 </div>
             </div>
             <div class="col-md-6 d-flex align-items-center gap-2">
                 <div class="stat-icon">
-                    <img src="../assets/img/coordinador/pendientes.png" alt="">
+                    <img src="<%= request.getContextPath() %>/assets/img/coordinador/pendientes.png" alt="">
                 </div>
                 <div>
-                    <p class="fs-6 fw-medium mb-0">Pendientes</p>
+                    <p class="fs-6 fw-medium mb-0">Asistencias</p>
                     <p class="fs-6 mb-0">101</p>
                 </div>
             </div>
@@ -118,29 +142,28 @@
                     <div class="d-flex flex-column gap-2">
                         <div class="d-flex align-items-center gap-2">
                             <span class="legend-dot" style="background-color:#008B74;"></span>
-                            <span class="fs-6">Servicio Médico <span id="legendServicioMedico"></span>%</span>
+                            <span class="fs-6">Atendidos <span id="legendAtendidos"></span>%</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <span class="legend-dot" style="background-color:#A0CBF3;"></span>
-                            <span class="fs-6">Psicología <span id="legendPsicologia"></span>%</span>
+                            <span class="fs-6">Canalizaciones <span id="legendCanalizaciones"></span>%</span>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <span class="legend-dot" style="background-color:#003351;"></span>
-                            <span class="fs-6">Becas <span id="legendBecas"></span>%</span>
+                            <span class="fs-6">Asistencias <span id="legendAsistencias"></span>%</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="col-md-6 d-flex flex-column">
-                <p class="grafica-titulo fs-5 mb-3">Estado de Solicitudes de Asesoría (General)</p>
+                <p class="grafica-titulo fs-5 mb-3">Estado de Reportes (General)</p>
                 <div class="grafica-barras-wrap mb-3">
                     <canvas id="graficaBarras"></canvas>
                 </div>
                 <div class="mt-auto d-flex justify-content-end">
-                    <a href="https://docs.google.com/spreadsheets/d/1zv0IH2VBxcrhwLzWJxy9tqAwfscXnNtD2ct0eivN3Gc/edit?hl=es&gid=0#gid=0"
-                       target="_blank" rel="noopener" class="btn btn-exportar fw-medium">
-                        <img src="../assets/css/bi/download.svg" alt="">
+                    <a href="#" class="btn btn-exportar fw-medium">
+                        <img src="<%= request.getContextPath() %>/assets/css/bi/download.svg" alt="">
                         Exportar PDF / Excel
                     </a>
                 </div>
@@ -153,53 +176,48 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="../assets/js/bootstrap.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
 <script>
     /* ==========================================================================
        DATOS DE LAS GRAFICAS
        Declarados como variables independientes para que, mas adelante, sea
-       trivial sustituir cada numero por un valor dinamico impreso desde JSP
-       (ej. var pctServicioMedico = <%= "${reporte.pctServicioMedico}" %>;)
+       trivial sustituir cada numero por un valor dinamico impreso desde JSP.
        ========================================================================== */
 
     // --- Dona: "Distribución de Alumnos Canalizados" ---
-    // Porcentajes reales tomados del diseño de Figma (nodo 858:826)
-    var pctServicioMedico = 55;
-    var pctPsicologia = 25;
-    var pctBecas = 20;
+    var pctAtendidos = 55;
+    var pctCanalizaciones = 25;
+    var pctAsistencias = 20;
 
     var coloresDona = {
-        servicioMedico: '#008B74',
-        psicologia: '#A0CBF3',
-        becas: '#003351'
+        atendidos: '#008B74',
+        canalizaciones: '#A0CBF3',
+        asistencias: '#003351'
     };
 
-    document.getElementById('legendServicioMedico').textContent = pctServicioMedico;
-    document.getElementById('legendPsicologia').textContent = pctPsicologia;
-    document.getElementById('legendBecas').textContent = pctBecas;
+    document.getElementById('legendAtendidos').textContent = pctAtendidos;
+    document.getElementById('legendCanalizaciones').textContent = pctCanalizaciones;
+    document.getElementById('legendAsistencias').textContent = pctAsistencias;
 
-    // --- Barras: "Estado de Solicitudes de Asesoría (General)" ---
-    // El diseño de Figma no trae valores numéricos para esta grafica (solo
-    // proporciones visuales de las barras), asi que estos son valores de
-    // muestra a reemplazar por los reales del backend (ej. desde un bean
-    // "reporte" expuesto por el servlet: ${reporte.totalPendientes}, etc.)
-    var totalPendientes = 45;
-    var totalAtendidas = 35;
-    var totalCanalizadas = 10;
+    // --- Barras: "Estado de Reportes (General)" ---
+    // Mismos valores mostrados en las tarjetas de estadisticas de arriba.
+    var totalAtendidos = 98;
+    var totalCanalizaciones = 75;
+    var totalAsistencias = 101;
 
     var coloresBarras = {
-        pendientes: '#3F9F9C',
-        atendidas: '#647DAB',
-        canalizadas: '#699AB7'
+        atendidos: '#3F9F9C',
+        canalizaciones: '#647DAB',
+        asistencias: '#699AB7'
     };
 
     new Chart(document.getElementById('graficaDona'), {
         type: 'doughnut',
         data: {
-            labels: ['Servicio Médico', 'Psicología', 'Becas'],
+            labels: ['Atendidos', 'Canalizaciones', 'Asistencias'],
             datasets: [{
-                data: [pctServicioMedico, pctPsicologia, pctBecas],
-                backgroundColor: [coloresDona.servicioMedico, coloresDona.psicologia, coloresDona.becas],
+                data: [pctAtendidos, pctCanalizaciones, pctAsistencias],
+                backgroundColor: [coloresDona.atendidos, coloresDona.canalizaciones, coloresDona.asistencias],
                 borderWidth: 0
             }]
         },
@@ -216,10 +234,10 @@
     new Chart(document.getElementById('graficaBarras'), {
         type: 'bar',
         data: {
-            labels: ['Pendientes', 'Atendidas', 'Canalizadas'],
+            labels: ['ATENDIDOS', 'CANALIZACIONES', 'ASISTENCIAS'],
             datasets: [{
-                data: [totalPendientes, totalAtendidas, totalCanalizadas],
-                backgroundColor: [coloresBarras.pendientes, coloresBarras.atendidas, coloresBarras.canalizadas],
+                data: [totalAtendidos, totalCanalizaciones, totalAsistencias],
+                backgroundColor: [coloresBarras.atendidos, coloresBarras.canalizaciones, coloresBarras.asistencias],
                 borderRadius: 6,
                 maxBarThickness: 64
             }]
