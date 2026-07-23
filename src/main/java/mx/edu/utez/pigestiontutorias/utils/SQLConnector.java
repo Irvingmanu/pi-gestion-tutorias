@@ -3,12 +3,13 @@ package mx.edu.utez.pigestiontutorias.utils;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
-import java.io.File;
 import java.io.InputStream;
 import java.net.URL;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.nio.charset.StandardCharsets;
+import java.net.URLDecoder;
 
 public class SQLConnector {
 
@@ -16,7 +17,6 @@ public class SQLConnector {
 
     static {
         try {
-            // 1. Localizar mis conjuntos de Wallet
             ClassLoader classLoader = SQLConnector.class.getClassLoader();
             URL walletUrl = classLoader.getResource("wallet/");
 
@@ -24,10 +24,15 @@ public class SQLConnector {
                 throw new RuntimeException("No se encontró la Wallet");
             }
 
-            String walletPath = new File(walletUrl.toURI()).getAbsolutePath();
+            String walletPath = URLDecoder.decode(walletUrl.getPath(), StandardCharsets.UTF_8);
+            if (walletPath.startsWith("/") && System.getProperty("os.name").toLowerCase().contains("win")) {
+                walletPath = walletPath.substring(1);
+            }
             walletPath = walletPath.replace("\\", "/");
 
-            // 2. Intentar leer credenciales y nombre de BD desde el entorno
+
+            System.setProperty("oracle.net.tns_admin", walletPath);
+
             String dbUser = System.getenv("DB_USER");
             String dbPass = System.getenv("DB_PASS");
             String dbName = System.getenv("DB_NAME");
@@ -42,14 +47,11 @@ public class SQLConnector {
                         throw new RuntimeException("No se encontró el archivo credentials.properties ni las variables de entorno de la base de datos.");
                     }
 
-                    // 1. Convertimos el InputStream en bytes para poder analizarlo sin consumirlo
                     byte[] fileBytes = is.readAllBytes();
 
-                    // 2. Detectamos dinámicamente la codificación
                     java.nio.charset.Charset detectedCharset = detectCharset(fileBytes);
                     System.out.println("Codificación detectada para credentials.properties: " + detectedCharset.name());
 
-                    // 3. Cargamos las propiedades usando el encoding correcto
                     try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(fileBytes);
                          java.io.InputStreamReader reader = new java.io.InputStreamReader(bais, detectedCharset)) {
                         creds.load(reader);
@@ -62,19 +64,15 @@ public class SQLConnector {
                 }
             }
 
-            // Validar que finalmente tengamos el nombre de la BD
             if (dbName == null) {
                 throw new RuntimeException("El nombre de la base de datos (db.name / DB_NAME) no está configurado.");
             }
 
-            // Configuración de Hikari (incluye conf de conexion y pool)
             HikariConfig config = new HikariConfig();
             config.setDriverClassName("oracle.jdbc.OracleDriver");
 
-            // Concatenamos la variable dbName dinámicamente aquí:
-            config.setJdbcUrl("jdbc:oracle:thin:@" + dbName + "?TNS_ADMIN=" + walletPath);
+            config.setJdbcUrl("jdbc:oracle:thin:@" + dbName);
 
-            // Asignar los valores dinámicos y seguros
             config.setUsername(dbUser);
             config.setPassword(dbPass);
 
@@ -106,27 +104,20 @@ public class SQLConnector {
         }
     }
 
-    /**
-     * Detecta si un arreglo de bytes pertenece a un archivo UTF-8 o ISO-8859-1.
-     */
     private static java.nio.charset.Charset detectCharset(byte[] bytes) {
-        // 1. Revisar si tiene BOM de UTF-8 (tres bytes específicos al inicio: EF BB BF)
         if (bytes.length >= 3 && (bytes[0] & 0xFF) == 0xEF && (bytes[1] & 0xFF) == 0xBB && (bytes[2] & 0xFF) == 0xBF) {
-            return java.nio.charset.StandardCharsets.UTF_8;
+            return StandardCharsets.UTF_8;
         }
 
-        // 2. Intentar decodificar como UTF-8 estricto.
-        // Si contiene caracteres ISO-8859-1 puros (como la 'ñ' en un solo byte), fallará.
-        java.nio.charset.CharsetDecoder decoder = java.nio.charset.StandardCharsets.UTF_8.newDecoder();
+        java.nio.charset.CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder();
         decoder.onMalformedInput(java.nio.charset.CodingErrorAction.REPORT);
         decoder.onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT);
 
         try {
             decoder.decode(java.nio.ByteBuffer.wrap(bytes));
-            return java.nio.charset.StandardCharsets.UTF_8; // Si no falló, es UTF-8 válido (o texto plano ASCII)
+            return StandardCharsets.UTF_8;
         } catch (java.nio.charset.CharacterCodingException e) {
-            // Si lanza excepción, significa que encontró bytes inválidos para UTF-8 (como tu 'ñ' en ISO)
-            return java.nio.charset.StandardCharsets.ISO_8859_1;
+            return StandardCharsets.ISO_8859_1;
         }
     }
 }

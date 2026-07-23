@@ -23,7 +23,7 @@
         <img src="<%= ctx %>/assets/img/coordinador/grupos.png" alt="Grupos">
         <span>Grupos</span>
     </a>
-    <a href="<%= ctx %>/coordinador/asignacion.jsp" class="nav-item-grupos<%= "asignacion".equals(paginaActiva) ? " active" : "" %>">
+    <a href="<%= ctx %>/asignacion" class="nav-item-grupos<%= "asignacion".equals(paginaActiva) ? " active" : "" %>">
         <img src="<%= ctx %>/assets/img/coordinador/asignacion.png" alt="Asignación">
         <span>Asignación</span>
     </a>
