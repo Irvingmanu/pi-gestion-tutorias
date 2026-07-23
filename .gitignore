@@ -38,4 +38,5 @@ build/
 ### Mac OS ###
 .DS_Store
 
-/src/main/resources/credentials.properties
+src/main/resources/wallet/
+src/main/resources/credentials.properties
