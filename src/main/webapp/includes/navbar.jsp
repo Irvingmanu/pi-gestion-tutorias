@@ -1,8 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%
-    // Cada vista debe definir `paginaActiva` (y publicarla via request.setAttribute)
-    // antes de incluir este navbar, para que el item correspondiente reciba
-    // la clase "active" (rectángulo con radius:20px definido en gestion-grupos.css).
     String paginaActiva = (String) request.getAttribute("paginaActiva");
     if (paginaActiva == null) {
         paginaActiva = "";

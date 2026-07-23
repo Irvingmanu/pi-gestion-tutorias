@@ -2,6 +2,7 @@
 <%
     String paginaActiva = "tutores";
     request.setAttribute("paginaActiva", paginaActiva);
+    String ctx = request.getContextPath();
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -9,9 +10,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Gestión de Tutores</title>
-    <link href="../assets/css/bootstrap.css" rel="stylesheet">
-    <link href="../assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
-    <link href="../assets/css/coordinador/gestion-tutores.css" rel="stylesheet">
+    <link href="<%= ctx %>/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="<%= ctx %>/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
+    <link href="<%= ctx %>/assets/css/coordinador/gestion-tutores.css" rel="stylesheet">
 </head>
 <body>
 
@@ -74,8 +75,8 @@
                     <td>DATID</td>
                     <td>
                         <div class="d-flex justify-content-center gap-2">
-                            <a href="formulario-tutor.jsp?accion=editar" class="btn-accion btn-editar"><img src="../assets/img/coordinador/editar.png" width="16" alt="Editar"></a>
-                            <button class="btn-accion btn-eliminar"><img src="../assets/img/coordinador/eliminar.png" width="16" alt="Eliminar"></button>
+                            <a href="formulario-tutor.jsp?accion=editar" class="btn-accion btn-editar"><img src="<%= ctx %>/assets/img/coordinador/editar.png" width="16" alt="Editar"></a>
+                            <button class="btn-accion btn-eliminar"><img src="<%= ctx %>/assets/img/coordinador/eliminar.png" width="16" alt="Eliminar"></button>
                         </div>
                     </td>
                 </tr>
@@ -87,8 +88,8 @@
                     <td>DATID</td>
                     <td>
                         <div class="d-flex justify-content-center gap-2">
-                            <a href="formulario-tutor.jsp?accion=editar" class="btn-accion btn-editar"><img src="../assets/img/coordinador/editar.png" width="16" alt="Editar"></a>
-                            <button class="btn-accion btn-eliminar"><img src="../assets/img/coordinador/eliminar.png" width="16" alt="Eliminar"></button>
+                            <a href="formulario-tutor.jsp?accion=editar" class="btn-accion btn-editar"><img src="<%= ctx %>/assets/img/coordinador/editar.png" width="16" alt="Editar"></a>
+                            <button class="btn-accion btn-eliminar"><img src="<%= ctx %>/assets/img/coordinador/eliminar.png" width="16" alt="Eliminar"></button>
                         </div>
                     </td>
                 </tr>
@@ -112,6 +113,6 @@
 
 </div>
 
-<script src="../assets/js/bootstrap.js"></script>
+<script src="<%= ctx %>/assets/js/bootstrap.js"></script>
 </body>
 </html>
