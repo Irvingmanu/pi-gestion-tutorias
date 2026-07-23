@@ -46,6 +46,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Gestión de Grupos</title>
     <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
     <link href="<%= request.getContextPath() %>/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
     <link href="<%= request.getContextPath() %>/assets/css/alertas.css" rel="stylesheet">
 </head>

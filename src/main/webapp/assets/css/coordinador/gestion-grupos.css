@@ -1,139 +1,11 @@
 /* ==========================================================================
-   FUENTES SN PRO
-   Este archivo vive en: assets/css/coordinador/gestion-grupos.css
-   Las fuentes viven en: assets/fonts/  -> se suben DOS niveles (../../)
+   ESTILOS EXCLUSIVOS DE LA TABLA/BUSCADOR/FILTROS de "Gestion_Grupos"
+   (node 1061:10110)
+   Las variables globales, las fuentes, .rounded-figma y los componentes de
+   UI compartidos (banner, titulo, botones, formularios) viven en
+   assets/css/global.css. Los estilos de la barra lateral viven en
+   assets/css/coordinador/navbar.css.
    ========================================================================== */
-@font-face {
-    font-family: 'SN Pro';
-    src: url('../../fonts/SNPro-Regular.woff2') format('woff2');
-    font-weight: 400;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'SN Pro';
-    src: url('../../fonts/SNPro-Medium.woff2') format('woff2');
-    font-weight: 500;
-    font-style: normal;
-    font-display: swap;
-}
-@font-face {
-    font-family: 'SN Pro';
-    src: url('../../fonts/SNPro-Semibold.woff2') format('woff2');
-    font-weight: 600;
-    font-style: normal;
-    font-display: swap;
-}
-
-/* ==========================================================================
-   VALORES EXTRAIDOS DE FIGMA (node 1061:10110 "Gestion_Grupos")
-   ========================================================================== */
-:root {
-    --utez-green: #008B74;
-    --gris-fondo: #F2F2F2;
-    --borde-tabla: #B9B9B9;
-    --header-tabla: rgba(0, 0, 0, 0.06);
-    --borde-campo: #000000;
-    --placeholder-color: #787878;
-    --texto: #000000;
-
-    /* Redondeo unico usado en TODOS los contenedores del diseño */
-    --radius-figma: 20px;
-
-    /* Sombra real del panel lateral (drop-shadow + inset), tomada del nodo 1110:1518 */
-    --shadow-figma: 0px 4px 4px 0px rgba(0, 0, 0, 0.25);
-}
-
-body {
-    font-family: 'SN Pro', -apple-system, BlinkMacSystemFont, sans-serif;
-    background-color: var(--gris-fondo);
-    color: var(--texto);
-}
-
-.rounded-figma {
-    border-radius: var(--radius-figma) !important;
-}
-
-/* ==========================================================================
-   BARRA LATERAL — nodo 1110:1517 (w:192px, h:960px)
-   ========================================================================== */
-.sidebar-grupos {
-    width: 192px;
-    min-width: 192px;
-    background-color: rgba(255, 255, 255, 0.9);
-    border-radius: var(--radius-figma);
-    box-shadow: var(--shadow-figma), inset var(--shadow-figma);
-    padding: 16px 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.sidebar-grupos .sidebar-logo {
-    display: flex;
-    justify-content: center;
-    padding: 10px 0 20px;
-}
-.sidebar-grupos .sidebar-logo img {
-    width: 148px;
-    height: auto;
-}
-
-/* nodos FrameTutores / FrameGrupos / etc.: caja h:~96-100px, icono 64x64, texto 30px */
-.nav-item-grupos {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    padding: 12px 4px;
-    border-radius: var(--radius-figma);
-    text-decoration: none;
-    color: var(--texto);
-    font-size: 1.875rem; /* 30px */
-    font-weight: 400;
-    text-align: center;
-    background-color: transparent;
-}
-.nav-item-grupos img {
-    width: 64px;
-    height: 64px;
-    object-fit: contain;
-}
-.nav-item-grupos:hover {
-    color: var(--texto);
-    background-color: #ffffff;
-    text-decoration: none;
-}
-/* Estado activo (nodo FrameGrupos): fondo gris #F2F2F2, tal como en el archivo */
-.nav-item-grupos.active {
-    background-color: var(--gris-fondo);
-}
-.nav-item-grupos:not(.active) {
-    background-color: #ffffff;
-}
-
-/* ==========================================================================
-   ENCABEZADO
-   Tamaño de fuente: ya NO se fija en px aqui. Se resuelve con las
-   utilidades de Bootstrap (clase .h5) directamente en el HTML; este
-   archivo solo define lo no-tipografico (peso, alineacion, color, fondo,
-   padding, redondeo).
-   ========================================================================== */
-.titulo-principal {
-    font-weight: 500;
-    text-align: center;
-}
-
-/* Banner "Gestión de Grupos" — nodo 1061:10113/1061:10114 */
-.banner-grupos {
-    background-color: var(--utez-green);
-    color: #ffffff;
-    text-align: center;
-    font-weight: 600;
-    padding: 10px 20px;
-    border-radius: var(--radius-figma);
-}
 
 /* ==========================================================================
    FILTROS (Buscar Alumno / Carrera / Grupo / Cuatrimestre)
@@ -190,27 +62,6 @@ body {
 }
 
 /* ==========================================================================
-   BOTONES — nodos 1061:10115 (Agregar) y 1061:10116 (Guardar)
-   Ancho/alto ya no fijos: el tamaño lo da el padding estandar de .btn,
-   igual que cualquier boton normal de Bootstrap
-   ========================================================================== */
-.btn-figma {
-    background-color: var(--utez-green);
-    color: #ffffff;
-    border: none;
-    border-radius: var(--radius-figma);
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.375rem 0.75rem;
-}
-.btn-figma:hover {
-    color: #ffffff;
-    background-color: #00735F;
-}
-
-/* ==========================================================================
    TABLA — nodo 1098:2224 (w:1152px) / 1098:2229 (h:416px, borde #B9B9B9)
    Ancho de columnas exacto tomado de los nodos "Cell" del Row de encabezado
    ========================================================================== */
@@ -261,52 +112,7 @@ body {
 .col-cuatri      { width: 126px; }
 .col-acciones    { width: 227px; }
 
-/* ==========================================================================
-   FORMULARIOS COMPARTIDOS (Nueva/Editar Área, Nuevo/Editar Tutor)
-   Usados por formulario-area.jsp y formulario-tutor.jsp
-   ========================================================================== */
-
-/* Columna del formulario, centrada en el contenedor principal */
-.form-wrap-figma {
-    max-width: 520px;
-    width: 100%;
-    margin: 0 auto;
-}
-
-/* Inputs de texto — estructura nativa .form-control de Bootstrap, solo se
-   ajustan borde y radius para conservar la identidad visual (border-radius
-   20px en todos los campos, tal como en el resto del sistema) */
-.form-control-figma {
-    border: 1px solid var(--borde-campo);
-    border-radius: var(--radius-figma) !important;
-}
-.form-control-figma:focus {
-    border-color: var(--borde-campo);
-    box-shadow: none;
-}
-.form-control-figma::placeholder {
-    color: var(--placeholder-color);
-    opacity: 1;
-}
-
-/* Boton "Cancelar" — color real extraido de Figma (#CC5052) */
-.btn-cancelar-figma {
-    background-color: #CC5052;
-    color: #ffffff;
-    border: none;
-    border-radius: var(--radius-figma);
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.375rem 0.75rem;
-}
-.btn-cancelar-figma:hover {
-    color: #ffffff;
-    background-color: #B33F41;
-}
-
-/* Botones de accion — mismo patron ya usado en gestion-tutores.jsp */
+/* Botones de accion (Editar/Eliminar dentro de cada fila) — mismo patron ya usado en gestion-tutores.jsp */
 .btn-accion {
     border-radius: var(--radius-figma);
     border: none;

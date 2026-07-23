@@ -17,8 +17,10 @@
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
+    <!-- ==================== BARRA LATERAL ==================== -->
     <jsp:include page="../includes/navbar.jsp" />
 
+    <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">
 
         <h2 class="titulo-principal h5 mb-3 mt-2">Sistema de Gestión de Tutorías</h2>
@@ -27,6 +29,7 @@
             Gestión de Tutores
         </div>
 
+        <!-- Buscar tutor / Nuevo Tutor -->
         <div class="row mb-3">
             <div class="col-12 d-flex justify-content-between align-items-end">
                 <div>
@@ -41,6 +44,7 @@
             </div>
         </div>
 
+        <!-- Tabla de tutores -->
         <div class="table-responsive mb-auto">
             <table class="tabla-grupos fs-6">
                 <colgroup>
