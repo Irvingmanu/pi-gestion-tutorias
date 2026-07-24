@@ -18,6 +18,8 @@
 </head>
 <body>
 
+<jsp:include page="../includes/alertas.jsp" />
+
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
     <!-- ==================== BARRA LATERAL ==================== -->
@@ -49,6 +51,12 @@
                 </ul>
             </div>
 
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-cancelar-figma rounded-figma px-4" id="btnCerrarSesion">
+                    Cerrar sesión
+                </button>
+            </div>
+
         </div>
 
     </div>
@@ -56,5 +64,19 @@
 </div>
 
 <script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/alertas.js"></script>
+<script>
+    document.getElementById('btnCerrarSesion').addEventListener('click', function () {
+        mostrarConfirmacion(
+            'advertencia',
+            '¿Cerrar sesión?',
+            'Tendrás que iniciar sesión de nuevo para continuar.',
+            'Cerrar sesión',
+            function () {
+                window.location.href = '<%= request.getContextPath() %>/logout';
+            }
+        );
+    });
+</script>
 </body>
 </html>
