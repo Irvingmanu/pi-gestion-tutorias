@@ -34,4 +34,30 @@ public class TutorDao {
 
         return lista;
     }
+
+    public Tutor findByIdUsuario(int idUsuario) {
+        String sql = "SELECT ID_TUTOR, NOMBRES, APELLIDOS FROM ADMIN.TUTOR WHERE ID_USUARIO = ?";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, idUsuario);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Tutor t = new Tutor();
+                    t.setIdTutor(rs.getInt("ID_TUTOR"));
+                    t.setNombres(rs.getString("NOMBRES"));
+                    t.setApellidos(rs.getString("APELLIDOS"));
+                    return t;
+                }
+            }
+
+        } catch (Exception e) {
+            System.err.println("Error al obtener el tutor por idUsuario: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
+    }
 }

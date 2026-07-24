@@ -51,7 +51,7 @@
             <% for (Area area : listaAreas) { %>
             <div class="col">
                 <div class="card-area p-3 text-center d-flex flex-column">
-                    <img src="<%= request.getContextPath() %>/assets/img/coordinador/personas.png" alt="<%= area.getNombre() %>" class="icon-area mx-auto mb-2">
+                    <img src="<%= request.getContextPath() %>/assets/img/coordinador/manocorazon.png" alt="<%= area.getNombre() %>" class="icon-area mx-auto mb-2">
                     <p class="fs-6 fw-bold mb-1"><%= area.getNombre() %></p>
                     <p class="small text-muted mb-2">
                         <%= area.getEncargado() %><br>
