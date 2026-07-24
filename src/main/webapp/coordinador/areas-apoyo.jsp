@@ -18,6 +18,7 @@
     <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
     <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
     <link href="<%= request.getContextPath() %>/assets/css/coordinador/areas-apoyo.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/alertas.css" rel="stylesheet">
 </head>
 <body>
 
@@ -36,7 +37,7 @@
         </div>
 
         <div class="d-flex justify-content-end mb-3">
-            <a href="<%= request.getContextPath() %>/coordinador/nueva-area.jsp" class="btn btn-utez-primary fw-medium px-3 py-1">Nueva área</a>
+            <a href="<%= request.getContextPath() %>/coordinador/formulario-area.jsp" class="btn btn-utez-primary fw-medium px-3 py-1">Nueva área</a>
         </div>
 
         <!-- Tarjetas de areas de apoyo, pintadas dinamicamente desde AREA_APOYO -->
@@ -58,7 +59,7 @@
                     </p>
                     <div class="mt-auto d-flex flex-column gap-2">
                         <a href="<%= request.getContextPath() %>/AreaServlet?accion=prepararEdicion&idArea=<%= area.getIdArea() %>" class="btn btn-utez-primary fw-medium">Editar</a>
-                        <button type="button" class="btn btn-utez-danger fw-medium" onclick="prepararEliminacion(<%= area.getIdArea() %>)">Eliminar</button>
+                        <button type="button" class="btn btn-utez-danger fw-medium" onclick="prepararEliminacionArea(<%= area.getIdArea() %>)">Eliminar</button>
                     </div>
                 </div>
             </div>
@@ -71,30 +72,16 @@
 
 </div>
 
-<!-- ==================== MODAL ELIMINAR ==================== -->
-<div class="modal fade" id="modalEliminar" tabindex="-1" aria-labelledby="modalEliminarLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <form action="<%= request.getContextPath() %>/AreaServlet" method="POST">
-                <input type="hidden" name="accion" value="eliminar">
-                <input type="hidden" name="idArea" id="deleteId">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="modalEliminarLabel">Eliminar área de apoyo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    ¿Estás seguro de que deseas eliminar esta área de apoyo?
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-utez-danger fw-medium">Eliminar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+<!-- ==================== ELIMINAR AREA (confirmacion via mostrarConfirmacion) ==================== -->
+<form id="formEliminarArea" action="<%= request.getContextPath() %>/AreaServlet" method="POST" style="display:none;">
+    <input type="hidden" name="accion" value="eliminar">
+    <input type="hidden" name="idArea" id="inputEliminarIdArea">
+</form>
+
+<jsp:include page="../includes/alertas.jsp" />
 
 <script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/alertas.js"></script>
 <script src="<%= request.getContextPath() %>/assets/js/coordinador/areas.js"></script>
 </body>
 </html>
