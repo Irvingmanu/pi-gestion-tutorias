@@ -1,8 +1,25 @@
-<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="java.util.List" %>
+<%@ page import="java.util.Map" %>
+<%@ page import="java.util.HashMap" %>
+<%@ page import="java.util.ArrayList" %>
+<%@ page import="mx.edu.utez.pigestiontutorias.models.Tutor" %>
+<%@ page import="mx.edu.utez.pigestiontutorias.models.Academia" %>
+<%@ page import="mx.edu.utez.pigestiontutorias.models.dao.TutorDao" %>
 <%
-    String paginaActiva = "tutores";
-    request.setAttribute("paginaActiva", paginaActiva);
-    String ctx = request.getContextPath();
+    request.setAttribute("paginaActiva", "tutores");
+
+    List<Tutor> listaTutores = (List<Tutor>) request.getAttribute("listaTutores");
+    if (listaTutores == null) {
+        listaTutores = new ArrayList<>();
+    }
+
+    TutorDao tutorDao = new TutorDao();
+
+    Map<Integer, String> nombresAcademia = new HashMap<>();
+    for (Academia academia : tutorDao.getAllAcademias()) {
+        nombresAcademia.put(academia.getIdAcademia(), academia.getNombre());
+    }
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -10,9 +27,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Gestión de Tutores</title>
-    <link href="<%= ctx %>/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= ctx %>/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
-    <link href="<%= ctx %>/assets/css/coordinador/gestion-tutores.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/coordinador/gestion-tutores.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/alertas.css" rel="stylesheet">
 </head>
 <body>
 
@@ -30,7 +50,7 @@
             Gestión de Tutores
         </div>
 
-        <!-- Buscar tutor / Nuevo Tutor -->
+        <!-- Controles de búsqueda y botón nuevo -->
         <div class="row mb-3">
             <div class="col-12 d-flex justify-content-between align-items-end">
                 <div>
@@ -40,13 +60,18 @@
                 </div>
                 <div class="text-center">
                     <label class="campo-label fs-6">Nuevo Tutor</label>
-                    <a href="formulario-tutor.jsp?accion=nueva" class="btn-figma">Agregar</a>
+                    <a href="<%= request.getContextPath() %>/TutoresServlet?accion=nuevo" class="btn-figma text-decoration-none">Agregar</a>
                 </div>
             </div>
         </div>
 
         <!-- Tabla de tutores -->
         <div class="table-responsive mb-auto">
+            <% if (listaTutores.isEmpty()) { %>
+            <div class="alert alert-info text-center">
+                No hay tutores registrados todavía.
+            </div>
+            <% } else { %>
             <table class="tabla-grupos fs-6">
                 <colgroup>
                     <col class="col-nomina">
@@ -66,53 +91,48 @@
                     <th>Acciones</th>
                 </tr>
                 </thead>
-                <tbody>
-                <tr>
-                    <td>1000</td>
-                    <td>Derick Axel Lagunes Ramirez</td>
-                    <td>dericklagunes@utez.edu.mx</td>
-                    <td>777 243 3456</td>
-                    <td>DATID</td>
+                <tbody id="tablaTutores">
+                <% for (Tutor tutor : listaTutores) { %>
+                <tr data-nombre="<%= tutor.getNombres().toLowerCase() %> <%= tutor.getApellidos().toLowerCase() %>">
+                    <td><%= tutor.getNomina() %></td>
+                    <td><%= tutor.getNombres() %> <%= tutor.getApellidos() %></td>
+                    <td><%= tutor.getCorreoInstitucional() %></td>
+                    <td><%= tutor.getTelefono() %></td>
+                    <td><%= nombresAcademia.get(tutor.getIdAcademia()) %></td>
                     <td>
                         <div class="d-flex justify-content-center gap-2">
-                            <a href="formulario-tutor.jsp?accion=editar" class="btn-accion btn-editar"><img src="<%= ctx %>/assets/img/coordinador/editar.png" width="16" alt="Editar"></a>
-                            <button class="btn-accion btn-eliminar"><img src="<%= ctx %>/assets/img/coordinador/eliminar.png" width="16" alt="Eliminar"></button>
+                            <a href="<%= request.getContextPath() %>/TutoresServlet?accion=prepararEdicion&nomina=<%= tutor.getNomina() %>" class="btn-accion btn-editar">
+                                <img src="<%= request.getContextPath() %>/assets/img/coordinador/editar.png" width="16" alt="Editar">
+                            </a>
+                            <button type="button" class="btn-accion btn-eliminar" onclick="prepararEliminacion('<%= tutor.getNomina() %>')">
+                                <img src="<%= request.getContextPath() %>/assets/img/coordinador/eliminar.png" width="16" alt="Eliminar">
+                            </button>
                         </div>
                     </td>
                 </tr>
-                <tr>
-                    <td>1001</td>
-                    <td>Nelida Baron Perez</td>
-                    <td>nelidaperez@utez.edu.mx</td>
-                    <td>777 759 2045</td>
-                    <td>DATID</td>
-                    <td>
-                        <div class="d-flex justify-content-center gap-2">
-                            <a href="formulario-tutor.jsp?accion=editar" class="btn-accion btn-editar"><img src="<%= ctx %>/assets/img/coordinador/editar.png" width="16" alt="Editar"></a>
-                            <button class="btn-accion btn-eliminar"><img src="<%= ctx %>/assets/img/coordinador/eliminar.png" width="16" alt="Eliminar"></button>
-                        </div>
-                    </td>
+                <% } %>
+                <tr id="filaSinResultados" style="display: none;">
+                    <td colspan="6" class="text-center">No se encontraron tutores con ese nombre.</td>
                 </tr>
-                <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
-                <tr><td>&nbsp;</td><td></td><td></td><td></td><td></td><td></td></tr>
                 </tbody>
             </table>
+            <% } %>
         </div>
 
-        <div class="d-flex justify-content-end mt-3">
-            <button type="button" class="btn-figma">Guardar</button>
-        </div>
 
     </div>
 
 </div>
 
-<script src="<%= ctx %>/assets/js/bootstrap.js"></script>
+<form id="formEliminarTutor" action="<%= request.getContextPath() %>/TutoresServlet" method="POST" style="display:none;">
+    <input type="hidden" name="accion" value="eliminar">
+    <input type="hidden" id="inputEliminarNomina" name="nomina" value="">
+</form>
+
+<jsp:include page="../includes/alertas.jsp" />
+
+<script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/alertas.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/coordinador/tutor.js"></script>
 </body>
 </html>

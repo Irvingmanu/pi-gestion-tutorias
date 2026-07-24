@@ -12,22 +12,69 @@ import java.util.List;
 
 public class AreaDAO implements Dao<Area, Integer> {
 
+    private final MotivoDAO motivoDAO = new MotivoDAO();
+
     @Override
     public boolean create(Area entidad) {
+        return createAndGetId(entidad) > 0;
+    }
+
+    // Devuelve el ID_AREA generado para poder insertar sus motivos hijos
+    public int createAndGetId(Area entidad) {
         String sql = "INSERT INTO AREA_APOYO(NOMBRE, ENCARGADO, CORREO_CONTACTO) VALUES(?, ?, ?)";
         try (Connection con = SQLConnector.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+             PreparedStatement ps = con.prepareStatement(sql, new String[]{"ID_AREA"})) {
 
             ps.setString(1, entidad.getNombre());
             ps.setString(2, entidad.getEncargado());
             ps.setString(3, entidad.getCorreoContacto());
 
             int filasAfectadas = ps.executeUpdate();
-            return filasAfectadas > 0;
+            if (filasAfectadas > 0) {
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        return keys.getInt(1);
+                    }
+                }
+            }
+            return -1;
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
+            return -1;
         }
+    }
+
+    public boolean existeNombreArea(String nombre) {
+        String sql = "SELECT COUNT(*) FROM AREA_APOYO WHERE NOMBRE = ?";
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, nombre);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public boolean existeNombreArea(String nombre, int idAreaActual) {
+        String sql = "SELECT COUNT(*) FROM AREA_APOYO WHERE NOMBRE = ? AND ID_AREA <> ?";
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setString(1, nombre);
+            ps.setInt(2, idAreaActual);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     @Override
@@ -67,10 +114,11 @@ public class AreaDAO implements Dao<Area, Integer> {
                     a.setNombre(rs.getString("NOMBRE"));
                     a.setEncargado(rs.getString("ENCARGADO"));
                     a.setCorreoContacto(rs.getString("CORREO_CONTACTO"));
+                    a.setMotivos(motivoDAO.getByIdArea(a.getIdArea()));
                     return a;
                 }
             }
-        } catch (SQLException e) {
+        } catch (SQLException e)    {
             e.printStackTrace();
         }
         return null;
@@ -97,60 +145,45 @@ public class AreaDAO implements Dao<Area, Integer> {
 
     @Override
     public boolean delete(Integer id) {
-        String sql = "DELETE FROM AREA_APOYO WHERE ID_AREA = ?";
-        try (Connection con = SQLConnector.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        String sqlMotivos = "DELETE FROM MOTIVO_AREA WHERE ID_AREA = ?";
+        String sqlArea = "DELETE FROM AREA_APOYO WHERE ID_AREA = ?";
 
-            ps.setInt(1, id);
+        Connection con = null;
+        try {
+            con = SQLConnector.getConnection();
+            con.setAutoCommit(false);
 
-            int filasAfectadas = ps.executeUpdate();
+            try (PreparedStatement psMotivos = con.prepareStatement(sqlMotivos)) {
+                psMotivos.setInt(1, id);
+                psMotivos.executeUpdate();
+            }
+
+            int filasAfectadas;
+            try (PreparedStatement psArea = con.prepareStatement(sqlArea)) {
+                psArea.setInt(1, id);
+                filasAfectadas = psArea.executeUpdate();
+            }
+
+            con.commit();
             return filasAfectadas > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            if (con != null) {
+                try {
+                    con.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
             return false;
-        }
-    }
-
-    public boolean existeNombreCorreo(String nombre, String correo) {
-        boolean existe = false;
-        String sql = "SELECT COUNT(*) FROM AREA_APOYO WHERE nombre = ? OR CORREO_CONTACTO = ?";
-
-        try (Connection con = SQLConnector.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setString(1, nombre);
-            ps.setString(2, correo);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    existe = rs.getInt(1) > 0;
+        } finally {
+            if (con != null) {
+                try {
+                    con.close();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
                 }
             }
-        } catch (SQLException e) {
-            e.printStackTrace();
         }
-        return existe;
-    }
-
-    public boolean Duplicado(String nombre, String correo, Integer idArea) {
-        int id = (idArea != null) ? idArea : 0;
-        String sql = "SELECT COUNT(*) FROM AREA_APOYO WHERE (NOMBRE = ? OR CORREO_CONTACTO = ?) AND ID_AREA != ?";
-
-        try (Connection con = SQLConnector.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setString(1, nombre);
-            ps.setString(2, correo);
-            ps.setInt(3, id);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    return rs.getInt(1) > 0;
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return false;
     }
 }
