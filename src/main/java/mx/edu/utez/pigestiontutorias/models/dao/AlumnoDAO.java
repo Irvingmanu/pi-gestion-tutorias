@@ -206,6 +206,20 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return null;
     }
 
+    // Necesario para el módulo de Solicitud: la sesión solo guarda idUsuario,
+    // así que hay que traducirlo a la MATRICULA real de la tabla ALUMNO.
+    public Alumno getByIdUsuario(int idUsuario) {
+        String sql = "SELECT * FROM ALUMNO WHERE ID_USUARIO = ?";
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idUsuario);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return mapearAlumno(rs);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return null;
+    }
+
     @Override
     public boolean update(Alumno entidad) {
         String sqlAlumno = "UPDATE ALUMNO SET NOMBRES = ?, APELLIDOS = ?, CORREO_INSTITUCIONAL = ?, TELEFONO = ?, ID_GENERO = ?, ID_CARRERA = ?, ID_CUATRIMESTRE = ?, ID_LETRA_GRUPO = ? WHERE MATRICULA = ?";

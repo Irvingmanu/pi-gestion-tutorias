@@ -5,6 +5,7 @@ import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 public class AsignacionTutorDao {
@@ -31,5 +32,32 @@ public class AsignacionTutorDao {
         }
 
         return resultado;
+    }
+
+    // Necesario para el módulo de Solicitud: dado el grupo y cuatrimestre
+    // de un alumno, obtenemos el ID_TUTOR que tiene asignado (regla de
+    // negocio: un alumno tiene un solo tutor activo por grupo+cuatrimestre).
+    public Integer findIdTutorByGrupoYCuatrimestre(int idLetraGrupo, int idCuatrimestre) {
+        String sql = "SELECT ID_TUTOR FROM ASIGNACION_TUTOR " +
+                "WHERE ID_LETRA_GRUPO = ? AND ID_CUATRIMESTRE = ? AND ACTIVO = 'S'";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, idLetraGrupo);
+            ps.setInt(2, idCuatrimestre);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("ID_TUTOR");
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al buscar el tutor asignado: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }
