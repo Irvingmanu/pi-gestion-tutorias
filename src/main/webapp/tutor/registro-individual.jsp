@@ -13,7 +13,6 @@
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
-    <!-- ==================== BARRA LATERAL (Tutor) ==================== -->
     <aside class="sidebar-grupos">
         <div class="sidebar-logo">
             <img src="<%= request.getContextPath() %>/assets/img/tutor/logoUtez.png" alt="UTEZ">
@@ -41,7 +40,6 @@
         </a>
     </aside>
 
-    <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">
 
         <h2 class="titulo-principal h5 mb-3 mt-2">Sistema de Gestión de Tutorías</h2>
@@ -55,7 +53,6 @@
 
                 <input type="hidden" name="accion" value="registrarIndividual">
 
-                <!-- Fila 1: Matricula / Fecha -->
                 <div class="row g-3 mb-5">
                     <div class="col-md-6">
                         <label for="matricula" class="form-label fs-6 fw-bold">Matrícula</label>
@@ -70,7 +67,6 @@
                     </div>
                 </div>
 
-                <!-- Fila 2: Temas Tratados / Acuerdos -->
                 <div class="row g-3 mb-5">
                     <div class="col-md-6">
                         <label for="temasTratados" class="form-label fs-6 fw-bold">Temas Tratados</label>
@@ -84,7 +80,6 @@
                     </div>
                 </div>
 
-                <!-- Vínculo Directo -->
                 <p class="fs-5 fw-bold text-center my-4">Vínculo Directo</p>
 
                 <div class="row g-3 mb-5">

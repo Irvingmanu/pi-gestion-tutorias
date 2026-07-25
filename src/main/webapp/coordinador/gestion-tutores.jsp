@@ -11,6 +11,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Gestión de Tutores</title>
     <link href="<%= ctx %>/assets/css/bootstrap.css" rel="stylesheet">
+    <!-- Asegurar que este CSS del sidebar esté presente para fijar el diseño lateral -->
     <link href="<%= ctx %>/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
     <link href="<%= ctx %>/assets/css/coordinador/gestion-tutores.css" rel="stylesheet">
 </head>
