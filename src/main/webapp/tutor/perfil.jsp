@@ -12,6 +12,8 @@
 </head>
 <body>
 
+<jsp:include page="../includes/alertas.jsp" />
+
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
     <!-- ==================== BARRA LATERAL (Tutor) ==================== -->
@@ -51,42 +53,57 @@
             Perfil Tutor
         </div>
 
-        <!-- Tarjeta de perfil: asume que el Servlet expone el objeto "tutor" -->
-        <div style="max-width: 800px;">
-            <div class="bg-white rounded shadow-sm border p-4">
+        <div class="bg-white rounded shadow-sm border p-4">
 
-                <div class="d-flex align-items-center gap-4 mb-4">
-                    <div class="bg-light rounded-circle d-flex justify-content-center align-items-center" style="width: 80px; height: 80px;">
-                        <i class="bi bi-person fs-1"></i>
-                    </div>
-                    <h4 class="mb-0">${tutor.nombres} ${tutor.apellidos}</h4>
+            <div class="d-flex align-items-center gap-4 mb-4">
+                <div class="bg-light rounded-circle d-flex justify-content-center align-items-center" style="width: 80px; height: 80px;">
+                    <i class="bi bi-person fs-1"></i>
                 </div>
-
-                <div class="mb-4">
-                    <p class="fw-bold mb-3">Información Personal</p>
-                    <ul class="list-unstyled fs-6">
-                        <li class="mb-2">Nombre: ${tutor.apellidos} ${tutor.nombres}</li>
-                        <li class="mb-2">Nómina: ${tutor.nomina}</li>
-                        <li class="mb-2">Email: ${tutor.correoInstitucional}</li>
-                        <li class="mb-2">Teléfono: ${tutor.telefono}</li>
-                    </ul>
-                </div>
-
-                <div class="mb-4 mt-4">
-                    <p class="fw-bold mb-3">Información Académica</p>
-                    <ul class="list-unstyled fs-6">
-                        <li class="mb-2">Rol: Tutor Académico</li>
-                        <li class="mb-2">División: ${tutor.divisionAcademica}</li>
-                    </ul>
-                </div>
-
+                <h4 class="mb-0">${tutor.nombres} ${tutor.apellidos}</h4>
             </div>
+
+            <div class="mb-4">
+                <p class="fw-bold mb-3">Información Personal</p>
+                <ul class="list-unstyled fs-6">
+                    <li class="mb-2">Nombre: ${tutor.apellidos} ${tutor.nombres}</li>
+                    <li class="mb-2">Nómina: ${tutor.nomina}</li>
+                    <li class="mb-2">Email: ${tutor.correoInstitucional}</li>
+                    <li class="mb-2">Teléfono: ${tutor.telefono}</li>
+                </ul>
+            </div>
+
+            <div class="mb-4 mt-4">
+                <p class="fw-bold mb-3">Información Académica</p>
+                <ul class="list-unstyled fs-6">
+                    <li class="mb-2">Rol: Tutor Académico</li>
+                    <li class="mb-2">División: ${tutor.divisionAcademica}</li>
+                </ul>
+            </div>
+
+            <div class="d-flex justify-content-end">
+                <button type="button" class="btn btn-cancelar-figma rounded-figma px-4" id="btnCerrarSesion">
+                    Cerrar sesión
+                </button>
+            </div>
+
         </div>
-
     </div>
-
 </div>
 
 <script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/alertas.js"></script>
+<script>
+    document.getElementById('btnCerrarSesion').addEventListener('click', function () {
+        mostrarConfirmacion(
+            'advertencia',
+            '¿Cerrar sesión?',
+            'Tendrás que iniciar sesión de nuevo para continuar.',
+            'Cerrar sesión',
+            function () {
+                window.location.href = '<%= request.getContextPath() %>/logout';
+            }
+        );
+    });
+</script>
 </body>
 </html>

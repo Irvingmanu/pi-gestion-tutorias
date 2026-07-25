@@ -1,10 +1,13 @@
 package mx.edu.utez.pigestiontutorias.models;
 
+import java.util.List;
+
 public class Area {
     private int idArea;
     private String nombre;
     private String encargado;
     private String correoContacto;
+    private List<Motivo> motivos;
 
     public Area() {
     }
@@ -46,6 +49,14 @@ public class Area {
 
     public void setCorreoContacto(String correoContacto) {
         this.correoContacto = correoContacto;
+    }
+
+    public List<Motivo> getMotivos() {
+        return motivos;
+    }
+
+    public void setMotivos(List<Motivo> motivos) {
+        this.motivos = motivos;
     }
 
     @Override
