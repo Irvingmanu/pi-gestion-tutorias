@@ -11,6 +11,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Gestión de Tutores</title>
     <link href="<%= ctx %>/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="<%= ctx %>/assets/css/global.css" rel="stylesheet">
+    <link href="<%= ctx %>/assets/css/coordinador/navbar.css" rel="stylesheet">
     <!-- Asegurar que este CSS del sidebar esté presente para fijar el diseño lateral -->
     <link href="<%= ctx %>/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
     <link href="<%= ctx %>/assets/css/coordinador/gestion-tutores.css" rel="stylesheet">
@@ -106,14 +108,15 @@
             </table>
         </div>
 
-        <div class="d-flex justify-content-end mt-3">
-            <button type="button" class="btn-figma">Guardar</button>
-        </div>
 
     </div>
 
 </div>
 
-<script src="<%= ctx %>/assets/js/bootstrap.js"></script>
+<jsp:include page="../includes/alertas.jsp" />
+
+<script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/alertas.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/coordinador/tutor.js"></script>
 </body>
 </html>
