@@ -138,6 +138,7 @@ function mostrarToast(tipo, titulo, mensaje) {
     const toast = new bootstrap.Toast(toastElement, { delay: 4000 });
     toast.show();
 }
+<<<<<<< HEAD
 
 document.addEventListener('DOMContentLoaded', function () {
     const parametros = new URLSearchParams(window.location.search);
@@ -203,3 +204,5 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
+=======
+>>>>>>> bb98215c4ce621353d4b2246e394e8f282cfccc7

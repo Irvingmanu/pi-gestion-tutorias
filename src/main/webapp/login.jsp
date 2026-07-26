@@ -71,8 +71,8 @@
                     <img src="assets/img/login/candado.png" alt="" class="auth-icon-left">
                     <input type="password" class="form-control auth-input" id="password" name="password"
                            placeholder="Contraseña" required>
-                    <button type="button" class="auth-toggle-password toggle-password-btn" data-target="password" aria-label="Mostrar contraseña">
-                        <img src="assets/img/login/ojoOcultar.png" alt="" class="auth-field-icon toggle-icon">
+                    <button type="button" class="auth-toggle-password" id="togglePassword" aria-label="Mostrar contraseña">
+                        <img src="assets/img/login/ojoOcultar.png" alt="" class="auth-field-icon" id="toggleIcon">
                     </button>
                     <div class="invalid-feedback">
                         Ingresa tu contraseña.

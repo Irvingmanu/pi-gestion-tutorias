@@ -75,3 +75,43 @@ document.addEventListener('DOMContentLoaded', function () {
     if (grupo) grupo.addEventListener('change', filtrarAlumnos);
     if (cuatrimestre) cuatrimestre.addEventListener('change', filtrarAlumnos);
 });
+
+// Toasts/alertas de exito y error via parametros en la URL (?exito=, ?error=)
+document.addEventListener('DOMContentLoaded', function () {
+    const parametros = new URLSearchParams(window.location.search);
+    const exito = parametros.get('exito');
+
+    if (exito) {
+        switch (exito) {
+            case 'guardado':
+                mostrarToast('exito', '¡Éxito!', 'El alumno fue guardado correctamente');
+                break;
+            case 'editado':
+                mostrarToast('exito', '¡Éxito!', 'El alumno fue editado correctamente');
+                break;
+            case 'eliminado':
+                mostrarToast('exito', '¡Éxito!', 'El alumno fue eliminado correctamente');
+                break;
+        }
+
+        window.history.replaceState(null, null, window.location.pathname);
+    }
+
+    const error = parametros.get('error');
+
+    if (error) {
+        switch (error) {
+            case 'matricula_duplicada':
+                mostrarAlerta('error', 'Error', 'Esta matrícula ya está registrada en el sistema.');
+                break;
+            case 'correo_duplicado':
+                mostrarAlerta('error', 'Error', 'Este correo ya está registrado en el sistema.');
+                break;
+            case 'correo':
+                mostrarAlerta('error', 'Error', 'El correo debe terminar en @utez.edu.mx.');
+                break;
+        }
+
+        window.history.replaceState(null, null, window.location.pathname);
+    }
+});

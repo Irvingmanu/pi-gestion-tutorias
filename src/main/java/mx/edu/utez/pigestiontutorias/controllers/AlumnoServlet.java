@@ -1,6 +1,7 @@
 package mx.edu.utez.pigestiontutorias.controllers;
 
 import mx.edu.utez.pigestiontutorias.models.Alumno;
+import mx.edu.utez.pigestiontutorias.models.EventoAgenda;
 import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
 
 import jakarta.servlet.ServletException;
@@ -10,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import java.io.IOException;
+import java.util.List;
 
 @WebServlet("/AlumnoServlet")
 public class AlumnoServlet extends HttpServlet {
@@ -23,6 +25,17 @@ public class AlumnoServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String accion = request.getParameter("accion");
+        if ("agenda".equals(accion)) {
+
+            String matricula = request.getParameter("matricula");
+            int idLetraGrupo = Integer.parseInt(request.getParameter("idLetraGrupo"));
+
+            List<EventoAgenda> listaEventos = alumnoDAO.getAgendaAlumno(matricula, idLetraGrupo);
+
+            request.setAttribute("listaEventosAgenda", listaEventos);
+            request.getRequestDispatcher("/alumno/agenda.jsp").forward(request, response);
+            return;
+        }
 
         if ("eliminar".equals(accion)) {
             alumnoDAO.delete(request.getParameter("matricula"));
@@ -31,7 +44,6 @@ public class AlumnoServlet extends HttpServlet {
         }
 
         if ("nuevo".equals(accion) || "prepararEdicion".equals(accion)) {
-            // Mandamos los 4 catálogos a la vista
             request.setAttribute("listaGeneros", alumnoDAO.getAllGeneros());
             request.setAttribute("listaCarreras", alumnoDAO.getAllCarreras());
             request.setAttribute("listaCuatrimestres", alumnoDAO.getAllCuatrimestres());
@@ -67,7 +79,6 @@ public class AlumnoServlet extends HttpServlet {
         alumno.setCorreoInstitucional(request.getParameter("correo"));
         alumno.setTelefono(request.getParameter("telefono"));
 
-        // Recibimos los 4 IDs del formulario
         alumno.setIdGenero(Integer.parseInt(request.getParameter("idGenero")));
         alumno.setIdCarrera(Integer.parseInt(request.getParameter("idCarrera")));
         alumno.setIdCuatrimestre(Integer.parseInt(request.getParameter("idCuatrimestre")));
