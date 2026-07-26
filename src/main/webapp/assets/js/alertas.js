@@ -138,49 +138,16 @@ function mostrarToast(tipo, titulo, mensaje) {
     const toast = new bootstrap.Toast(toastElement, { delay: 4000 });
     toast.show();
 }
-<<<<<<< HEAD
-
 document.addEventListener('DOMContentLoaded', function () {
     const parametros = new URLSearchParams(window.location.search);
     const exito = parametros.get('exito');
 
-    if (exito) {
-        switch (exito) {
-            case 'guardado':
-                mostrarToast('exito', '¡Éxito!', 'El alumno fue guardado correctamente');
-                break;
-            case 'editado':
-                mostrarToast('exito', '¡Éxito!', 'El alumno fue editado correctamente');
-                break;
-            case 'eliminado':
-                mostrarToast('exito', '¡Éxito!', 'El alumno fue eliminado correctamente');
-                break;
-            case 'asistencia_guardada':
-                mostrarAlerta('exito', 'Éxito', 'Se registró exitosamente');
-                document.getElementById('alertaBtnAceptar').innerText = 'OK';
-                break;
-        }
-
+    if (exito === 'asistencia_guardada') {
+        mostrarAlerta('exito', 'Éxito', 'Se registró exitosamente');
+        document.getElementById('alertaBtnAceptar').innerText = 'OK';
         window.history.replaceState(null, null, window.location.pathname);
     }
 
-    const error = parametros.get('error');
-
-    if (error) {
-        switch (error) {
-            case 'matricula_duplicada':
-                mostrarAlerta('error', 'Error', 'Esta matrícula ya está registrada en el sistema.');
-                break;
-            case 'correo_duplicado':
-                mostrarAlerta('error', 'Error', 'Este correo ya está registrado en el sistema.');
-                break;
-            case 'correo':
-                mostrarAlerta('error', 'Error', 'El correo debe terminar en @utez.edu.mx.');
-                break;
-        }
-
-        window.history.replaceState(null, null, window.location.pathname);
-    }
     const formularioGuardar = document.getElementById('formGuardar');
 
     if (formularioGuardar) {
@@ -204,5 +171,3 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 });
-=======
->>>>>>> bb98215c4ce621353d4b2246e394e8f282cfccc7
