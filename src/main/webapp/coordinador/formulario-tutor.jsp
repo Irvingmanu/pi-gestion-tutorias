@@ -58,6 +58,8 @@
         <form class="form-wrap-figma mt-3" style="max-width: 920px;" action="<%= request.getContextPath() %>/TutoresServlet" method="post">
 
             <input type="hidden" name="accion" value="<%= esEdicion ? "editar" : "nuevo" %>">
+            <input type="hidden" name="idTutor" value="<%= tutorFormulario != null ? tutorFormulario.getIdTutor() : 0 %>">
+            <input type="hidden" name="idUsuario" value="<%= tutorFormulario != null ? tutorFormulario.getIdUsuario() : 0 %>">
 
             <div class="row">
 

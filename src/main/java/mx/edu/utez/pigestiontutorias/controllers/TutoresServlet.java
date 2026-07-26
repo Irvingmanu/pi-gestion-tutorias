@@ -89,9 +89,14 @@ public class TutoresServlet extends HttpServlet {
         tutor.setCorreoInstitucional(request.getParameter("correo"));
         tutor.setTelefono(request.getParameter("telefono"));
 
-        String idAcademiaStr = request.getParameter("idAcademia");
-        if (idAcademiaStr != null && !idAcademiaStr.trim().isEmpty()) {
-            tutor.setIdAcademia(Integer.parseInt(idAcademiaStr.trim()));
+        String idTutorStr = request.getParameter("idTutor");
+        if (idTutorStr != null && !idTutorStr.trim().isEmpty()) {
+            tutor.setIdTutor(Integer.parseInt(idTutorStr.trim()));
+        }
+
+        String idUsuarioStr = request.getParameter("idUsuario");
+        if (idUsuarioStr != null && !idUsuarioStr.trim().isEmpty()) {
+            tutor.setIdUsuario(Integer.parseInt(idUsuarioStr.trim()));
         }
 
         // Capturar la lista de horarios enviados desde el formulario
@@ -99,11 +104,25 @@ public class TutoresServlet extends HttpServlet {
         if (horarios != null) {
             tutor.setHorariosDispo(Arrays.asList(horarios));
         }
+        String idAcademiaStr = request.getParameter("idAcademia");
+        if (idAcademiaStr != null && !idAcademiaStr.trim().isEmpty()) {
+            tutor.setIdAcademia(Integer.parseInt(idAcademiaStr.trim()));
+        } else if ("editar".equals(accion)) {
+            // NUEVO: Si la academia viene vacía (ej. porque se deshabilitó en el frontend),
+            // recuperamos el ID que ya tenía registrado en la base de datos para no reemplazarlo con un 0 (null).
+            Tutor tutorAntiguo = tutorDAO.getByNomina(tutor.getNomina());
+            if (tutorAntiguo != null) {
+                tutor.setIdAcademia(tutorAntiguo.getIdAcademia());
+            }
+        }
+
+        // Código anterior (captura de datos)...
 
         HttpSession session = request.getSession();
         boolean operacionExitosa;
 
         if ("editar".equals(accion)) {
+            // Para editar también deberías hacer validaciones usando tus métodos existeCorreo(correo, idTutorActual)
             operacionExitosa = tutorDAO.update(tutor);
             if (operacionExitosa) {
                 session.setAttribute("mensajeExito", "Tutor actualizado exitosamente.");
@@ -111,7 +130,20 @@ public class TutoresServlet extends HttpServlet {
                 session.setAttribute("mensajeError", "No se pudo actualizar el tutor.");
             }
         } else {
-            // Caso por defecto: "nuevo"
+            // --- NUEVAS VALIDACIONES ANTES DE CREAR ---
+            if (tutorDAO.existeNomina(tutor.getNomina())) {
+                session.setAttribute("mensajeError", "Error: La nómina ya está registrada.");
+                response.sendRedirect(request.getContextPath() + "/TutoresServlet");
+                return;
+            }
+
+            if (tutorDAO.existeCorreo(tutor.getCorreoInstitucional())) {
+                session.setAttribute("mensajeError", "Error: El correo ya está registrado.");
+                response.sendRedirect(request.getContextPath() + "/TutoresServlet");
+                return;
+            }
+            // ------------------------------------------
+
             operacionExitosa = tutorDAO.create(tutor);
             if (operacionExitosa) {
                 session.setAttribute("mensajeExito", "Tutor registrado exitosamente.");
@@ -120,7 +152,7 @@ public class TutoresServlet extends HttpServlet {
             }
         }
 
-        // Redireccionar al GET del Servlet para consultar la lista actualizada de la BD
+// Redireccionar al GET del Servlet
         response.sendRedirect(request.getContextPath() + "/TutoresServlet");
     }
 
