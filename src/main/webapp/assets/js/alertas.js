@@ -154,6 +154,10 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'eliminado':
                 mostrarToast('exito', '¡Éxito!', 'El alumno fue eliminado correctamente');
                 break;
+            case 'asistencia_guardada':
+                mostrarAlerta('exito', 'Éxito', 'Se registró exitosamente');
+                document.getElementById('alertaBtnAceptar').innerText = 'OK';
+                break;
         }
 
         window.history.replaceState(null, null, window.location.pathname);
@@ -175,5 +179,27 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         window.history.replaceState(null, null, window.location.pathname);
+    }
+    const formularioGuardar = document.getElementById('formGuardar');
+
+    if (formularioGuardar) {
+        formularioGuardar.addEventListener('submit', function (e) {
+            if (this.dataset.confirmado === 'true') {
+                return;
+            }
+
+            e.preventDefault();
+
+            mostrarConfirmacion(
+                'advertencia',
+                '¿Deseas guardar?',
+                'Estás a punto de registrar los datos ingresados en el sistema.',
+                'Sí, guardar',
+                () => {
+                    formularioGuardar.dataset.confirmado = 'true';
+                    formularioGuardar.submit();
+                }
+            );
+        });
     }
 });
