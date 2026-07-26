@@ -1,4 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -20,7 +21,7 @@
             <img src="<%= request.getContextPath() %>/assets/img/alumno/logo-utez.png" alt="UTEZ">
         </div>
 
-        <a href="<%= request.getContextPath() %>/alumno/agenda.jsp" class="nav-item-grupos active">
+        <a href="<%= request.getContextPath() %>/AgendaServlet?accion=agenda&matricula=20253DS076&idLetraGrupo=3" class="nav-item-grupos active">
             <img src="<%= request.getContextPath() %>/assets/img/alumno/calendario.png" alt="Agenda">
             <span>Agenda</span>
         </a>
@@ -50,49 +51,39 @@
         <!-- Lista de eventos de la agenda -->
         <div class="form-wrap-figma" style="max-width: 100%;">
 
-            <%-- TODO: reemplazar por <c:forEach items="${listaEventosAgenda}" var="evento"> cuando el controlador exista --%>
-
-            <div class="d-flex align-items-center justify-content-between p-3 mb-3 bg-white rounded shadow-sm border">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="d-flex justify-content-center align-items-center" style="width: 60px; height: 60px;">
-                        <i class="bi bi-person fs-1"></i>
+            <c:choose>
+                <c:when test="${empty listaEventosAgenda}">
+                    <div class="p-4 text-center bg-white rounded shadow-sm border">
+                        <p class="fs-5 text-muted mb-0">No hay tutorías programadas en tu agenda.</p>
                     </div>
-                    <div>
-                        <div class="fw-bold">Tutoría Individual</div>
-                        <div>Flores Torrescano Irving Manuel</div>
-                        <div>24 Mayo 2026 - 2:00pm</div>
-                    </div>
-                </div>
-                <span class="fw-bold">Próximo</span>
-            </div>
-
-            <div class="d-flex align-items-center justify-content-between p-3 mb-3 bg-white rounded shadow-sm border">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="d-flex justify-content-center align-items-center" style="width: 60px; height: 60px;">
-                        <i class="bi bi-people fs-1"></i>
-                    </div>
-                    <div>
-                        <div class="fw-bold">Tutoría Grupal</div>
-                        <div>Grupo 3°C</div>
-                        <div>27 Mayo 2026 - 10:00am</div>
-                    </div>
-                </div>
-                <span class="fw-bold">Próximo</span>
-            </div>
-
-            <div class="d-flex align-items-center justify-content-between p-3 mb-3 bg-white rounded shadow-sm border">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="d-flex justify-content-center align-items-center" style="width: 60px; height: 60px;">
-                        <i class="bi bi-people fs-1"></i>
-                    </div>
-                    <div>
-                        <div class="fw-bold">Tutoría Grupal</div>
-                        <div>Grupo 3°C</div>
-                        <div>3 Junio 2026 - 10:00am</div>
-                    </div>
-                </div>
-                <span class="fw-bold">Próximo</span>
-            </div>
+                </c:when>
+                <c:otherwise>
+                    <c:forEach items="${listaEventosAgenda}" var="evento">
+                        <div class="d-flex align-items-center justify-content-between p-3 mb-3 bg-white rounded shadow-sm border">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="d-flex justify-content-center align-items-center" style="width: 60px; height: 60px;">
+                                    <c:choose>
+                                        <c:when test="${evento.tipo == 'Individual'}">
+                                            <i class="bi bi-person fs-1 text-primary"></i>
+                                        </c:when>
+                                        <c:otherwise>
+                                            <i class="bi bi-people fs-1 text-success"></i>
+                                        </c:otherwise>
+                                    </c:choose>
+                                </div>
+                                <div>
+                                    <div class="fw-bold">Tutoría ${evento.tipo}</div>
+                                    <div>${evento.descripcion}</div>
+                                    <div class="text-muted">${evento.fechaFormateada}</div>
+                                </div>
+                            </div>
+                            <span class="fw-bold ${evento.estado == 'Próximo' ? 'text-secondary' : 'text-success'}">
+                                    ${evento.estado}
+                            </span>
+                        </div>
+                    </c:forEach>
+                </c:otherwise>
+            </c:choose>
 
         </div>
 
