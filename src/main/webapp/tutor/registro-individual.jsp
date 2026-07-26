@@ -16,7 +16,6 @@
 <body>
 
 <%
-    // Carga las áreas con sus motivos ya incluidos
     AreaDAO areaDAO = new AreaDAO();
     List<Area> areas = areaDAO.getAll();
     for (Area a : areas) {
