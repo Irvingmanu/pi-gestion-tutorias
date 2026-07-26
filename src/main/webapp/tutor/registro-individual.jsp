@@ -72,7 +72,6 @@
                 <input type="hidden" id="idAreaCanalizacion" name="idAreaCanalizacion" value="">
                 <input type="hidden" id="observacionesCanalizacion" name="observacionesCanalizacion" value="">
 
-                <!-- Fila 1: Matricula / Fecha -->
                 <div class="row g-3 mb-5">
                     <div class="col-md-6">
                         <label for="matricula" class="form-label fs-6 fw-bold">Matrícula</label>
@@ -87,7 +86,6 @@
                     </div>
                 </div>
 
-                <!-- Fila 2: Temas Tratados / Acuerdos -->
                 <div class="row g-3 mb-5">
                     <div class="col-md-6">
                         <label for="temasTratados" class="form-label fs-6 fw-bold">Temas Tratados</label>
@@ -101,7 +99,6 @@
                     </div>
                 </div>
 
-                <!-- Vínculo Directo (dinámico desde AREA_APOYO + MOTIVO_AREA) -->
                 <p class="fs-5 fw-bold text-center my-4">Vínculo Directo</p>
 
                 <div class="row g-3 mb-5">
@@ -140,7 +137,6 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
 
-        // --- Lógica de "solo un área canalizable a la vez" ---
         const selects = document.querySelectorAll('.select-canalizacion');
         const inputIdArea = document.getElementById('idAreaCanalizacion');
         const inputObservaciones = document.getElementById('observacionesCanalizacion');
@@ -161,7 +157,6 @@
             });
         });
 
-        // --- Validación del formulario usando el sistema de alertas propio ---
         const form = document.getElementById('formRegistroIndividual');
         form.addEventListener('submit', function (event) {
             if (!form.checkValidity()) {
@@ -171,7 +166,6 @@
             }
         });
 
-        // --- Mensajes que vienen del servlet después de un forward ---
         <% if (request.getAttribute("exito") != null) { %>
         mostrarAlerta('exito', 'Éxito', 'Se registró exitosamente');
         <% } %>
