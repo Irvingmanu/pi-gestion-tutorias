@@ -38,8 +38,16 @@ public class AlumnoServlet extends HttpServlet {
         }
 
         if ("eliminar".equals(accion)) {
-            alumnoDAO.delete(request.getParameter("matricula"));
-            response.sendRedirect(request.getContextPath() + "/AlumnoServlet?exito=eliminado");
+            boolean eliminado = alumnoDAO.delete(request.getParameter("matricula"));
+            String parametro = eliminado ? "exito=eliminado" : "error=alumno_en_uso";
+            response.sendRedirect(request.getContextPath() + "/AlumnoServlet?" + parametro);
+            return;
+        }
+
+        if ("reactivar".equals(accion)) {
+            boolean reactivado = alumnoDAO.reactivar(request.getParameter("matricula"));
+            String parametro = reactivado ? "exito=reactivado" : "error=reactivacion_fallida";
+            response.sendRedirect(request.getContextPath() + "/AlumnoServlet?" + parametro);
             return;
         }
 
@@ -67,8 +75,16 @@ public class AlumnoServlet extends HttpServlet {
         String accion = request.getParameter("accion");
 
         if ("eliminar".equals(accion)) {
-            alumnoDAO.delete(request.getParameter("matricula"));
-            response.sendRedirect(request.getContextPath() + "/AlumnoServlet?exito=eliminado");
+            boolean eliminado = alumnoDAO.delete(request.getParameter("matricula"));
+            String parametro = eliminado ? "exito=eliminado" : "error=alumno_en_uso";
+            response.sendRedirect(request.getContextPath() + "/AlumnoServlet?" + parametro);
+            return;
+        }
+
+        if ("reactivar".equals(accion)) {
+            boolean reactivado = alumnoDAO.reactivar(request.getParameter("matricula"));
+            String parametro = reactivado ? "exito=reactivado" : "error=reactivacion_fallida";
+            response.sendRedirect(request.getContextPath() + "/AlumnoServlet?" + parametro);
             return;
         }
 

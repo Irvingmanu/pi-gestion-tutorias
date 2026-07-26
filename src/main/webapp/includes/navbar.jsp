@@ -12,7 +12,7 @@
         <img src="<%= ctx %>/assets/img/coordinador/logo-utez.png" alt="UTEZ">
     </div>
 
-    <a href="<%= ctx %>/coordinador/gestion-tutores.jsp" class="nav-item-grupos<%= "tutores".equals(paginaActiva) ? " active" : "" %>">
+    <a href="<%= ctx %>/TutoresServlet" class="nav-item-grupos<%= "tutores".equals(paginaActiva) ? " active" : "" %>">
         <img src="<%= ctx %>/assets/img/coordinador/tutores.png" alt="Tutores">
         <span>Tutores</span>
     </a>

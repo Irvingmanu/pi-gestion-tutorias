@@ -31,6 +31,12 @@ public class TutoresServlet extends HttpServlet {
             return;
         }
 
+        // 1b. REACTIVAR TUTOR (vía GET)
+        if ("reactivar".equals(accion)) {
+            procesarReactivacion(request, response);
+            return;
+        }
+
         // 2. NUEVO O PREPARAR EDICIÓN DE TUTOR
         if ("nuevo".equals(accion) || "prepararEdicion".equals(accion)) {
             request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
@@ -75,6 +81,12 @@ public class TutoresServlet extends HttpServlet {
         // 1. ELIMINAR TUTOR (vía POST)
         if ("eliminar".equals(accion)) {
             procesarEliminacion(request, response);
+            return;
+        }
+
+        // 1b. REACTIVAR TUTOR (vía POST)
+        if ("reactivar".equals(accion)) {
+            procesarReactivacion(request, response);
             return;
         }
 
@@ -157,22 +169,34 @@ public class TutoresServlet extends HttpServlet {
     }
 
     private void procesarEliminacion(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        HttpSession session = request.getSession();
+        String parametro = "error=tutor_no_encontrado";
         String nominaStr = request.getParameter("nomina");
         if (nominaStr != null && !nominaStr.trim().isEmpty()) {
             try {
                 int nomina = Integer.parseInt(nominaStr.trim());
                 boolean eliminado = tutorDAO.delete(nomina);
-                if (eliminado) {
-                    session.setAttribute("mensajeExito", "Tutor eliminado correctamente.");
-                } else {
-                    session.setAttribute("mensajeError", "No se pudo eliminar el tutor.");
-                }
+                parametro = eliminado ? "exito=eliminado" : "error=tutor_en_uso";
             } catch (Exception e) {
                 e.printStackTrace();
-                session.setAttribute("mensajeError", "Ocurrió un error al intentar eliminar.");
+                parametro = "error=tutor_en_uso";
             }
         }
-        response.sendRedirect(request.getContextPath() + "/TutoresServlet");
+        response.sendRedirect(request.getContextPath() + "/TutoresServlet?" + parametro);
+    }
+
+    private void procesarReactivacion(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String parametro = "error=tutor_no_encontrado";
+        String nominaStr = request.getParameter("nomina");
+        if (nominaStr != null && !nominaStr.trim().isEmpty()) {
+            try {
+                int nomina = Integer.parseInt(nominaStr.trim());
+                boolean reactivado = tutorDAO.reactivar(nomina);
+                parametro = reactivado ? "exito=reactivado" : "error=reactivacion_fallida";
+            } catch (Exception e) {
+                e.printStackTrace();
+                parametro = "error=reactivacion_fallida";
+            }
+        }
+        response.sendRedirect(request.getContextPath() + "/TutoresServlet?" + parametro);
     }
 }

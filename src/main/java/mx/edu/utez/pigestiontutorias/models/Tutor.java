@@ -11,6 +11,7 @@ public class Tutor {
     private String telefono;
     private int idAcademia;
     private int idUsuario;
+    private String activo;
     private List<String>horariosDispo;
 
     public Tutor() {
@@ -90,6 +91,14 @@ public class Tutor {
 
     public void setIdUsuario(int idUsuario) {
         this.idUsuario = idUsuario;
+    }
+
+    public String getActivo() {
+        return activo;
+    }
+
+    public void setActivo(String activo) {
+        this.activo = activo;
     }
 
     public List<String> getHorariosDispo() {

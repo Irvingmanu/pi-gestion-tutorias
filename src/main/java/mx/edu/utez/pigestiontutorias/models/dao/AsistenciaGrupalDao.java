@@ -13,7 +13,7 @@ public class AsistenciaGrupalDao {
 
     public List<Alumno> getAlumnosPorFiltros(int idLetraGrupo, int idCarrera, int idCuatrimestre) {
         List<Alumno> lista = new ArrayList<>();
-        String sql = "SELECT * FROM ALUMNO WHERE ID_LETRA_GRUPO = ? AND ID_CARRERA = ? AND ID_CUATRIMESTRE = ?";
+        String sql = "SELECT * FROM ALUMNO WHERE ID_LETRA_GRUPO = ? AND ID_CARRERA = ? AND ID_CUATRIMESTRE = ? AND ACTIVO = 'S'";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {

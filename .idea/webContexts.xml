@@ -3,11 +3,7 @@
   <component name="WebContextManager">
     <option name="state">
       <map>
-<<<<<<< HEAD
-        <entry key="file://$PROJECT_DIR$/src/main/webapp/tutor/asistencia-grupal.jsp" value="file://$PROJECT_DIR$/src/main/webapp/tutor" />
-=======
-        <entry key="file://$PROJECT_DIR$/src/main/webapp/coordinador/areas-apoyo.jsp" value="file://$PROJECT_DIR$/src/main/webapp/coordinador" />
->>>>>>> bb98215c4ce621353d4b2246e394e8f282cfccc7
+        <entry key="file://$PROJECT_DIR$/src/main/webapp/coordinador/gestion-tutores.jsp" value="file://$PROJECT_DIR$/src/main/webapp/coordinador" />
       </map>
     </option>
   </component>

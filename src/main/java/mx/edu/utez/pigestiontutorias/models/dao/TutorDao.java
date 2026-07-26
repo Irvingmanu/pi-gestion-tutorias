@@ -16,6 +16,7 @@ public class TutorDao {
         String sqlUsuario = "INSERT INTO USUARIO (ROL, IDENTIFICADOR, PASS, CORREO_INSTITUCIONAL) VALUES (?, ?, ?, ?)";
         String sqlTutor = "INSERT INTO TUTOR(NOMINA, NOMBRES, APELLIDOS, CORREO_INSTITUCIONAL, TELEFONO, DIVISION_ACADEMICA, ID_USUARIO) VALUES(?, ?, ?, ?, ?, ?, ?)";
 
+// Se elimina ACTIVO de la consulta
         String sqlHorario = "INSERT INTO HORARIO_ATENCION (ID_TUTOR, DIA_SEMANA, HORA_DESDE, HORA_HASTA) VALUES (?, ?, TO_DSINTERVAL('0 ' || ? || ':00'), TO_DSINTERVAL('0 ' || ? || ':00'))";
         Connection con = null;
         try {
@@ -37,6 +38,7 @@ public class TutorDao {
             }
 
             int idTutorGenerado = 0;
+            // Solicitamos a Oracle que nos devuelva el ID_TUTOR que acaba de crear
             try (PreparedStatement psTutor = con.prepareStatement(sqlTutor, new String[]{"ID_TUTOR"})) {
                 psTutor.setString(1, String.valueOf(entidad.getNomina()));
                 psTutor.setString(2, entidad.getNombres());
@@ -56,6 +58,8 @@ public class TutorDao {
             if (entidad.getHorariosDispo() != null && !entidad.getHorariosDispo().isEmpty()) {
                 try (PreparedStatement psHorario = con.prepareStatement(sqlHorario)) {
                     for (String horarioStr : entidad.getHorariosDispo()) {
+
+                        // Extractor inteligente: Busca el día y las horas en el texto que manda el JS
                         String dia = "Lunes";
                         String desde = "00:00";
                         String hasta = "00:00";
@@ -67,7 +71,7 @@ public class TutorDao {
                         if (mHoras.find()) desde = mHoras.group(1);
                         if (mHoras.find()) hasta = mHoras.group(1);
 
-                        psHorario.setInt(1, idTutorGenerado);
+                        psHorario.setInt(1, idTutorGenerado); // Usamos la FK correcta
                         psHorario.setString(2, dia);
                         psHorario.setString(3, desde);
                         psHorario.setString(4, hasta);
@@ -99,7 +103,7 @@ public class TutorDao {
         String sql = "SELECT COUNT(*) FROM TUTOR WHERE NOMINA = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, String.valueOf(nomina)); // CORRECCIÓN: Era setInt, cambiado a setString
+            ps.setInt(1, nomina);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getInt(1) > 0;
             }
@@ -135,7 +139,7 @@ public class TutorDao {
         String sql = "SELECT COUNT(*) FROM TUTOR WHERE NOMINA = ? AND ID_TUTOR <> ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, String.valueOf(nomina)); // CORRECCIÓN: Era setInt, cambiado a setString
+            ps.setInt(1, nomina);
             ps.setInt(2, idTutorActual);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return rs.getInt(1) > 0;
@@ -158,7 +162,6 @@ public class TutorDao {
     }
 
     public boolean existeTelefono(String telefono, int idTutorActual) {
-        // ... (Se mantiene igual)
         String sql = "SELECT COUNT(*) FROM TUTOR WHERE TELEFONO = ? AND ID_TUTOR <> ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -173,7 +176,9 @@ public class TutorDao {
 
     public List<Tutor> getAll() {
         List<Tutor> lista = new ArrayList<>();
-        String sql = "SELECT ID_TUTOR, NOMINA, NOMBRES, APELLIDOS, CORREO_INSTITUCIONAL, TELEFONO, DIVISION_ACADEMICA, ID_USUARIO FROM TUTOR";
+        // Trae activos e inactivos: la pantalla de gestion decide que mostrar
+        // segun el filtro "mostrar dados de baja".
+        String sql = "SELECT ID_TUTOR, NOMINA, NOMBRES, APELLIDOS, CORREO_INSTITUCIONAL, TELEFONO, DIVISION_ACADEMICA, ID_USUARIO, ACTIVO FROM TUTOR";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -184,24 +189,20 @@ public class TutorDao {
                     Tutor tutor = new Tutor();
                     tutor.setIdTutor(rs.getInt("ID_TUTOR"));
 
-                    // CORRECCIÓN: Se añade trim() para evitar fallos si la DB agrega espacios invisibles
-                    String nominaStr = rs.getString("NOMINA");
-                    tutor.setNomina(nominaStr != null ? Integer.parseInt(nominaStr.trim()) : 0);
-
+                    // Leemos como String y parseamos a int para evitar el ORA-17059 directo del driver
+                    tutor.setNomina(Integer.parseInt(rs.getString("NOMINA")));
                     tutor.setNombres(rs.getString("NOMBRES"));
                     tutor.setApellidos(rs.getString("APELLIDOS"));
                     tutor.setCorreoInstitucional(rs.getString("CORREO_INSTITUCIONAL"));
                     tutor.setTelefono(rs.getString("TELEFONO"));
-
-                    // CORRECCIÓN: También sanitizamos este parseo con trim()
-                    String divAcadStr = rs.getString("DIVISION_ACADEMICA");
-                    tutor.setIdAcademia(divAcadStr != null && !divAcadStr.trim().isEmpty() ? Integer.parseInt(divAcadStr.trim()) : 0);
-
+                    tutor.setIdAcademia(Integer.parseInt(rs.getString("DIVISION_ACADEMICA")));
                     tutor.setIdUsuario(rs.getInt("ID_USUARIO"));
+                    tutor.setActivo(rs.getString("ACTIVO"));
 
                     lista.add(tutor);
                 } catch (NumberFormatException ex) {
-                    System.out.println("Fila ignorada por datos incompatibles: " + ex.getMessage());
+                    System.out.println("Fila ignorada por datos incompatibles (VARCHAR no numérico): " + ex.getMessage());
+                    // Esto evitará que toda la tabla deje de cargar por culpa de un solo registro malo.
                 }
             }
         } catch (SQLException e) {
@@ -213,6 +214,8 @@ public class TutorDao {
 
     public Tutor getByNomina(int nomina) {
         String sql = "SELECT * FROM TUTOR WHERE NOMINA = ?";
+
+        // Extraemos el intervalo de Oracle y lo formateamos de vuelta a texto "HH:mm"
         String sqlHorarios = "SELECT DIA_SEMANA, " +
                 "TO_CHAR(EXTRACT(HOUR FROM HORA_DESDE), 'FM00') || ':' || TO_CHAR(EXTRACT(MINUTE FROM HORA_DESDE), 'FM00') AS DESDE, " +
                 "TO_CHAR(EXTRACT(HOUR FROM HORA_HASTA), 'FM00') || ':' || TO_CHAR(EXTRACT(MINUTE FROM HORA_HASTA), 'FM00') AS HASTA " +
@@ -230,13 +233,15 @@ public class TutorDao {
 
             if (tutor != null) {
                 try (PreparedStatement psH = con.prepareStatement(sqlHorarios)) {
-                    psH.setInt(1, tutor.getIdTutor());
+                    psH.setInt(1, tutor.getIdTutor()); // Enlazamos por ID_TUTOR
                     try (ResultSet rsH = psH.executeQuery()) {
                         List<String> horarios = new ArrayList<>();
                         while (rsH.next()) {
                             String dia = rsH.getString("DIA_SEMANA");
                             String desde = rsH.getString("DESDE");
                             String hasta = rsH.getString("HASTA");
+
+                            // Juntamos los datos para que el HTML los pinte como un solo texto
                             horarios.add(dia + " " + desde + " - " + hasta);
                         }
                         tutor.setHorariosDispo(horarios);
@@ -246,11 +251,11 @@ public class TutorDao {
         } catch (SQLException e) { e.printStackTrace(); }
         return tutor;
     }
-
     public boolean update(Tutor entidad) {
         String sqlTutor = "UPDATE TUTOR SET NOMBRES = ?, APELLIDOS = ?, CORREO_INSTITUCIONAL = ?, TELEFONO = ?, DIVISION_ACADEMICA = ? WHERE NOMINA = ?";
         String sqlUsuario = "UPDATE USUARIO SET CORREO_INSTITUCIONAL = ? WHERE ID_USUARIO = ?";
 
+        // El borrado e insertado ahora usan ID_TUTOR
         String sqlDeleteHorarios = "DELETE FROM HORARIO_ATENCION WHERE ID_TUTOR = ?";
         String sqlInsertHorario = "INSERT INTO HORARIO_ATENCION (ID_TUTOR, DIA_SEMANA, HORA_DESDE, HORA_HASTA) VALUES (?, ?, TO_DSINTERVAL('0 ' || ? || ':00'), TO_DSINTERVAL('0 ' || ? || ':00'))";
 
@@ -276,13 +281,15 @@ public class TutorDao {
             }
 
             try (PreparedStatement psDel = con.prepareStatement(sqlDeleteHorarios)) {
-                psDel.setInt(1, entidad.getIdTutor());
+                psDel.setInt(1, entidad.getIdTutor()); // Borramos por ID_TUTOR
                 psDel.executeUpdate();
             }
 
             if (entidad.getHorariosDispo() != null && !entidad.getHorariosDispo().isEmpty()) {
                 try (PreparedStatement psIns = con.prepareStatement(sqlInsertHorario)) {
                     for (String horarioStr : entidad.getHorariosDispo()) {
+
+                        // Mismo extractor inteligente que usamos al crear
                         String dia = "Lunes";
                         String desde = "00:00";
                         String hasta = "00:00";
@@ -320,53 +327,94 @@ public class TutorDao {
     }
 
     public boolean delete(int nomina) {
-        String selectSql = "SELECT ID_TUTOR, ID_USUARIO FROM TUTOR WHERE NOMINA = ?";
-        String deleteHorarios = "DELETE FROM HORARIO_ATENCION WHERE ID_TUTOR = ?";
-        String deleteTutor = "DELETE FROM TUTOR WHERE NOMINA = ?";
-        String deleteUsuario = "DELETE FROM USUARIO WHERE ID_USUARIO = ?";
+        // Baja logica: preserva horarios, asignaciones y sesiones vinculadas y bloquea el acceso del tutor.
+        String sqlSelect = "SELECT ID_USUARIO FROM TUTOR WHERE NOMINA = ?";
+        String sqlTutor = "UPDATE TUTOR SET ACTIVO = 'N' WHERE NOMINA = ?";
+        String sqlUsuario = "UPDATE USUARIO SET ACTIVO = 'N' WHERE ID_USUARIO = ?";
 
         Connection con = null;
         try {
             con = SQLConnector.getConnection();
             con.setAutoCommit(false);
 
-            int idTutor = 0;
             int idUsuario = 0;
-
-            try (PreparedStatement psSel = con.prepareStatement(selectSql)) {
-                // CORRECCIÓN: Cambiado de setInt a setString para que el WHERE concuerde
-                psSel.setString(1, String.valueOf(nomina));
+            try (PreparedStatement psSel = con.prepareStatement(sqlSelect)) {
+                psSel.setInt(1, nomina);
                 try (ResultSet rs = psSel.executeQuery()) {
-                    if (rs.next()) {
-                        idTutor = rs.getInt("ID_TUTOR");
-                        idUsuario = rs.getInt("ID_USUARIO");
-                    } else {
+                    if (!rs.next()) {
+                        con.rollback();
                         return false;
                     }
+                    idUsuario = rs.getInt("ID_USUARIO");
                 }
             }
 
-            try (PreparedStatement psDelH = con.prepareStatement(deleteHorarios)) {
-                psDelH.setInt(1, idTutor);
-                psDelH.executeUpdate();
-            }
-
-            try (PreparedStatement psDelT = con.prepareStatement(deleteTutor)) {
-                // CORRECCIÓN: Cambiado de setInt a setString
-                psDelT.setString(1, String.valueOf(nomina));
-                psDelT.executeUpdate();
+            int filasAfectadas;
+            try (PreparedStatement psTutor = con.prepareStatement(sqlTutor)) {
+                psTutor.setInt(1, nomina);
+                filasAfectadas = psTutor.executeUpdate();
             }
 
             if (idUsuario > 0) {
-                try (PreparedStatement psDelU = con.prepareStatement(deleteUsuario)) {
-                    psDelU.setInt(1, idUsuario);
-                    psDelU.executeUpdate();
+                try (PreparedStatement psUsuario = con.prepareStatement(sqlUsuario)) {
+                    psUsuario.setInt(1, idUsuario);
+                    psUsuario.executeUpdate();
                 }
             }
 
             con.commit();
-            return true;
+            return filasAfectadas > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            return false;
+        } finally {
+            if (con != null) {
+                try { con.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+        }
+    }
 
+    // Reactiva a un tutor dado de baja y restaura su acceso al sistema.
+    public boolean reactivar(int nomina) {
+        String sqlSelect = "SELECT ID_USUARIO FROM TUTOR WHERE NOMINA = ?";
+        String sqlTutor = "UPDATE TUTOR SET ACTIVO = 'S' WHERE NOMINA = ?";
+        String sqlUsuario = "UPDATE USUARIO SET ACTIVO = 'S' WHERE ID_USUARIO = ?";
+
+        Connection con = null;
+        try {
+            con = SQLConnector.getConnection();
+            con.setAutoCommit(false);
+
+            int idUsuario = 0;
+            try (PreparedStatement psSel = con.prepareStatement(sqlSelect)) {
+                psSel.setInt(1, nomina);
+                try (ResultSet rs = psSel.executeQuery()) {
+                    if (!rs.next()) {
+                        con.rollback();
+                        return false;
+                    }
+                    idUsuario = rs.getInt("ID_USUARIO");
+                }
+            }
+
+            int filasAfectadas;
+            try (PreparedStatement psTutor = con.prepareStatement(sqlTutor)) {
+                psTutor.setInt(1, nomina);
+                filasAfectadas = psTutor.executeUpdate();
+            }
+
+            if (idUsuario > 0) {
+                try (PreparedStatement psUsuario = con.prepareStatement(sqlUsuario)) {
+                    psUsuario.setInt(1, idUsuario);
+                    psUsuario.executeUpdate();
+                }
+            }
+
+            con.commit();
+            return filasAfectadas > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             if (con != null) {
@@ -394,10 +442,7 @@ public class TutorDao {
     private Tutor mapearTutor(ResultSet rs) throws SQLException {
         Tutor tutor = new Tutor();
         tutor.setIdTutor(rs.getInt("ID_TUTOR"));
-
-        String nominaStr = rs.getString("NOMINA");
-        tutor.setNomina(nominaStr != null ? Integer.parseInt(nominaStr.trim()) : 0);
-
+        tutor.setNomina(rs.getInt("NOMINA"));
         tutor.setNombres(rs.getString("NOMBRES"));
         tutor.setApellidos(rs.getString("APELLIDOS"));
         tutor.setCorreoInstitucional(rs.getString("CORREO_INSTITUCIONAL"));
@@ -409,7 +454,7 @@ public class TutorDao {
 
     public List<Tutor> findAll() {
         List<Tutor> lista = new ArrayList<>();
-        String sql = "SELECT ID_TUTOR, NOMBRES, APELLIDOS FROM ADMIN.TUTOR";
+        String sql = "SELECT ID_TUTOR, NOMBRES, APELLIDOS FROM ADMIN.TUTOR WHERE ACTIVO = 'S'";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
@@ -430,13 +475,14 @@ public class TutorDao {
 
         return lista;
     }
-
     public Tutor findByIdUsuario(int idUsuario) {
         String sql = "SELECT ID_TUTOR, NOMBRES, APELLIDOS FROM ADMIN.TUTOR WHERE ID_USUARIO = ?";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
+
             ps.setInt(1, idUsuario);
+
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
                     Tutor t = new Tutor();

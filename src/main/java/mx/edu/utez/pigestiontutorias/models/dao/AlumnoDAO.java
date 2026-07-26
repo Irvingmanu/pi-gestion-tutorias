@@ -181,6 +181,8 @@ public class AlumnoDAO implements Dao<Alumno, String> {
 
     @Override
     public List<Alumno> getAll() {
+        // Trae activos e inactivos: la pantalla de gestion decide que mostrar
+        // segun el filtro "mostrar dados de baja".
         List<Alumno> listaAlumnos = new ArrayList<>();
         String sql = "SELECT * FROM ALUMNO";
         try (Connection con = SQLConnector.getConnection();
@@ -275,15 +277,53 @@ public class AlumnoDAO implements Dao<Alumno, String> {
 
     @Override
     public boolean delete(String matricula) {
-        String sql = "DELETE FROM ALUMNO WHERE MATRICULA = ?";
-        try (Connection con = SQLConnector.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, matricula);
-            int filasAfectadas = ps.executeUpdate();
+        // Baja logica: preserva el historial de asistencias/sesiones y bloquea el acceso del alumno.
+        String sqlSelect = "SELECT ID_USUARIO FROM ALUMNO WHERE MATRICULA = ?";
+        String sqlAlumno = "UPDATE ALUMNO SET ACTIVO = 'N' WHERE MATRICULA = ?";
+        String sqlUsuario = "UPDATE USUARIO SET ACTIVO = 'N' WHERE ID_USUARIO = ?";
+
+        Connection con = null;
+        try {
+            con = SQLConnector.getConnection();
+            con.setAutoCommit(false);
+
+            int idUsuario = 0;
+            try (PreparedStatement psSel = con.prepareStatement(sqlSelect)) {
+                psSel.setString(1, matricula);
+                try (ResultSet rs = psSel.executeQuery()) {
+                    if (!rs.next()) {
+                        con.rollback();
+                        return false;
+                    }
+                    idUsuario = rs.getInt("ID_USUARIO");
+                }
+            }
+
+            int filasAfectadas;
+            try (PreparedStatement psAlumno = con.prepareStatement(sqlAlumno)) {
+                psAlumno.setString(1, matricula);
+                filasAfectadas = psAlumno.executeUpdate();
+            }
+
+            if (idUsuario > 0) {
+                try (PreparedStatement psUsuario = con.prepareStatement(sqlUsuario)) {
+                    psUsuario.setInt(1, idUsuario);
+                    psUsuario.executeUpdate();
+                }
+            }
+
+            con.commit();
             return filasAfectadas > 0;
         } catch (SQLException e) {
             e.printStackTrace();
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
             return false;
+        } finally {
+            if (con != null) {
+                try { con.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
         }
     }
 
@@ -344,7 +384,59 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         alumno.setIdCuatrimestre(rs.getInt("ID_CUATRIMESTRE"));
         alumno.setIdLetraGrupo(rs.getInt("ID_LETRA_GRUPO"));
         alumno.setIdUsuario(rs.getInt("ID_USUARIO"));
+        alumno.setActivo(rs.getString("ACTIVO"));
         return alumno;
+    }
+
+    // Reactiva a un alumno dado de baja y restaura su acceso al sistema.
+    public boolean reactivar(String matricula) {
+        String sqlSelect = "SELECT ID_USUARIO FROM ALUMNO WHERE MATRICULA = ?";
+        String sqlAlumno = "UPDATE ALUMNO SET ACTIVO = 'S' WHERE MATRICULA = ?";
+        String sqlUsuario = "UPDATE USUARIO SET ACTIVO = 'S' WHERE ID_USUARIO = ?";
+
+        Connection con = null;
+        try {
+            con = SQLConnector.getConnection();
+            con.setAutoCommit(false);
+
+            int idUsuario = 0;
+            try (PreparedStatement psSel = con.prepareStatement(sqlSelect)) {
+                psSel.setString(1, matricula);
+                try (ResultSet rs = psSel.executeQuery()) {
+                    if (!rs.next()) {
+                        con.rollback();
+                        return false;
+                    }
+                    idUsuario = rs.getInt("ID_USUARIO");
+                }
+            }
+
+            int filasAfectadas;
+            try (PreparedStatement psAlumno = con.prepareStatement(sqlAlumno)) {
+                psAlumno.setString(1, matricula);
+                filasAfectadas = psAlumno.executeUpdate();
+            }
+
+            if (idUsuario > 0) {
+                try (PreparedStatement psUsuario = con.prepareStatement(sqlUsuario)) {
+                    psUsuario.setInt(1, idUsuario);
+                    psUsuario.executeUpdate();
+                }
+            }
+
+            con.commit();
+            return filasAfectadas > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            return false;
+        } finally {
+            if (con != null) {
+                try { con.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+        }
     }
 
     public List<EventoAgenda> getAgendaAlumno(String matricula, int idLetraGrupo) {

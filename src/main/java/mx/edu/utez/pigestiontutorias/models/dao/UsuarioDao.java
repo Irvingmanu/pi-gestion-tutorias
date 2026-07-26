@@ -112,7 +112,7 @@ public class UsuarioDao {
         Usuario usuario = null;
         String sql = "SELECT * FROM USUARIO " +
                 "WHERE (UPPER(CORREO_INSTITUCIONAL) = UPPER(?) OR UPPER(IDENTIFICADOR) = UPPER(?)) " +
-                "AND PASS = ?";
+                "AND PASS = ? AND ACTIVO = 'S'";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {

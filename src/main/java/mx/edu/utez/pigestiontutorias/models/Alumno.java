@@ -12,6 +12,7 @@ public class Alumno {
     private Integer idCuatrimestre;
     private Integer idLetraGrupo;
     private Integer idUsuario;
+    private String activo;
 
     public Alumno() {
     }
@@ -63,6 +64,9 @@ public class Alumno {
 
     public Integer getIdUsuario() { return idUsuario; }
     public void setIdUsuario(Integer idUsuario) { this.idUsuario = idUsuario; }
+
+    public String getActivo() { return activo; }
+    public void setActivo(String activo) { this.activo = activo; }
 
     @Override
     public String toString() {

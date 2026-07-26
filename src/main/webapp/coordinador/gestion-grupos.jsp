@@ -109,6 +109,13 @@
             </div>
         </div>
 
+        <div class="row g-3 mb-3">
+            <div class="col-md-6 d-flex align-items-center gap-2">
+                <input type="checkbox" id="mostrarInactivos" class="form-check-input">
+                <label class="form-check-label fs-6" for="mostrarInactivos">Mostrar alumnos dados de baja</label>
+            </div>
+        </div>
+
         <div class="table-responsive mb-auto">
             <% if (listaAlumnos.isEmpty()) { %>
             <div class="alert alert-info text-center">
@@ -137,25 +144,35 @@
                 </tr>
                 </thead>
                 <tbody id="tablaAlumnos">
-                <% for (Alumno alumno : listaAlumnos) { %>
-                <tr data-nombre="<%= alumno.getNombres().toLowerCase() %> <%= alumno.getApellidos().toLowerCase() %>"
+                <% for (Alumno alumno : listaAlumnos) {
+                    boolean alumnoActivo = !"N".equals(alumno.getActivo());
+                %>
+                <tr class="<%= alumnoActivo ? "" : "fila-inactiva" %>"
+                    data-nombre="<%= alumno.getNombres().toLowerCase() %> <%= alumno.getApellidos().toLowerCase() %>"
                     data-carrera="<%= nombresCarrera.get(alumno.getIdCarrera()) %>"
                     data-cuatri="<%= numerosCuatrimestre.get(alumno.getIdCuatrimestre()) %>"
-                    data-grupo="<%= nombresLetra.get(alumno.getIdLetraGrupo()) %>">
+                    data-grupo="<%= nombresLetra.get(alumno.getIdLetraGrupo()) %>"
+                    data-activo="<%= alumnoActivo ? "S" : "N" %>">
                     <td><%= alumno.getMatricula() %></td>
-                    <td><%= alumno.getNombres() %> <%= alumno.getApellidos() %></td>
+                    <td><%= alumno.getNombres() %> <%= alumno.getApellidos() %><% if (!alumnoActivo) { %> <span class="badge-inactivo">(Baja)</span><% } %></td>
                     <td><%= alumno.getCorreoInstitucional() %></td>
                     <td><%= nombresGenero.get(alumno.getIdGenero()) %></td>
                     <td><%= nombresCarrera.get(alumno.getIdCarrera()) %></td>
                     <td><%= numerosCuatrimestre.get(alumno.getIdCuatrimestre()) %>&deg; <%= nombresLetra.get(alumno.getIdLetraGrupo()) %></td>
                     <td>
                         <div class="d-flex justify-content-center gap-2">
+                            <% if (alumnoActivo) { %>
                             <a href="<%= request.getContextPath() %>/AlumnoServlet?accion=prepararEdicion&matricula=<%= alumno.getMatricula() %>" class="btn-accion btn-editar">
                                 <img src="<%= request.getContextPath() %>/assets/img/coordinador/editar.png" width="16" alt="Editar">
                             </a>
                             <button type="button" class="btn-accion btn-eliminar" onclick="prepararEliminacion('<%= alumno.getMatricula() %>')">
                                 <img src="<%= request.getContextPath() %>/assets/img/coordinador/eliminar.png" width="16" alt="Eliminar">
                             </button>
+                            <% } else { %>
+                            <button type="button" class="btn-accion btn-reactivar" onclick="prepararReactivacion('<%= alumno.getMatricula() %>')">
+                                <img src="<%= request.getContextPath() %>/assets/img/coordinador/reactivar.png" width="16" alt="Reactivar">
+                            </button>
+                            <% } %>
                         </div>
                     </td>
                 </tr>
@@ -175,6 +192,11 @@
 <form id="formEliminarAlumno" action="<%= request.getContextPath() %>/AlumnoServlet" method="POST" style="display:none;">
     <input type="hidden" name="accion" value="eliminar">
     <input type="hidden" name="matricula" id="inputEliminarMatricula">
+</form>
+
+<form id="formReactivarAlumno" action="<%= request.getContextPath() %>/AlumnoServlet" method="POST" style="display:none;">
+    <input type="hidden" name="accion" value="reactivar">
+    <input type="hidden" name="matricula" id="inputReactivarMatricula">
 </form>
 
 <jsp:include page="../includes/alertas.jsp" />

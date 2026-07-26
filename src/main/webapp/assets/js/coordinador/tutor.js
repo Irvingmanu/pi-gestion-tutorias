@@ -26,7 +26,7 @@ function prepararEliminacion(nomina) {
         mostrarConfirmacion(
             'critica',
             '¿Eliminar tutor?',
-            'Esta acción es irreversible y perderás todos los datos del tutor.',
+            'El tutor se dará de baja y no podrá acceder al sistema, pero se conservará su historial.',
             'Eliminar',
             function () {
                 ejecutarSubmitEliminar(nomina);
@@ -48,6 +48,30 @@ function ejecutarSubmitEliminar(nomina) {
         formEliminar.submit();
     } else {
         console.error('No se encontró el formulario oculto formEliminarTutor o inputEliminarNomina');
+    }
+}
+
+function prepararReactivacion(nomina) {
+    mostrarConfirmacion(
+        'advertencia',
+        '¿Reactivar tutor?',
+        'El tutor volverá a aparecer en los listados y podrá acceder al sistema nuevamente.',
+        'Reactivar',
+        function () {
+            ejecutarSubmitReactivar(nomina);
+        }
+    );
+}
+
+function ejecutarSubmitReactivar(nomina) {
+    const inputNomina = document.getElementById('inputReactivarNomina');
+    const formReactivar = document.getElementById('formReactivarTutor');
+
+    if (inputNomina && formReactivar) {
+        inputNomina.value = nomina;
+        formReactivar.submit();
+    } else {
+        console.error('No se encontró el formulario oculto formReactivarTutor o inputReactivarNomina');
     }
 }
 /**
@@ -120,6 +144,9 @@ function filtrarTutores() {
     if (!inputBuscar || !tabla) return;
 
     let textoBuscar = inputBuscar.value.trim().toLowerCase();
+    let mostrarInactivos = document.getElementById('mostrarInactivos');
+    let incluirInactivos = mostrarInactivos ? mostrarInactivos.checked : false;
+
     let filas = document.querySelectorAll('#tablaTutores tr');
     let filasVisibles = 0;
 
@@ -127,8 +154,12 @@ function filtrarTutores() {
         if (fila.id === 'filaSinResultados') return;
 
         let nombre = fila.dataset.nombre || '';
-        let coincide = nombre.includes(textoBuscar);
+        let activo = fila.dataset.activo !== 'N';
 
+        let coincideNombre = nombre.includes(textoBuscar);
+        let coincideActivo = activo || incluirInactivos;
+
+        let coincide = coincideNombre && coincideActivo;
         fila.style.display = coincide ? '' : 'none';
         if (coincide) filasVisibles++;
     });
@@ -142,7 +173,48 @@ function filtrarTutores() {
 document.addEventListener('DOMContentLoaded', function () {
     let buscarTutor = document.getElementById('buscarTutor');
     let btnAgregar = document.getElementById('btnAgregarHorario');
+    let mostrarInactivos = document.getElementById('mostrarInactivos');
 
     if (buscarTutor) buscarTutor.addEventListener('input', filtrarTutores);
     if (btnAgregar) btnAgregar.addEventListener('click', agregarHorario);
+    if (mostrarInactivos) mostrarInactivos.addEventListener('change', filtrarTutores);
+
+    filtrarTutores();
+});
+
+// Toasts/alertas de exito y error via parametros en la URL (?exito=, ?error=)
+document.addEventListener('DOMContentLoaded', function () {
+    const parametros = new URLSearchParams(window.location.search);
+    const exito = parametros.get('exito');
+
+    if (exito) {
+        switch (exito) {
+            case 'eliminado':
+                mostrarToast('exito', '¡Éxito!', 'El tutor fue eliminado correctamente');
+                break;
+            case 'reactivado':
+                mostrarToast('exito', '¡Éxito!', 'El tutor fue reactivado correctamente');
+                break;
+        }
+
+        window.history.replaceState(null, null, window.location.pathname);
+    }
+
+    const error = parametros.get('error');
+
+    if (error) {
+        switch (error) {
+            case 'tutor_en_uso':
+                mostrarAlerta('error', 'No se puede eliminar', 'Este tutor ya tiene asignaciones o sesiones vinculadas en el sistema.');
+                break;
+            case 'tutor_no_encontrado':
+                mostrarAlerta('error', 'Error', 'No se encontró el tutor indicado.');
+                break;
+            case 'reactivacion_fallida':
+                mostrarAlerta('error', 'Error', 'No se pudo reactivar al tutor.');
+                break;
+        }
+
+        window.history.replaceState(null, null, window.location.pathname);
+    }
 });
