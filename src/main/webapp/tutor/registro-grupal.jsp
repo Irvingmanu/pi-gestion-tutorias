@@ -24,7 +24,6 @@
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
-    <!-- ==================== BARRA LATERAL (Tutor) ==================== -->
     <aside class="sidebar-grupos">
         <div class="sidebar-logo">
             <img src="<%= request.getContextPath() %>/assets/img/tutor/logoUtez.png" alt="UTEZ">
@@ -66,7 +65,6 @@
 
                 <input type="hidden" name="accion" value="registrarGrupal">
 
-                <!-- Fila 1: Grupo / Fecha -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <label for="grupo" class="form-label fs-6 fw-bold">Grupo</label>
@@ -83,7 +81,6 @@
                     </div>
                 </div>
 
-                <!-- Fila 2: Carrera / Cuatrimestre -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <label for="carrera" class="form-label fs-6 fw-bold">Carrera</label>
@@ -105,7 +102,6 @@
                     </div>
                 </div>
 
-                <!-- Fila 3: Acuerdos / Asesorias grupales -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <label for="acuerdos" class="form-label fs-6 fw-bold">Acuerdos</label>
@@ -119,7 +115,6 @@
                     </div>
                 </div>
 
-                <!-- Fila 4: Temas Tratados / Tomar asistencia -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <label for="temasTratados" class="form-label fs-6 fw-bold">Temas Tratados</label>

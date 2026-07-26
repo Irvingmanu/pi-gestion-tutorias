@@ -47,10 +47,10 @@
 }
 
 .alerta-card {
-    background-color: var(--alerta-bg);
-    border: none;
-    border-radius: var(--alerta-radius);
-    box-shadow: var(--alerta-shadow);
+    background-color: var(--alerta-bg) !important;
+    border: none !important;
+    border-radius: var(--alerta-radius) !important;
+    box-shadow: var(--alerta-shadow) !important;
     overflow: hidden;
 }
 

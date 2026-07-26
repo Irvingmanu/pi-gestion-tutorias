@@ -346,4 +346,46 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         alumno.setIdUsuario(rs.getInt("ID_USUARIO"));
         return alumno;
     }
+
+    public List<EventoAgenda> getAgendaAlumno(String matricula, int idLetraGrupo) {
+        List<EventoAgenda> listaEventos = new ArrayList<>();
+
+        String query =
+                "SELECT 'Individual' AS TIPO, " +
+                        "       t.NOMBRES || ' ' || t.APELLIDOS AS DESCRIPCION, " +
+                        "       si.FECHA AS FECHA " +
+                        "FROM SESION_INDIVIDUAL si " +
+                        "JOIN TUTOR t ON si.ID_TUTOR = t.ID_TUTOR " +
+                        "WHERE TRIM(si.MATRICULA) = TRIM(?) " +
+                        "UNION ALL " +
+                        "SELECT 'Grupal' AS TIPO, " +
+                        "       'Grupo ' || c.NUMERO || '°' || lg.LETRA AS DESCRIPCION, " +
+                        "       sg.FECHA AS FECHA " +
+                        "FROM SESION_GRUPAL sg " +
+                        "JOIN LETRA_GRUPO lg ON sg.ID_LETRA_GRUPO = lg.ID_LETRA " +
+                        "JOIN CUATRIMESTRE c ON sg.ID_CUATRIMESTRE = c.ID_CUATRIMESTRE " +
+                        "WHERE sg.ID_LETRA_GRUPO = ? " +
+                        "ORDER BY FECHA ASC";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(query)) {
+
+            ps.setString(1, matricula != null ? matricula.trim() : "");
+            ps.setInt(2, idLetraGrupo);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    java.sql.Timestamp fecha = rs.getTimestamp("FECHA");
+                    listaEventos.add(new EventoAgenda(
+                            rs.getString("TIPO"),
+                            rs.getString("DESCRIPCION"),
+                            fecha
+                    ));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return listaEventos;
+    }
 }

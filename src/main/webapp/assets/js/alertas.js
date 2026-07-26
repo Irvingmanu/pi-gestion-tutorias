@@ -138,3 +138,36 @@ function mostrarToast(tipo, titulo, mensaje) {
     const toast = new bootstrap.Toast(toastElement, { delay: 4000 });
     toast.show();
 }
+document.addEventListener('DOMContentLoaded', function () {
+    const parametros = new URLSearchParams(window.location.search);
+    const exito = parametros.get('exito');
+
+    if (exito === 'asistencia_guardada') {
+        mostrarAlerta('exito', 'Éxito', 'Se registró exitosamente');
+        document.getElementById('alertaBtnAceptar').innerText = 'OK';
+        window.history.replaceState(null, null, window.location.pathname);
+    }
+
+    const formularioGuardar = document.getElementById('formGuardar');
+
+    if (formularioGuardar) {
+        formularioGuardar.addEventListener('submit', function (e) {
+            if (this.dataset.confirmado === 'true') {
+                return;
+            }
+
+            e.preventDefault();
+
+            mostrarConfirmacion(
+                'advertencia',
+                '¿Deseas guardar?',
+                'Estás a punto de registrar los datos ingresados en el sistema.',
+                'Sí, guardar',
+                () => {
+                    formularioGuardar.dataset.confirmado = 'true';
+                    formularioGuardar.submit();
+                }
+            );
+        });
+    }
+});

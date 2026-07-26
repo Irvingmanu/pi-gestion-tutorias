@@ -42,20 +42,21 @@ public class SQLConnector {
                 System.err.println("Advertencia: Faltan variables de entorno de la BD. Buscando en credentials.properties...");
                 Properties creds = new Properties();
 
-                try (InputStream is = classLoader.getResourceAsStream("credentials.properties")) {
+                try (InputStream is = classLoader.getResourceAsStream("wallet/db.properties")) {
                     if (is == null) {
-                        throw new RuntimeException("No se encontró el archivo credentials.properties ni las variables de entorno de la base de datos.");
+                        throw new RuntimeException("No se encontró el archivo db.properties ni las variables de entorno de la base de datos.");
                     }
 
                     byte[] fileBytes = is.readAllBytes();
 
                     java.nio.charset.Charset detectedCharset = detectCharset(fileBytes);
-                    System.out.println("Codificación detectada para credentials.properties: " + detectedCharset.name());
+                    System.out.println("Codificación detectada para db.properties: " + detectedCharset.name());
 
                     try (java.io.ByteArrayInputStream bais = new java.io.ByteArrayInputStream(fileBytes);
                          java.io.InputStreamReader reader = new java.io.InputStreamReader(bais, detectedCharset)) {
                         creds.load(reader);
                     }
+
 
                     // Si ya se habían leído del entorno, conservamos ese valor; si no, del archivo
                     if (dbUser == null) dbUser = creds.getProperty("db.user");
@@ -89,7 +90,7 @@ public class SQLConnector {
 
         } catch (Exception e) {
             System.err.println("Error crítico al inicializar la base de datos");
-            e.printStackTrace();
+            e.printStackTrace(); // Esto mostrará el error exacto que causó que HikariCP fallara
             throw new ExceptionInInitializerError(e);
         }
     }
