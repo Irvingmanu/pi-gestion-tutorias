@@ -8,9 +8,11 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import mx.edu.utez.pigestiontutorias.models.Canalizacion;
 import mx.edu.utez.pigestiontutorias.models.SesionIndividual;
+import mx.edu.utez.pigestiontutorias.models.SesionGrupal; // <-- NUEVO MODELO
 import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.models.dao.CanalizacionDao;
 import mx.edu.utez.pigestiontutorias.models.dao.SesionIndividualDao;
+import mx.edu.utez.pigestiontutorias.models.dao.SesionGrupalDAO; // <-- NUEVO DAO
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
 
 import java.io.IOException;
@@ -22,6 +24,7 @@ public class TutoriaServlet extends HttpServlet {
     private final TutorDao tutorDao = new TutorDao();
     private final SesionIndividualDao sesionIndividualDao = new SesionIndividualDao();
     private final CanalizacionDao canalizacionDao = new CanalizacionDao();
+    private final SesionGrupalDAO sesionGrupalDao = new SesionGrupalDAO();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -45,6 +48,8 @@ public class TutoriaServlet extends HttpServlet {
 
         if ("registrarIndividual".equals(accion)) {
             registrarIndividual(request, response, session);
+        } else if ("registrarGrupal".equals(accion) || "registrarYAsistencia".equals(accion)) {
+            registrarGrupal(request, response, accion);
         } else {
             response.sendRedirect(request.getContextPath() + "/tutor/registro-individual.jsp");
         }
@@ -63,7 +68,6 @@ public class TutoriaServlet extends HttpServlet {
         }
 
         int idTutor = tutor.getIdTutor();
-
         String matricula = request.getParameter("matricula");
         String fechaStr = request.getParameter("fecha");
         String temasTratados = request.getParameter("temasTratados");
@@ -82,7 +86,6 @@ public class TutoriaServlet extends HttpServlet {
 
         Integer idCanalizacion = null;
 
-        // Si el tutor eligió canalizar a alguna área, primero se registra la canalización
         if (idAreaStr != null && !idAreaStr.isBlank()) {
             Canalizacion c = new Canalizacion();
             c.setIdArea(Integer.parseInt(idAreaStr));
@@ -113,5 +116,41 @@ public class TutoriaServlet extends HttpServlet {
         }
 
         request.getRequestDispatcher("/tutor/registro-individual.jsp").forward(request, response);
+    }
+
+
+    private void registrarGrupal(HttpServletRequest request, HttpServletResponse response, String accion)
+            throws ServletException, IOException {
+
+        try {
+            int idLetraGrupo = Integer.parseInt(request.getParameter("idLetraGrupo"));
+            int idCarrera = Integer.parseInt(request.getParameter("idCarrera"));
+            int idCuatrimestre = Integer.parseInt(request.getParameter("idCuatrimestre"));
+            Date fecha = Date.valueOf(request.getParameter("fecha"));
+            String acuerdos = request.getParameter("acuerdos");
+            String asesoriasGrupales = request.getParameter("asesoriasGrupales");
+            String temasTratados = request.getParameter("temasTratados");
+
+            SesionGrupal sesionGrupal = new SesionGrupal(idLetraGrupo, idCarrera, idCuatrimestre, fecha, acuerdos, asesoriasGrupales, temasTratados);
+
+            int idSesionGenerado = sesionGrupalDao.registrarSesion(sesionGrupal);
+
+            if (idSesionGenerado > 0) {
+                if ("registrarYAsistencia".equals(accion)) {
+                    response.sendRedirect(request.getContextPath() + "/tutor/asistencia-grupal.jsp?idSesion=" + idSesionGenerado);
+                    return;
+                } else {
+                    request.setAttribute("exito", true);
+                }
+            } else {
+                request.setAttribute("error", "Ocurrió un error al guardar la tutoría grupal. Intenta de nuevo.");
+            }
+
+        } catch (Exception e) {
+            request.setAttribute("error", "Error en los datos enviados: Verifique los campos.");
+            e.printStackTrace();
+        }
+
+        request.getRequestDispatcher("/tutor/registro-grupal.jsp").forward(request, response);
     }
 }

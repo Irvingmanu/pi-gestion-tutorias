@@ -17,8 +17,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Registro de Tutoría Grupal</title>
     <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/glqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqobal.css" rel="stylesheet">
     <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/alertas.css" rel="stylesheet">
 </head>
 <body>
 
@@ -123,12 +124,12 @@
                     </div>
                     <div class="col-md-6">
                         <label class="form-label fs-6 fw-bold d-block">Tomar asistencia</label>
-                        <a href="<%= request.getContextPath() %>/tutor/asistencia-grupal.jsp" class="btn-figma fw-medium fs-5 px-4 py-2 w-100">IR</a>
+                        <a href="<%= request.getContextPath() %>/tutor/asistencia-grupal.jsp" class="btn-figma text-center text-decoration-none fw-medium fs-5 px-4 py-2 w-100 d-inline-block">IR</a>
                     </div>
                 </div>
 
                 <div class="d-flex justify-content-end mt-4">
-                    <button type="submit" class="btn-figma fw-medium fs-5 px-4 py-2">Guardar</button>
+                    <button type="submit" name="accion" value="registrarGrupal" class="btn-figma fw-medium fs-5 px-4 py-2">Guardar</button>
                 </div>
 
             </form>
@@ -139,5 +140,6 @@
 </div>
 
 <script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
+<script src="<%= request.getContextPath() %>/assets/js/alertas.js"></script>
 </body>
 </html>
