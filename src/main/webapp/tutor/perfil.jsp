@@ -34,7 +34,7 @@
             <img src="<%= request.getContextPath() %>/assets/img/tutor/solicitudes.png" alt="Solicitudes">
             <span>Solicitudes</span>
         </a>
-        <a href="<%= request.getContextPath() %>/tutor/reportes.jsp" class="nav-item-grupos">
+        <a href="<%= request.getContextPath() %>/ReportesServlet" class="nav-item-grupos">
             <img src="<%= request.getContextPath() %>/assets/img/tutor/reportes.png" alt="Reportes">
             <span>Reportes</span>
         </a>
