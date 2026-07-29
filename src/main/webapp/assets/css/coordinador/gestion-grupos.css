@@ -127,3 +127,16 @@
 .btn-eliminar {
     background-color: #D15B5B;
 }
+.btn-reactivar {
+    background-color: #4CAF50;
+}
+
+/* Fila de un registro dado de baja (ACTIVO = 'N') */
+.fila-inactiva {
+    opacity: 0.6;
+}
+.badge-inactivo {
+    font-size: 0.75em;
+    font-weight: 500;
+    color: #D15B5B;
+}

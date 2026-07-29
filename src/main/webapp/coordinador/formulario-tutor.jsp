@@ -25,6 +25,8 @@
         mensajeError = "Este número de teléfono ya está registrado en el sistema.";
     } else if ("formato_invalido".equals(codigoError)) {
         mensajeError = "Verifica los datos. El formato de uno o más campos es incorrecto.";
+    } else if ("registro_fallido".equals(codigoError)) {
+        mensajeError = "No se pudo guardar el tutor. Intenta de nuevo.";
     }
 %>
 <!DOCTYPE html>
@@ -44,7 +46,7 @@
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
     <!-- ==================== BARRA LATERAL ==================== -->
-    <jsp:include page="../includes/navbar.jsp" />
+    <jsp:include page="../includes/navbar-coordinador.jsp" />
 
     <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">

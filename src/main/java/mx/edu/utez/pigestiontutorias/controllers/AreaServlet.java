@@ -1,15 +1,14 @@
 package mx.edu.utez.pigestiontutorias.controllers;
 
-import mx.edu.utez.pigestiontutorias.models.Area;
-import mx.edu.utez.pigestiontutorias.models.Motivo;
-import mx.edu.utez.pigestiontutorias.models.dao.AreaDAO;
-import mx.edu.utez.pigestiontutorias.models.dao.MotivoDAO;
-
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import mx.edu.utez.pigestiontutorias.models.Area;
+import mx.edu.utez.pigestiontutorias.models.Motivo;
+import mx.edu.utez.pigestiontutorias.models.dao.AreaDAO;
+import mx.edu.utez.pigestiontutorias.models.dao.MotivoDAO;
 
 import java.io.IOException;
 

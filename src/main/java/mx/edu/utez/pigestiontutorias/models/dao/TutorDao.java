@@ -4,7 +4,10 @@ import mx.edu.utez.pigestiontutorias.models.Academia;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -495,6 +498,37 @@ public class TutorDao {
 
         } catch (Exception e) {
             System.err.println("Error al obtener el tutor por idUsuario: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    // Perfil del tutor para la sesión: datos completos + Academia resuelta
+    // como objeto, para poder usarla directamente en EL (${tutor.academia.nombre}).
+    public Tutor getPerfilCompleto(int idUsuario) {
+        String sql = "SELECT * FROM ADMIN.TUTOR WHERE ID_USUARIO = ?";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, idUsuario);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    Tutor tutor = mapearTutor(rs);
+                    for (Academia a : getAllAcademias()) {
+                        if (a.getIdAcademia() == tutor.getIdAcademia()) {
+                            tutor.setAcademia(a);
+                            break;
+                        }
+                    }
+                    return tutor;
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al obtener el perfil del tutor: " + e.getMessage());
             e.printStackTrace();
         }
 

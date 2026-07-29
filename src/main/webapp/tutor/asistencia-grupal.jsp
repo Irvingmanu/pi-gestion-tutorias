@@ -39,6 +39,8 @@
     } catch (Exception e) {
         e.printStackTrace();
     }
+
+    request.setAttribute("paginaActiva", "grupal");
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -58,33 +60,7 @@
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
-    <!-- ==================== BARRA LATERAL (Tutor) ==================== -->
-    <aside class="sidebar-grupos">
-        <div class="sidebar-logo">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/logoUtez.png" alt="UTEZ">
-        </div>
-
-        <a href="<%= request.getContextPath() %>/tutor/registro-individual.jsp" class="nav-item-grupos">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/tutoriaIndividual.png" alt="Tutoría Individual">
-            <span>Tutoría Individual</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/tutor/asistencia-grupal" class="nav-item-grupos active">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/tutoriaGrupal.png" alt="Tutoría Grupal">
-            <span>Tutoría Grupal</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/tutor/solicitudes.jsp" class="nav-item-grupos">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/solicitudes.png" alt="Solicitudes">
-            <span>Solicitudes</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/ReportesServlet" class="nav-item-grupos">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/reportes.png" alt="Reportes">
-            <span>Reportes</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/tutor/perfil.jsp" class="nav-item-grupos mt-auto">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/perfil.png" alt="Perfil">
-            <span>Perfil</span>
-        </a>
-    </aside>
+    <jsp:include page="../includes/navbar-tutor.jsp" />
 
     <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">

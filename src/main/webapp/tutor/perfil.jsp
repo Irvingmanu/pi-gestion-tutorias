@@ -1,4 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var="paginaActiva" value="perfil" scope="request" />
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -16,33 +18,7 @@
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
-    <!-- ==================== BARRA LATERAL (Tutor) ==================== -->
-    <aside class="sidebar-grupos">
-        <div class="sidebar-logo">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/logoUtez.png" alt="UTEZ">
-        </div>
-
-        <a href="<%= request.getContextPath() %>/tutor/registro-individual.jsp" class="nav-item-grupos">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/tutoriaIndividual.png" alt="Tutoría Individual">
-            <span>Tutoría Individual</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/tutor/registro-grupal.jsp" class="nav-item-grupos">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/tutoriaGrupal.png" alt="Tutoría Grupal">
-            <span>Tutoría Grupal</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/tutor/solicitudes.jsp" class="nav-item-grupos">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/solicitudes.png" alt="Solicitudes">
-            <span>Solicitudes</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/ReportesServlet" class="nav-item-grupos">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/reportes.png" alt="Reportes">
-            <span>Reportes</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/tutor/perfil.jsp" class="nav-item-grupos mt-auto active">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/perfil.png" alt="Perfil">
-            <span>Perfil</span>
-        </a>
-    </aside>
+    <jsp:include page="../includes/navbar-tutor.jsp" />
 
     <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">
@@ -53,34 +29,30 @@
             Perfil Tutor
         </div>
 
-        <div class="bg-white rounded shadow-sm border p-4">
+        <div class="bg-white p-4 rounded-figma shadow-sm border">
 
-            <div class="d-flex align-items-center gap-4 mb-4">
-                <div class="bg-light rounded-circle d-flex justify-content-center align-items-center" style="width: 80px; height: 80px;">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="rounded-circle bg-light d-flex justify-content-center align-items-center" style="width: 60px; height: 60px;">
                     <i class="bi bi-person fs-1"></i>
                 </div>
-                <h4 class="mb-0">${tutor.nombres} ${tutor.apellidos}</h4>
+                <h4 class="fs-4 mb-0">${tutor.nombres} ${tutor.apellidos}</h4>
             </div>
 
-            <div class="mb-4">
-                <p class="fw-bold mb-3">Información Personal</p>
-                <ul class="list-unstyled fs-6">
-                    <li class="mb-2">Nombre: ${tutor.apellidos} ${tutor.nombres}</li>
-                    <li class="mb-2">Nómina: ${tutor.nomina}</li>
-                    <li class="mb-2">Email: ${tutor.correoInstitucional}</li>
-                    <li class="mb-2">Teléfono: ${tutor.telefono}</li>
-                </ul>
-            </div>
+            <p class="fw-bold fs-5 mt-4 mb-3">Información Personal</p>
+            <ul class="ms-3">
+                <li class="mb-2"><strong>Nombre:</strong> ${tutor.nombres} ${tutor.apellidos}</li>
+                <li class="mb-2"><strong>Nómina:</strong> ${tutor.nomina}</li>
+                <li class="mb-2"><strong>Email:</strong> ${tutor.correoInstitucional}</li>
+                <li class="mb-2"><strong>Teléfono:</strong> ${tutor.telefono}</li>
+            </ul>
 
-            <div class="mb-4 mt-4">
-                <p class="fw-bold mb-3">Información Académica</p>
-                <ul class="list-unstyled fs-6">
-                    <li class="mb-2">Rol: Tutor Académico</li>
-                    <li class="mb-2">División: ${tutor.divisionAcademica}</li>
-                </ul>
-            </div>
+            <p class="fw-bold fs-5 mt-4 mb-3">Información Académica</p>
+            <ul class="ms-3">
+                <li class="mb-2"><strong>Rol:</strong> Tutor Académico</li>
+                <li class="mb-2"><strong>División:</strong> ${tutor.academia.nombre}</li>
+            </ul>
 
-            <div class="d-flex justify-content-end">
+            <div class="d-flex justify-content-end mt-4">
                 <button type="button" class="btn btn-cancelar-figma rounded-figma px-4" id="btnCerrarSesion">
                     Cerrar sesión
                 </button>

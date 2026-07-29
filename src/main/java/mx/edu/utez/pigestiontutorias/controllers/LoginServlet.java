@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import mx.edu.utez.pigestiontutorias.models.Usuario;
+import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
+import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
 import mx.edu.utez.pigestiontutorias.models.dao.UsuarioDao;
 
 import java.io.IOException;
@@ -16,6 +18,8 @@ import java.util.Map;
 public class LoginServlet extends HttpServlet {
 
     private final UsuarioDao usuarioDao = new UsuarioDao();
+    private final AlumnoDAO alumnoDAO = new AlumnoDAO();
+    private final TutorDao tutorDao = new TutorDao();
 
     private static final Map<String, String> ROLES = Map.of(
             "coordinador", "Coordinador",
@@ -63,6 +67,14 @@ public class LoginServlet extends HttpServlet {
         session.setAttribute("usuario", usuario.getIdentificador());
         session.setAttribute("idUsuario", usuario.getIdUsuario());
         session.setAttribute("rol", usuario.getRol());
+
+        // Se deja el objeto completo del rol en sesión para que las vistas de
+        // perfil lo consuman directamente por EL, sin scriptlets ni servlet propio.
+        if ("alumno".equals(opcion)) {
+            session.setAttribute("alumno", alumnoDAO.getPerfilCompleto(usuario.getIdUsuario()));
+        } else if ("tutor".equals(opcion)) {
+            session.setAttribute("tutor", tutorDao.getPerfilCompleto(usuario.getIdUsuario()));
+        }
 
         response.sendRedirect(request.getContextPath() + "/" + DESTINOS.get(opcion));
     }

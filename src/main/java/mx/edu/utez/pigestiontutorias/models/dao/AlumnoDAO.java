@@ -222,6 +222,40 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return null;
     }
 
+    // Perfil del alumno para la sesión: además de sus datos, resuelve
+    // Carrera/Cuatrimestre/LetraGrupo como objetos para poder usarlos
+    // directamente en EL (ej. ${alumno.carrera.nombre}) sin scriptlets.
+    public Alumno getPerfilCompleto(int idUsuario) {
+        Alumno alumno = getByIdUsuario(idUsuario);
+        if (alumno == null) return null;
+
+        if (alumno.getIdCarrera() != null) {
+            for (Carrera c : getAllCarreras()) {
+                if (c.getIdCarrera() == alumno.getIdCarrera()) {
+                    alumno.setCarrera(c);
+                    break;
+                }
+            }
+        }
+        if (alumno.getIdCuatrimestre() != null) {
+            for (Cuatrimestre c : getAllCuatrimestres()) {
+                if (c.getIdCuatrimestre() == alumno.getIdCuatrimestre()) {
+                    alumno.setCuatrimestre(c);
+                    break;
+                }
+            }
+        }
+        if (alumno.getIdLetraGrupo() != null) {
+            for (LetraGrupo lg : getAllLetrasGrupo()) {
+                if (lg.getIdLetra() == alumno.getIdLetraGrupo()) {
+                    alumno.setLetraGrupo(lg);
+                    break;
+                }
+            }
+        }
+        return alumno;
+    }
+
     @Override
     public boolean update(Alumno entidad) {
         String sqlAlumno = "UPDATE ALUMNO SET NOMBRES = ?, APELLIDOS = ?, CORREO_INSTITUCIONAL = ?, TELEFONO = ?, ID_GENERO = ?, ID_CARRERA = ?, ID_CUATRIMESTRE = ?, ID_LETRA_GRUPO = ? WHERE MATRICULA = ?";

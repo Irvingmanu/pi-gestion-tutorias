@@ -201,6 +201,11 @@
     box-shadow: var(--confirmacion-shadow-advertencia);
 }
 
+.confirmacion-icono--exito {
+    background-color: var(--alerta-color-exito);
+    box-shadow: 0px 10px 15px -3px var(--alerta-color-exito-borde), 0px 4px 6px -4px var(--alerta-color-exito-borde);
+}
+
 .confirmacion-titulo {
     margin: 0 0 12px;
     font-weight: 700;

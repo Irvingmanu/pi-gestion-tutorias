@@ -2,6 +2,7 @@ package mx.edu.utez.pigestiontutorias.models.dao;
 
 import mx.edu.utez.pigestiontutorias.models.Alumno;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -46,7 +47,7 @@ public class AsistenciaGrupalDao {
 
     public boolean registrarAsistenciaGrupal(String grupo, String carrera, String cuatrimestre, String fecha, String[] idsAlumnos, int idTutor) {
         String sqlBuscarSesion = "SELECT ID_SESION_GRUPAL FROM SESION_GRUPAL WHERE TRUNC(FECHA) = TO_DATE(?, 'YYYY-MM-DD') AND ID_LETRA_GRUPO = ? AND ID_CUATRIMESTRE = ?";
-        String sqlCrearSesion = "INSERT INTO SESION_GRUPAL (FECHA, ID_LETRA_GRUPO, ID_CUATRIMESTRE, ID_TUTOR, ESTADO, TEMAS_TRATADOS, ACUERDOS) VALUES (TO_DATE(?, 'YYYY-MM-DD'), ?, ?, ?, 1, 'N/A', 'N/A')";
+        String sqlCrearSesion = "INSERT INTO SESION_GRUPAL (FECHA, ID_LETRA_GRUPO, ID_CUATRIMESTRE, ID_TUTOR, ESTADO, TEMAS_TRATADOS, ACUERDOS) VALUES (TO_DATE(?, 'YYYY-MM-DD'), ?, ?, ?, 'Tomada', 'N/A', 'N/A')";
         String deleteSql = "DELETE FROM ASISTENCIA WHERE ID_SESION_GRUPAL = ?";
         String insertSql = "INSERT INTO ASISTENCIA (ID_SESION_GRUPAL, MATRICULA, ESTATUS_ASISTENCIA) VALUES (?, ?, ?)";
 

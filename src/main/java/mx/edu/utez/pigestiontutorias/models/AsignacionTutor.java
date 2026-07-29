@@ -7,6 +7,13 @@ public class AsignacionTutor {
     private int idCuatrimestre;
     private int activo;
 
+    // Campos extra que NO existen en la tabla, solo para mostrar datos
+    // del tutor/grupo/cuatrimestre en la lista de asignaciones (se llenan con un JOIN)
+    private String nombresTutor;
+    private String apellidosTutor;
+    private String letraGrupo;
+    private int numeroCuatrimestre;
+
     public AsignacionTutor() {}
 
     public AsignacionTutor(int idTutor, int idLetraGrupo, int idCuatrimestre) {
@@ -30,4 +37,16 @@ public class AsignacionTutor {
 
     public int getActivo() { return activo; }
     public void setActivo(int activo) { this.activo = activo; }
+
+    public String getNombresTutor() { return nombresTutor; }
+    public void setNombresTutor(String nombresTutor) { this.nombresTutor = nombresTutor; }
+
+    public String getApellidosTutor() { return apellidosTutor; }
+    public void setApellidosTutor(String apellidosTutor) { this.apellidosTutor = apellidosTutor; }
+
+    public String getLetraGrupo() { return letraGrupo; }
+    public void setLetraGrupo(String letraGrupo) { this.letraGrupo = letraGrupo; }
+
+    public int getNumeroCuatrimestre() { return numeroCuatrimestre; }
+    public void setNumeroCuatrimestre(int numeroCuatrimestre) { this.numeroCuatrimestre = numeroCuatrimestre; }
 }

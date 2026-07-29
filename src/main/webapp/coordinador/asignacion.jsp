@@ -10,14 +10,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Asignación de Tutores</title>
     <link href="${pageContext.request.contextPath}/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="${pageContext.request.contextPath}/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/coordinador/asignacion.css" rel="stylesheet">
 </head>
 <body>
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
-    <jsp:include page="../includes/navbar.jsp" />
+    <jsp:include page="../includes/navbar-coordinador.jsp" />
 
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">
 
@@ -31,7 +33,7 @@
 
             <div class="mb-4">
                 <label class="campo-label fs-6" for="tutor">Tutor</label>
-                <select id="tutor" name="id_tutor" class="form-select campo-select" required>
+                <select id="tutor" name="id_tutor" class="form-select form-control-figma w-100 fs-6" required>
                     <option value="" selected disabled>Seleccione el tutor</option>
                     <c:forEach var="tutor" items="${listaTutores}">
                         <option value="${tutor.idTutor}">${tutor.nombres} ${tutor.apellidos}</option>
@@ -41,7 +43,7 @@
 
             <div class="mb-4">
                 <label class="campo-label fs-6" for="carrera">Carrera</label>
-                <select id="carrera" name="id_carrera" class="form-select campo-select" required>
+                <select id="carrera" name="id_carrera" class="form-select form-control-figma w-100 fs-6" required>
                     <option value="" selected disabled>Seleccione la carrera</option>
                     <c:forEach var="carrera" items="${carreras}">
                         <option value="${carrera.idCarrera}">${carrera.nombre}</option>
@@ -51,7 +53,7 @@
 
             <div class="mb-4">
                 <label class="campo-label fs-6" for="cuatrimestre">Cuatrimestre</label>
-                <select id="cuatrimestre" name="id_cuatrimestre" class="form-select campo-select" required>
+                <select id="cuatrimestre" name="id_cuatrimestre" class="form-select form-control-figma w-100 fs-6" required>
                     <option value="" selected disabled>Seleccione el cuatrimestre</option>
                     <c:forEach var="cuatrimestre" items="${listaCuatrimestres}">
                         <option value="${cuatrimestre.idCuatrimestre}">${cuatrimestre.numero}°</option>
@@ -61,7 +63,7 @@
 
             <div class="mb-4">
                 <label class="campo-label fs-6" for="grupo">Grupo</label>
-                <select id="grupo" name="id_letra_grupo" class="form-select campo-select" required>
+                <select id="grupo" name="id_letra_grupo" class="form-select form-control-figma w-100 fs-6" required>
                     <option value="" selected disabled>Seleccione el Grupo</option>
                     <c:forEach var="letraGrupo" items="${listaLetras}">
                         <option value="${letraGrupo.idLetra}">${letraGrupo.letra}</option>
@@ -75,9 +77,54 @@
 
         </form>
 
+        <div class="banner-grupos h5 mb-3 mt-5">
+            Asignaciones Actuales
+        </div>
+
+        <div class="table-responsive mb-auto">
+            <c:if test="${empty listaAsignaciones}">
+                <div class="alert alert-info text-center">
+                    No hay asignaciones registradas todavía.
+                </div>
+            </c:if>
+            <c:if test="${not empty listaAsignaciones}">
+                <table class="tabla-grupos fs-6">
+                    <thead>
+                    <tr>
+                        <th>Tutor</th>
+                        <th>Cuatrimestre</th>
+                        <th>Grupo</th>
+                        <th>Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <c:forEach var="asignacion" items="${listaAsignaciones}">
+                        <tr>
+                            <td>${asignacion.nombresTutor} ${asignacion.apellidosTutor}</td>
+                            <td>${asignacion.numeroCuatrimestre}&deg;</td>
+                            <td>${asignacion.letraGrupo}</td>
+                            <td>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <button type="button" class="btn-accion btn-eliminar" onclick="prepararEliminacionAsignacion('${asignacion.idAsignacion}')">
+                                        <img src="${pageContext.request.contextPath}/assets/img/coordinador/eliminar.png" width="16" alt="Eliminar">
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                    </tbody>
+                </table>
+            </c:if>
+        </div>
+
     </div>
 
 </div>
+
+<form id="formEliminarAsignacion" action="${pageContext.request.contextPath}/asignacion" method="POST" style="display:none;">
+    <input type="hidden" name="accion" value="eliminar">
+    <input type="hidden" name="id_asignacion" id="inputEliminarAsignacion">
+</form>
 
 <!-- 1. PRIMERO cargamos el script base de Bootstrap para que inicialice objetos como Toast y Modal -->
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
@@ -85,13 +132,17 @@
 <!-- 2. DESPUÉS incluimos el HTML de los modales y toasts -->
 <jsp:include page="../includes/alertas.jsp" />
 
+<!-- 3. Script de alertas compartido: expone mostrarConfirmacion() para el borrado -->
+<script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+
 <!-- 3. SCRIPT DE CONTROL DE ALERTAS -->
 <script>
     document.addEventListener("DOMContentLoaded", function() {
         const urlParams = new URLSearchParams(window.location.search);
+        const exito = urlParams.get('exito');
         const error = urlParams.get('error');
 
-        if (urlParams.get('exito') === 'true' || error) {
+        if (exito === 'true' || exito === 'eliminado' || error) {
             const modalEl = document.getElementById('modalAlerta');
             const imgIcono = document.getElementById('alertaIcono');
             const circulo = document.getElementById('alertaIconoCirculo');
@@ -102,9 +153,22 @@
                     circulo.classList.remove('alerta-icono--exito', 'alerta-icono--error', 'alerta-icono--advertencia');
                 }
 
-                if (urlParams.get('exito') === 'true') {
+                if (exito === 'true') {
                     document.getElementById('alertaTitulo').innerText = "¡Asignación Exitosa!";
                     document.getElementById('alertaMensaje').innerText = "El tutor ha sido asignado correctamente al grupo.";
+                    if (imgIcono) {
+                        imgIcono.src = "${pageContext.request.contextPath}/assets/img/alertas/exito.png";
+                    }
+                    if (circulo) {
+                        circulo.classList.add('alerta-icono--exito');
+                    }
+                    if (btnAceptar) {
+                        btnAceptar.classList.remove('alerta-btn-error');
+                        btnAceptar.classList.add('alerta-btn-exito');
+                    }
+                } else if (exito === 'eliminado') {
+                    document.getElementById('alertaTitulo').innerText = "¡Asignación Eliminada!";
+                    document.getElementById('alertaMensaje').innerText = "El tutor ya no está asignado a ese grupo y cuatrimestre.";
                     if (imgIcono) {
                         imgIcono.src = "${pageContext.request.contextPath}/assets/img/alertas/exito.png";
                     }
@@ -158,6 +222,19 @@
             }
         }
     });
+
+    function prepararEliminacionAsignacion(idAsignacion) {
+        mostrarConfirmacion(
+            'critica',
+            '¿Eliminar asignación?',
+            'El tutor dejará de estar asignado a este grupo y cuatrimestre.',
+            'Eliminar',
+            function () {
+                document.getElementById('inputEliminarAsignacion').value = idAsignacion;
+                document.getElementById('formEliminarAsignacion').submit();
+            }
+        );
+    }
 </script>
 </body>
 </html>

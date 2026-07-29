@@ -48,7 +48,7 @@
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
     <!-- ==================== BARRA LATERAL ==================== -->
-    <jsp:include page="../includes/navbar.jsp" />
+    <jsp:include page="../includes/navbar-coordinador.jsp" />
 
     <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">

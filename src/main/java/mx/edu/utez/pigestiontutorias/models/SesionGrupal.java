@@ -5,38 +5,36 @@ import java.sql.Date;
 public class SesionGrupal {
     private int idSesionGrupal;
     private int idLetraGrupo;
-    private int idCarrera;
     private int idCuatrimestre;
+    private int idTutor;
     private Date fecha;
-    private String acuerdos;
-    private String asesoriasGrupales;
     private String temasTratados;
+    private String acuerdos;
+    private String estado;
 
     public SesionGrupal() {}
 
-    public SesionGrupal(int idLetraGrupo, int idCarrera, int idCuatrimestre, Date fecha, String acuerdos, String asesoriasGrupales, String temasTratados) {
-        this.idLetraGrupo = idLetraGrupo;
-        this.idCarrera = idCarrera;
-        this.idCuatrimestre = idCuatrimestre;
-        this.fecha = fecha;
-        this.acuerdos = acuerdos;
-        this.asesoriasGrupales = asesoriasGrupales;
-        this.temasTratados = temasTratados;
-    }
+    public int getIdSesionGrupal() { return idSesionGrupal; }
+    public void setIdSesionGrupal(int idSesionGrupal) { this.idSesionGrupal = idSesionGrupal; }
 
-    // Genera aquí todos los Getters y Setters correspondientes
     public int getIdLetraGrupo() { return idLetraGrupo; }
     public void setIdLetraGrupo(int idLetraGrupo) { this.idLetraGrupo = idLetraGrupo; }
-    public Date getFecha() { return fecha; }
-    public void setFecha(Date fecha) { this.fecha = fecha; }
-    public int getIdCarrera() { return idCarrera; }
-    public void setIdCarrera(int idCarrera) { this.idCarrera = idCarrera; }
+
     public int getIdCuatrimestre() { return idCuatrimestre; }
     public void setIdCuatrimestre(int idCuatrimestre) { this.idCuatrimestre = idCuatrimestre; }
-    public String getAcuerdos() { return acuerdos; }
-    public void setAcuerdos(String acuerdos) { this.acuerdos = acuerdos; }
-    public String getAsesoriasGrupales() { return asesoriasGrupales; }
-    public void setAsesoriasGrupales(String asesoriasGrupales) { this.asesoriasGrupales = asesoriasGrupales; }
+
+    public int getIdTutor() { return idTutor; }
+    public void setIdTutor(int idTutor) { this.idTutor = idTutor; }
+
+    public Date getFecha() { return fecha; }
+    public void setFecha(Date fecha) { this.fecha = fecha; }
+
     public String getTemasTratados() { return temasTratados; }
     public void setTemasTratados(String temasTratados) { this.temasTratados = temasTratados; }
+
+    public String getAcuerdos() { return acuerdos; }
+    public void setAcuerdos(String acuerdos) { this.acuerdos = acuerdos; }
+
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
 }

@@ -14,6 +14,10 @@ public class Alumno {
     private Integer idUsuario;
     private String activo;
 
+    private Carrera carrera;
+    private Cuatrimestre cuatrimestre;
+    private LetraGrupo letraGrupo;
+
     public Alumno() {
     }
 
@@ -67,6 +71,15 @@ public class Alumno {
 
     public String getActivo() { return activo; }
     public void setActivo(String activo) { this.activo = activo; }
+
+    public Carrera getCarrera() { return carrera; }
+    public void setCarrera(Carrera carrera) { this.carrera = carrera; }
+
+    public Cuatrimestre getCuatrimestre() { return cuatrimestre; }
+    public void setCuatrimestre(Cuatrimestre cuatrimestre) { this.cuatrimestre = cuatrimestre; }
+
+    public LetraGrupo getLetraGrupo() { return letraGrupo; }
+    public void setLetraGrupo(LetraGrupo letraGrupo) { this.letraGrupo = letraGrupo; }
 
     @Override
     public String toString() {

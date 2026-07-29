@@ -9,7 +9,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Reportes Globales</title>
     <link href="../assets/css/bootstrap.css" rel="stylesheet">
-    <link href="../assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
+    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
     <link href="../assets/css/coordinador/reportes.css" rel="stylesheet">
 </head>
 <body>
@@ -17,7 +18,7 @@
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
     <!-- ==================== BARRA LATERAL ==================== -->
-    <jsp:include page="../includes/navbar.jsp" />
+    <jsp:include page="../includes/navbar-coordinador.jsp" />
 
     <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">
@@ -32,7 +33,7 @@
         <div class="row g-3 mb-3">
             <div class="col-md-6">
                 <label class="campo-label fs-6" for="carrera">Carrera</label>
-                <select id="carrera" class="form-select campo-select">
+                <select id="carrera" class="form-select form-control-figma w-100 fs-6">
                     <option selected>Seleccione la carrera</option>
                     <option>Desarrollo de Software Multiplataforma</option>
                     <option>Mantenimiento Industrial</option>
@@ -41,7 +42,7 @@
             </div>
             <div class="col-md-6">
                 <label class="campo-label fs-6" for="cuatrimestre">Cuatrimestre</label>
-                <select id="cuatrimestre" class="form-select campo-select">
+                <select id="cuatrimestre" class="form-select form-control-figma w-100 fs-6">
                     <option selected>Seleccione el cuatrimestre</option>
                     <option>1°</option>
                     <option>2°</option>
@@ -54,7 +55,7 @@
         <div class="row g-3 mb-4 align-items-end">
             <div class="col-md-6">
                 <label class="campo-label fs-6" for="grupo">Grupo</label>
-                <select id="grupo" class="form-select campo-select">
+                <select id="grupo" class="form-select form-control-figma w-100 fs-6">
                     <option selected>Seleccione el Grupo</option>
                     <option>A</option>
                     <option>B</option>

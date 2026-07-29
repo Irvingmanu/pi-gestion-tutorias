@@ -5,18 +5,8 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
-import mx.edu.utez.pigestiontutorias.models.Carrera;
-import mx.edu.utez.pigestiontutorias.models.Tutor;
-import mx.edu.utez.pigestiontutorias.models.Cuatrimestre;
-import mx.edu.utez.pigestiontutorias.models.LetraGrupo;
-import mx.edu.utez.pigestiontutorias.models.AsignacionTutor;
-
-import mx.edu.utez.pigestiontutorias.models.dao.CarreraDao;
-import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
-import mx.edu.utez.pigestiontutorias.models.dao.CuatrimestreDao;
-import mx.edu.utez.pigestiontutorias.models.dao.LetraGrupoDao;
-import mx.edu.utez.pigestiontutorias.models.dao.AsignacionTutorDao;
+import mx.edu.utez.pigestiontutorias.models.*;
+import mx.edu.utez.pigestiontutorias.models.dao.*;
 
 import java.io.IOException;
 import java.util.List;
@@ -38,10 +28,14 @@ public class AsignacionServlet extends HttpServlet {
         LetraGrupoDao letraGrupoDao = new LetraGrupoDao();
         List<LetraGrupo> listaLetras = letraGrupoDao.findAll();
 
+        AsignacionTutorDao asignacionTutorDao = new AsignacionTutorDao();
+        List<AsignacionTutor> listaAsignaciones = asignacionTutorDao.findAllActivas();
+
         request.setAttribute("carreras", listaCarreras);
         request.setAttribute("listaTutores", listaTutores);
         request.setAttribute("listaCuatrimestres", listaCuatrimestres);
         request.setAttribute("listaLetras", listaLetras);
+        request.setAttribute("listaAsignaciones", listaAsignaciones);
 
         request.getRequestDispatcher("/coordinador/asignacion.jsp").forward(request, response);
     }
@@ -50,13 +44,27 @@ public class AsignacionServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
 
+        AsignacionTutorDao dao = new AsignacionTutorDao();
+        String accion = request.getParameter("accion");
+
+        if ("eliminar".equals(accion)) {
+            int idAsignacion = Integer.parseInt(request.getParameter("id_asignacion"));
+            boolean eliminado = dao.desactivar(idAsignacion);
+            String parametro = eliminado ? "exito=eliminado" : "error=true";
+            response.sendRedirect(request.getContextPath() + "/asignacion?" + parametro);
+            return;
+        }
+
         int idTutor = Integer.parseInt(request.getParameter("id_tutor"));
         int idLetraGrupo = Integer.parseInt(request.getParameter("id_letra_grupo"));
         int idCuatrimestre = Integer.parseInt(request.getParameter("id_cuatrimestre"));
 
-        AsignacionTutor nuevaAsignacion = new AsignacionTutor(idTutor, idLetraGrupo, idCuatrimestre);
+        if (dao.existeAsignacionActiva(idLetraGrupo, idCuatrimestre)) {
+            response.sendRedirect(request.getContextPath() + "/asignacion?error=grupo_asignado");
+            return;
+        }
 
-        AsignacionTutorDao dao = new AsignacionTutorDao();
+        AsignacionTutor nuevaAsignacion = new AsignacionTutor(idTutor, idLetraGrupo, idCuatrimestre);
         boolean guardado = dao.insertar(nuevaAsignacion);
 
         if (guardado) {

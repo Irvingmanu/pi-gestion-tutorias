@@ -195,6 +195,12 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'reactivado':
                 mostrarToast('exito', '¡Éxito!', 'El tutor fue reactivado correctamente');
                 break;
+            case 'guardado':
+                mostrarToast('exito', '¡Éxito!', 'El tutor fue registrado correctamente');
+                break;
+            case 'actualizado':
+                mostrarToast('exito', '¡Éxito!', 'El tutor fue actualizado correctamente');
+                break;
         }
 
         window.history.replaceState(null, null, window.location.pathname);

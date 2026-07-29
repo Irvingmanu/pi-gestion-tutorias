@@ -5,7 +5,6 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import mx.edu.utez.pigestiontutorias.models.Academia;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
@@ -128,44 +127,44 @@ public class TutoresServlet extends HttpServlet {
             }
         }
 
-        // Código anterior (captura de datos)...
+        boolean esEdicion = "editar".equals(accion);
 
-        HttpSession session = request.getSession();
-        boolean operacionExitosa;
-
-        if ("editar".equals(accion)) {
-            // Para editar también deberías hacer validaciones usando tus métodos existeCorreo(correo, idTutorActual)
-            operacionExitosa = tutorDAO.update(tutor);
-            if (operacionExitosa) {
-                session.setAttribute("mensajeExito", "Tutor actualizado exitosamente.");
-            } else {
-                session.setAttribute("mensajeError", "No se pudo actualizar el tutor.");
+        String errorDuplicado = null;
+        if (esEdicion) {
+            if (tutorDAO.existeCorreo(tutor.getCorreoInstitucional(), tutor.getIdTutor())) {
+                errorDuplicado = "correo_duplicado";
+            } else if (tutorDAO.existeTelefono(tutor.getTelefono(), tutor.getIdTutor())) {
+                errorDuplicado = "telefono_duplicado";
             }
         } else {
-            // --- NUEVAS VALIDACIONES ANTES DE CREAR ---
             if (tutorDAO.existeNomina(tutor.getNomina())) {
-                session.setAttribute("mensajeError", "Error: La nómina ya está registrada.");
-                response.sendRedirect(request.getContextPath() + "/TutoresServlet");
-                return;
-            }
-
-            if (tutorDAO.existeCorreo(tutor.getCorreoInstitucional())) {
-                session.setAttribute("mensajeError", "Error: El correo ya está registrado.");
-                response.sendRedirect(request.getContextPath() + "/TutoresServlet");
-                return;
-            }
-            // ------------------------------------------
-
-            operacionExitosa = tutorDAO.create(tutor);
-            if (operacionExitosa) {
-                session.setAttribute("mensajeExito", "Tutor registrado exitosamente.");
-            } else {
-                session.setAttribute("mensajeError", "No se pudo registrar el tutor.");
+                errorDuplicado = "nomina_duplicada";
+            } else if (tutorDAO.existeCorreo(tutor.getCorreoInstitucional())) {
+                errorDuplicado = "correo_duplicado";
+            } else if (tutorDAO.existeTelefono(tutor.getTelefono())) {
+                errorDuplicado = "telefono_duplicado";
             }
         }
 
-// Redireccionar al GET del Servlet
-        response.sendRedirect(request.getContextPath() + "/TutoresServlet");
+        if (errorDuplicado != null) {
+            request.setAttribute("error", errorDuplicado);
+            request.setAttribute("tutor", tutor);
+            request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
+            request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);
+            return;
+        }
+
+        boolean operacionExitosa = esEdicion ? tutorDAO.update(tutor) : tutorDAO.create(tutor);
+
+        if (operacionExitosa) {
+            String exito = esEdicion ? "actualizado" : "guardado";
+            response.sendRedirect(request.getContextPath() + "/TutoresServlet?exito=" + exito);
+        } else {
+            request.setAttribute("error", "registro_fallido");
+            request.setAttribute("tutor", tutor);
+            request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
+            request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);
+        }
     }
 
     private void procesarEliminacion(HttpServletRequest request, HttpServletResponse response) throws IOException {

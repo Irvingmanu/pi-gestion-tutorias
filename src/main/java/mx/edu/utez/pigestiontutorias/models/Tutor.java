@@ -13,6 +13,7 @@ public class Tutor {
     private int idUsuario;
     private String activo;
     private List<String>horariosDispo;
+    private Academia academia;
 
     public Tutor() {
     }
@@ -107,5 +108,13 @@ public class Tutor {
 
     public void setHorariosDispo(List<String> horariosDispo) {
         this.horariosDispo = horariosDispo;
+    }
+
+    public Academia getAcademia() {
+        return academia;
+    }
+
+    public void setAcademia(Academia academia) {
+        this.academia = academia;
     }
 }

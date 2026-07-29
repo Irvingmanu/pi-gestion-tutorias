@@ -1,5 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%
+    request.setAttribute("paginaActiva", "agenda");
+%>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -15,29 +18,7 @@
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
-    <!-- ==================== BARRA LATERAL (Alumno) ==================== -->
-    <aside class="sidebar-grupos">
-        <div class="sidebar-logo">
-            <img src="<%= request.getContextPath() %>/assets/img/alumno/logo-utez.png" alt="UTEZ">
-        </div>
-
-        <a href="<%= request.getContextPath() %>/AgendaServlet?accion=agenda&matricula=20253DS076&idLetraGrupo=3" class="nav-item-grupos active">
-            <img src="<%= request.getContextPath() %>/assets/img/alumno/calendario.png" alt="Agenda">
-            <span>Agenda</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/alumno/solicitud.jsp" class="nav-item-grupos">
-            <img src="<%= request.getContextPath() %>/assets/img/alumno/solicitud.png" alt="Solicitud">
-            <span>Solicitud</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/alumno/acuerdos.jsp" class="nav-item-grupos">
-            <img src="<%= request.getContextPath() %>/assets/img/alumno/acuerdos.png" alt="Acuerdos">
-            <span>Acuerdos</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/alumno/perfil.jsp" class="nav-item-grupos mt-auto">
-            <img src="<%= request.getContextPath() %>/assets/img/alumno/perfil.png" alt="Perfil">
-            <span>Perfil</span>
-        </a>
-    </aside>
+    <jsp:include page="../includes/navbar-alumno.jsp" />
 
     <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">
