@@ -5,6 +5,8 @@
 <%@ page import="mx.edu.utez.pigestiontutorias.models.LetraGrupo" %>
 <%@ page import="mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO" %>
 <%
+    request.setAttribute("paginaActiva", "reportes");
+
     AlumnoDAO alumnoDAO = new AlumnoDAO();
     List<Carrera> listaCarreras = alumnoDAO.getAllCarreras();
     List<Cuatrimestre> listaCuatrimestres = alumnoDAO.getAllCuatrimestres();
@@ -15,7 +17,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión de Tutorías - Reportes</title>
+    <title>Sistema de Gestión de Tutorías - Reportes Globales</title>
     <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
     <link href="<%= request.getContextPath() %>/assets/css/bi/bootstrap-icons.css" rel="stylesheet">
     <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
@@ -26,33 +28,8 @@
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
-    <!-- ==================== BARRA LATERAL (Tutor) ==================== -->
-    <aside class="sidebar-grupos">
-        <div class="sidebar-logo">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/logoUtez.png" alt="UTEZ">
-        </div>
-
-        <a href="<%= request.getContextPath() %>/tutor/registro-individual.jsp" class="nav-item-grupos">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/tutoriaIndividual.png" alt="Tutoría Individual">
-            <span>Tutoría Individual</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/tutor/registro-grupal.jsp" class="nav-item-grupos">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/tutoriaGrupal.png" alt="Tutoría Grupal">
-            <span>Tutoría Grupal</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/SolicitudServlet" class="nav-item-grupos">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/solicitudes.png" alt="Solicitudes">
-            <span>Solicitudes</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/tutor/reportes.jsp" class="nav-item-grupos active">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/reportes.png" alt="Reportes">
-            <span>Reportes</span>
-        </a>
-        <a href="<%= request.getContextPath() %>/tutor/perfil.jsp" class="nav-item-grupos mt-auto">
-            <img src="<%= request.getContextPath() %>/assets/img/tutor/perfil.png" alt="Perfil">
-            <span>Perfil</span>
-        </a>
-    </aside>
+    <!-- ==================== BARRA LATERAL (Coordinador) ==================== -->
+    <jsp:include page="../includes/navbar-coordinador.jsp" />
 
     <!-- ==================== CONTENIDO PRINCIPAL ==================== -->
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">
@@ -60,11 +37,20 @@
         <h2 class="titulo-principal h5 mb-3 mt-2">Sistema de Gestión de Tutorías</h2>
 
         <div class="banner-grupos h5 mb-4">
-            Reportes
+            Reportes Globales
         </div>
 
         <!-- ---- Filtros ---- -->
         <div class="row g-3 mb-2">
+            <div class="col-md-4">
+                <label for="filtroCarrera" class="form-label fw-bold">Carrera</label>
+                <select id="filtroCarrera" class="form-select form-control-figma">
+                    <option value="">Seleccione la carrera</option>
+                    <% for (Carrera c : listaCarreras) { %>
+                    <option value="<%= c.getIdCarrera() %>"><%= c.getNombre() %></option>
+                    <% } %>
+                </select>
+            </div>
             <div class="col-md-4">
                 <label for="filtroCuatrimestre" class="form-label fw-bold">Cuatrimestre</label>
                 <select id="filtroCuatrimestre" class="form-select form-control-figma">
@@ -80,15 +66,6 @@
                     <option value="">Seleccione el grupo</option>
                     <% for (LetraGrupo l : listaLetrasGrupo) { %>
                     <option value="<%= l.getIdLetra() %>"><%= l.getLetra() %></option>
-                    <% } %>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label for="filtroCarrera" class="form-label fw-bold">Carrera</label>
-                <select id="filtroCarrera" class="form-select form-control-figma">
-                    <option value="">Seleccione la carrera</option>
-                    <% for (Carrera c : listaCarreras) { %>
-                    <option value="<%= c.getIdCarrera() %>"><%= c.getNombre() %></option>
                     <% } %>
                 </select>
             </div>
@@ -115,10 +92,7 @@
         <div class="row g-3 mb-4">
             <div class="col-md-3">
                 <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3">
-                    <div class="rounded-circle d-flex justify-content-center align-items-center"
-                         style="width:44px; height:44px; background-color:#008B74;">
-                        <i class="bi bi-person-check text-white fs-5"></i>
-                    </div>
+                    <i class="bi bi-person-check fs-2" style="color:#008B74;"></i>
                     <div>
                         <div class="text-muted small">Alumnos Atendidos</div>
                         <div class="fw-bold fs-4" id="kpiAtendidos">--</div>
@@ -127,37 +101,28 @@
             </div>
             <div class="col-md-3">
                 <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3">
-                    <div class="rounded-circle d-flex justify-content-center align-items-center"
-                         style="width:44px; height:44px; background-color:#008B74;">
-                        <i class="bi bi-signpost-split text-white fs-5"></i>
-                    </div>
+                    <i class="bi bi-person-plus fs-2" style="color:#008B74;"></i>
                     <div>
-                        <div class="text-muted small">Canalizaciones</div>
+                        <div class="text-muted small">Pidieron Tutorías</div>
+                        <div class="fw-bold fs-4" id="kpiPidieron">--</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3">
+                    <i class="bi bi-signpost-split fs-2" style="color:#008B74;"></i>
+                    <div>
+                        <div class="text-muted small">Canalizados</div>
                         <div class="fw-bold fs-4" id="kpiCanalizados">--</div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3">
-                    <div class="rounded-circle d-flex justify-content-center align-items-center"
-                         style="width:44px; height:44px; background-color:#008B74;">
-                        <i class="bi bi-calendar2-check text-white fs-5"></i>
-                    </div>
+                    <i class="bi bi-hourglass-split fs-2" style="color:#008B74;"></i>
                     <div>
-                        <div class="text-muted small">Grupos Atendidos</div>
-                        <div class="fw-bold fs-4" id="kpiGruposAtendidos">--</div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-3">
-                <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3">
-                    <div class="rounded-circle d-flex justify-content-center align-items-center"
-                         style="width:44px; height:44px; background-color:#008B74;">
-                        <i class="bi bi-check-circle text-white fs-5"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Asistencias</div>
-                        <div class="fw-bold fs-4" id="kpiAsistencias">--</div>
+                        <div class="text-muted small">Pendientes</div>
+                        <div class="fw-bold fs-4" id="kpiPendientes">--</div>
                     </div>
                 </div>
             </div>
@@ -173,7 +138,7 @@
             </div>
             <div class="col-md-6">
                 <div class="p-3 bg-white rounded-figma shadow-sm border">
-                    <div class="fw-bold mb-2">Estado de Reportes (General)</div>
+                    <div class="fw-bold mb-2">Estado de Solicitudes de Asesoría (General)</div>
                     <canvas id="graficaBarras" height="220"></canvas>
                 </div>
             </div>
@@ -192,20 +157,20 @@
 <script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
 <script src="<%= request.getContextPath() %>/assets/js/coordinador/reportes.js"></script>
 <script>
-    let graficaBarrasTutor = null;
+    let graficaBarrasCoordinador = null;
 
-    // Gráfica propia de la vista del tutor (Atendidos / Canalizaciones /
-    // Asistencias), distinta a la del coordinador a propósito.
-    function pintarBarrasTutor(data) {
+    // Esta gráfica sí es propia de la vista del coordinador (Pendientes /
+    // Atendidas / Canalizadas), por eso vive aquí y no en reportes.js.
+    function pintarBarrasCoordinador(data) {
         const ctx = document.getElementById('graficaBarras');
 
-        if (graficaBarrasTutor) graficaBarrasTutor.destroy();
-        graficaBarrasTutor = new Chart(ctx, {
+        if (graficaBarrasCoordinador) graficaBarrasCoordinador.destroy();
+        graficaBarrasCoordinador = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Atendidos', 'Canalizaciones', 'Asistencias'],
+                labels: ['Pendientes', 'Atendidas', 'Canalizadas'],
                 datasets: [{
-                    data: [data.totalAtendidos, data.totalCanalizados, data.totalAsistencias],
+                    data: [data.totalPendientes, data.totalAtendidos, data.totalCanalizados],
                     backgroundColor: ['#8FD9C4', '#7FA8C9', '#0B2544']
                 }]
             },
@@ -217,16 +182,16 @@
         });
     }
 
-    function buscarReporteTutor() {
+    function buscarReporteCoordinador() {
         cargarReporte({
             contextPath: '<%= request.getContextPath() %>',
             filtros: ['filtroCarrera', 'filtroCuatrimestre', 'filtroGrupo', 'filtroDesde', 'filtroHasta'],
-            onDatos: pintarBarrasTutor
+            onDatos: pintarBarrasCoordinador
         });
     }
 
-    document.getElementById('btnBuscar').addEventListener('click', buscarReporteTutor);
-    document.addEventListener('DOMContentLoaded', buscarReporteTutor);
+    document.getElementById('btnBuscar').addEventListener('click', buscarReporteCoordinador);
+    document.addEventListener('DOMContentLoaded', buscarReporteCoordinador);
 </script>
 </body>
 </html>
