@@ -96,7 +96,8 @@
                         <label for="matricula" class="form-label fs-6 fw-bold">Matrícula</label>
                         <input type="text" id="matricula" name="matricula" class="form-control form-control-figma w-100 fs-6"
                                value="<%= alumnoFormulario != null ? alumnoFormulario.getMatricula() : "" %>" placeholder="Escribe la matrícula"
-                               pattern="^[a-zA-Z0-9]+$" title="La matrícula solo debe contener letras y números, sin espacios ni símbolos."
+                               maxlength="10" minlength="10" pattern="^[a-zA-Z0-9]{10}$"
+                               title="La matrícula debe tener exactamente 10 caracteres, solo letras y números."
                                oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')"
                                <%= esEdicion ? "readonly" : "" %> required>
                     </div>

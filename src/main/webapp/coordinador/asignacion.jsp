@@ -142,84 +142,18 @@
         const exito = urlParams.get('exito');
         const error = urlParams.get('error');
 
-        if (exito === 'true' || exito === 'eliminado' || error) {
-            const modalEl = document.getElementById('modalAlerta');
-            const imgIcono = document.getElementById('alertaIcono');
-            const circulo = document.getElementById('alertaIconoCirculo');
-            const btnAceptar = document.getElementById('alertaBtnAceptar');
+        if (exito === 'true') {
+            mostrarAlerta('exito', '¡Asignación Exitosa!', 'El tutor ha sido asignado correctamente al grupo.');
+        } else if (exito === 'eliminado') {
+            mostrarAlerta('exito', '¡Asignación Eliminada!', 'El tutor ya no está asignado a ese grupo y cuatrimestre.');
+        } else if (error === 'grupo_asignado') {
+            mostrarAlerta('error', 'Grupo ya asignado', 'Este grupo ya tiene un tutor asignado en ese cuatrimestre.');
+        } else if (error === 'true') {
+            mostrarAlerta('error', 'Error en la Asignación', 'Esta asignación ya existe en la base de datos.');
+        }
 
-            if (modalEl) {
-                if (circulo) {
-                    circulo.classList.remove('alerta-icono--exito', 'alerta-icono--error', 'alerta-icono--advertencia');
-                }
-
-                if (exito === 'true') {
-                    document.getElementById('alertaTitulo').innerText = "¡Asignación Exitosa!";
-                    document.getElementById('alertaMensaje').innerText = "El tutor ha sido asignado correctamente al grupo.";
-                    if (imgIcono) {
-                        imgIcono.src = "${pageContext.request.contextPath}/assets/img/alertas/exito.png";
-                    }
-                    if (circulo) {
-                        circulo.classList.add('alerta-icono--exito');
-                    }
-                    if (btnAceptar) {
-                        btnAceptar.classList.remove('alerta-btn-error');
-                        btnAceptar.classList.add('alerta-btn-exito');
-                    }
-                } else if (exito === 'eliminado') {
-                    document.getElementById('alertaTitulo').innerText = "¡Asignación Eliminada!";
-                    document.getElementById('alertaMensaje').innerText = "El tutor ya no está asignado a ese grupo y cuatrimestre.";
-                    if (imgIcono) {
-                        imgIcono.src = "${pageContext.request.contextPath}/assets/img/alertas/exito.png";
-                    }
-                    if (circulo) {
-                        circulo.classList.add('alerta-icono--exito');
-                    }
-                    if (btnAceptar) {
-                        btnAceptar.classList.remove('alerta-btn-error');
-                        btnAceptar.classList.add('alerta-btn-exito');
-                    }
-                } else if (error === 'grupo_asignado') {
-                    document.getElementById('alertaTitulo').innerText = "Grupo ya asignado";
-                    document.getElementById('alertaMensaje').innerText = "Este grupo ya tiene un tutor asignado en ese cuatrimestre.";
-                    if (imgIcono) {
-                        imgIcono.src = "${pageContext.request.contextPath}/assets/img/alertas/error.png";
-                    }
-                    if (circulo) {
-                        circulo.classList.add('alerta-icono--error');
-                    }
-                    if (btnAceptar) {
-                        btnAceptar.classList.remove('alerta-btn-exito');
-                        btnAceptar.classList.add('alerta-btn-error');
-                    }
-                } else if (error === 'true') {
-                    document.getElementById('alertaTitulo').innerText = "Error en la Asignación";
-                    document.getElementById('alertaMensaje').innerText = "Esta asignación ya existe en la base de datos.";
-                    if (imgIcono) {
-                        imgIcono.src = "${pageContext.request.contextPath}/assets/img/alertas/error.png";
-                    }
-                    if (circulo) {
-                        circulo.classList.add('alerta-icono--error');
-                    }
-                    if (btnAceptar) {
-                        btnAceptar.classList.remove('alerta-btn-exito');
-                        btnAceptar.classList.add('alerta-btn-error');
-                    }
-                }
-
-                if (imgIcono) {
-                    imgIcono.style.display = "block";
-                    imgIcono.style.width = "70px";
-                    imgIcono.style.height = "70px";
-                    imgIcono.style.margin = "0 auto";
-                    imgIcono.style.objectFit = "contain";
-                }
-
-                const modal = new bootstrap.Modal(modalEl);
-                modal.show();
-
-                window.history.replaceState(null, null, window.location.pathname);
-            }
+        if (exito || error) {
+            window.history.replaceState(null, null, window.location.pathname);
         }
     });
 

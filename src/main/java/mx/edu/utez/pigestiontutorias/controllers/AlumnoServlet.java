@@ -18,6 +18,7 @@ public class AlumnoServlet extends HttpServlet {
     private static final String REGEX_NOMBRE = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$";
     private static final String REGEX_TELEFONO = "^\\d{10}$";
     private static final String REGEX_CORREO = "^[a-zA-Z0-9._-]+@utez\\.edu\\.mx$";
+    private static final String REGEX_MATRICULA = "^[a-zA-Z0-9]{10}$";
 
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();
 
@@ -99,7 +100,8 @@ public class AlumnoServlet extends HttpServlet {
         alumno.setIdCuatrimestre(Integer.parseInt(request.getParameter("idCuatrimestre")));
         alumno.setIdLetraGrupo(Integer.parseInt(request.getParameter("idLetraGrupo")));
 
-        boolean formatoValido = alumno.getNombres() != null && alumno.getNombres().matches(REGEX_NOMBRE)
+        boolean formatoValido = alumno.getMatricula() != null && alumno.getMatricula().matches(REGEX_MATRICULA)
+                && alumno.getNombres() != null && alumno.getNombres().matches(REGEX_NOMBRE)
                 && alumno.getApellidos() != null && alumno.getApellidos().matches(REGEX_NOMBRE)
                 && alumno.getTelefono() != null && alumno.getTelefono().matches(REGEX_TELEFONO)
                 && alumno.getCorreoInstitucional() != null && alumno.getCorreoInstitucional().matches(REGEX_CORREO);

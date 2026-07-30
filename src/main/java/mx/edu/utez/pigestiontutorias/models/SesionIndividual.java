@@ -7,6 +7,7 @@ public class SesionIndividual {
     private int idTutor;
     private String matricula;
     private Date fecha;
+    private String hora; // ej. "13:00", la hora original propuesta/confirmada de la cita
     private String temasTratados;
     private String acuerdos;
     private Integer idCanalizacion; // puede ser null
@@ -25,6 +26,9 @@ public class SesionIndividual {
 
     public Date getFecha() { return fecha; }
     public void setFecha(Date fecha) { this.fecha = fecha; }
+
+    public String getHora() { return hora; }
+    public void setHora(String hora) { this.hora = hora; }
 
     public String getTemasTratados() { return temasTratados; }
     public void setTemasTratados(String temasTratados) { this.temasTratados = temasTratados; }

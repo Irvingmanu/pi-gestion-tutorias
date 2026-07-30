@@ -184,6 +184,7 @@ public class SolicitudServlet extends HttpServlet {
                 sesion.setIdTutor(solicitud.getIdTutor());
                 sesion.setMatricula(solicitud.getMatricula());
                 sesion.setFecha(solicitud.getFechaPropuesta());
+                sesion.setHora(solicitud.getHoraPropuesta());
                 sesion.setTemasTratados("Por definir");
                 sesion.setAcuerdos("Por definir");
                 sesion.setEstado("Programada");

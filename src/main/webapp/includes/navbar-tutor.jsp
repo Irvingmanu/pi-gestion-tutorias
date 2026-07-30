@@ -13,7 +13,7 @@
         <img src="<%= ctx %>/assets/img/tutor/logoUtez.png" alt="UTEZ">
     </div>
 
-    <a href="<%= ctx %>/tutor/registro-individual.jsp" class="nav-item-grupos<%= "individual".equals(paginaActiva) ? " active" : "" %>">
+    <a href="<%= ctx %>/SesionIndividualServlet" class="nav-item-grupos<%= "individual".equals(paginaActiva) ? " active" : "" %>">
         <img src="<%= ctx %>/assets/img/tutor/tutoriaIndividual.png" alt="Tutoría Individual">
         <span>Tutoría Individual</span>
     </a>

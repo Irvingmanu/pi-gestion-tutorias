@@ -29,7 +29,7 @@ public class LoginServlet extends HttpServlet {
 
     private static final Map<String, String> DESTINOS = Map.of(
             "coordinador", "TutoresServlet",
-            "tutor", "TutoriaServlet",
+            "tutor", "SesionIndividualServlet",
             "alumno", "AgendaServlet"
     );
 

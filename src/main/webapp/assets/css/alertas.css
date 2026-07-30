@@ -261,6 +261,21 @@
     background-color: var(--confirmacion-color-advertencia-boton);
 }
 
+.btn-confirmar-exito {
+    background-color: var(--alerta-color-exito);
+}
+
+/* modalConfirmacion puede abrirse sobre otro modal ya abierto (ej. "Completar Sesión"),
+   ambos con el z-index por defecto de Bootstrap (.modal = 1055, .modal-backdrop = 1050).
+   Se sube modalConfirmacion y su backdrop (marcado desde alertas.js) por encima de eso. */
+#modalConfirmacion {
+    z-index: 1060;
+}
+
+.modal-backdrop.confirmacion-backdrop {
+    z-index: 1055;
+}
+
 /* ==========================================================================
    TOAST DE NOTIFICACION
    Valores extraidos de Figma (node 1547:1536 "Success Toast Notification")

@@ -100,6 +100,16 @@ public class AreaDAO implements Dao<Area, Integer> {
         return listaAreas;
     }
 
+    // Usado por el formulario de tutoria individual: cada Area trae ya cargados sus Motivos
+    // para poder generar un <select> por Area sin hacer una consulta aparte por cada una.
+    public List<Area> getAllConMotivos() {
+        List<Area> areas = getAll();
+        for (Area area : areas) {
+            area.setMotivos(motivoDAO.getByIdArea(area.getIdArea()));
+        }
+        return areas;
+    }
+
     @Override
     public Area getById(Integer id) {
         String sql = "SELECT * FROM AREA_APOYO WHERE ID_AREA = ?";

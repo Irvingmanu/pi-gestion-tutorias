@@ -189,17 +189,20 @@
             accionPendiente = accion;
 
             circuloEl.classList.remove('confirmacion-icono--exito', 'confirmacion-icono--critica', 'confirmacion-icono--advertencia');
+            btnAceptarModal.classList.remove('btn-confirmar-exito', 'btn-confirmar-critico', 'btn-confirmar-advertencia');
 
             if (accion === 'aceptar') {
                 tituloEl.textContent = '¿Aceptar solicitud?';
                 mensajeEl.textContent = 'El alumno será notificado de que su tutoría fue confirmada.';
                 iconoEl.src = iconoEl.getAttribute('data-base-path') + 'exito.png';
                 circuloEl.classList.add('confirmacion-icono--exito');
+                btnAceptarModal.classList.add('btn-confirmar-exito');
             } else {
                 tituloEl.textContent = '¿Negar solicitud?';
                 mensajeEl.textContent = 'El alumno será notificado de que su solicitud fue rechazada.';
                 iconoEl.src = iconoEl.getAttribute('data-base-path') + 'advertencia.png';
                 circuloEl.classList.add('confirmacion-icono--advertencia');
+                btnAceptarModal.classList.add('btn-confirmar-advertencia');
             }
 
             modalConfirmacion.show();

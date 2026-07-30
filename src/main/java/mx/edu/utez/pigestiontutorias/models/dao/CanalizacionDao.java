@@ -3,24 +3,26 @@ package mx.edu.utez.pigestiontutorias.models.dao;
 import mx.edu.utez.pigestiontutorias.models.Canalizacion;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 
 public class CanalizacionDao {
 
     // Inserta la canalización y devuelve el ID generado, para enlazarlo con SESION_INDIVIDUAL
     public int crearYObtenerId(Canalizacion c) {
-        String sql = "INSERT INTO CANALIZACION(ID_AREA, MATRICULA, FECHA_CANALIZACION, ESTATUS, OBSERVACIONES) " +
-                "VALUES(?, ?, SYSDATE, 'Pendiente', ?)";
+        String sql = "INSERT INTO CANALIZACION(ID_AREA, ID_MOTIVO, MATRICULA, FECHA_CANALIZACION, ESTATUS, OBSERVACIONES) " +
+                "VALUES(?, ?, ?, SYSDATE, 'Pendiente', ?)";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql, new String[]{"ID_CANALIZACION"})) {
 
             ps.setInt(1, c.getIdArea());
-            ps.setString(2, c.getMatricula());
-            ps.setString(3, c.getObservaciones());
+            if (c.getIdMotivo() != null) {
+                ps.setInt(2, c.getIdMotivo());
+            } else {
+                ps.setNull(2, Types.NUMERIC);
+            }
+            ps.setString(3, c.getMatricula());
+            ps.setString(4, c.getObservaciones());
 
             int filasAfectadas = ps.executeUpdate();
             if (filasAfectadas > 0) {
