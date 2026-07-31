@@ -11,22 +11,16 @@ import java.util.Map;
 
 public class ReportesDao {
 
-    // Resultado completo: trae TODAS las métricas posibles (las que usa
-    // la vista del coordinador y las que usa la del tutor). Cada JSP solo
-    // pinta las tarjetas que le interesan; así un solo DAO/endpoint sirve
-    // a las dos pantallas sin duplicar consultas ni servlets.
     public static class ReporteResumen {
-        public int totalAtendidos;          // alumnos con sesión individual completada
-        public int totalPidieronTutorias;   // alumnos que generaron al menos una solicitud
-        public int totalCanalizados;        // alumnos canalizados a un área de apoyo
-        public int totalPendientes;         // solicitudes en estatus 'Pendiente'
-        public int totalGruposAtendidos;    // sesiones grupales completadas (vista tutor)
-        public int totalAsistencias;        // asistencias 'Presente' registradas (vista tutor)
+        public int totalAtendidos;
+        public int totalPidieronTutorias;
+        public int totalCanalizados;
+        public int totalPendientes;
+        public int totalGruposAtendidos;
+        public int totalAsistencias;
         public Map<String, Integer> distribucionCanalizados = new LinkedHashMap<>();
     }
 
-    // idTutor == null -> alcance global (coordinador)
-    // idTutor != null -> alcance de un solo tutor, limitado a sus alumnos asignados
     public ReporteResumen generarReporte(Integer idTutor, Integer idCarrera, Integer idCuatrimestre,
                                          Integer idLetraGrupo, LocalDate desde, LocalDate hasta) {
         ReporteResumen reporte = new ReporteResumen();
@@ -49,14 +43,6 @@ public class ReportesDao {
         return reporte;
     }
 
-    // ---------------------------------------------------------------
-    // Filtro común: cuando hay idTutor, se limita a los alumnos que
-    // tienen a ese tutor asignado (misma regla de negocio que ya usa
-    // el módulo de Solicitud: grupo + cuatrimestre -> ASIGNACION_TUTOR).
-    // Se agrega como EXISTS para no repetir el JOIN en cada consulta.
-    // CANALIZACION no tiene ID_TUTOR propio, por eso esta es la única
-    // forma correcta de acotar "mis alumnos canalizados".
-    // ---------------------------------------------------------------
     private void agregarFiltrosAlumno(StringBuilder sql, List<Object> params, String aliasAlumno,
                                       Integer idTutor, Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) {
         if (idTutor != null) {
@@ -100,16 +86,14 @@ public class ReportesDao {
         }
     }
 
-    // ---------------------------------------------------------------
-    // 1. Alumnos atendidos: al menos una sesión individual completada
-    // ---------------------------------------------------------------
+    // 1. Alumnos atendidos: al menos una sesión individual "Tomada"
     private int contarAlumnosAtendidos(Connection con, Date desde, Date hasta, Integer idTutor,
                                        Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(DISTINCT a.MATRICULA) AS TOTAL " +
                         "FROM ALUMNO a " +
                         "JOIN SESION_INDIVIDUAL si ON si.MATRICULA = a.MATRICULA " +
-                        "WHERE si.ESTADO = 'Completado' AND si.FECHA BETWEEN ? AND ? ");
+                        "WHERE si.ESTADO = 'Tomada' AND si.FECHA BETWEEN ? AND ? ");
 
         List<Object> params = new ArrayList<>();
         params.add(desde);
@@ -119,9 +103,7 @@ public class ReportesDao {
         return ejecutarConteo(con, sql.toString(), params);
     }
 
-    // ---------------------------------------------------------------
     // 2. Alumnos que pidieron tutoría: al menos una solicitud registrada
-    // ---------------------------------------------------------------
     private int contarPidieronTutorias(Connection con, Date desde, Date hasta, Integer idTutor,
                                        Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
         StringBuilder sql = new StringBuilder(
@@ -138,9 +120,7 @@ public class ReportesDao {
         return ejecutarConteo(con, sql.toString(), params);
     }
 
-    // ---------------------------------------------------------------
     // 3. Alumnos canalizados a algún área de apoyo
-    // ---------------------------------------------------------------
     private int contarCanalizados(Connection con, Date desde, Date hasta, Integer idTutor,
                                   Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
         StringBuilder sql = new StringBuilder(
@@ -157,9 +137,7 @@ public class ReportesDao {
         return ejecutarConteo(con, sql.toString(), params);
     }
 
-    // ---------------------------------------------------------------
     // 4. Solicitudes pendientes de responder
-    // ---------------------------------------------------------------
     private int contarPendientes(Connection con, Date desde, Date hasta, Integer idTutor,
                                  Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
         StringBuilder sql = new StringBuilder(
@@ -176,13 +154,7 @@ public class ReportesDao {
         return ejecutarConteo(con, sql.toString(), params);
     }
 
-    // ---------------------------------------------------------------
-    // 5. Sesiones grupales completadas (vista del tutor). SESION_GRUPAL
-    // ya trae ID_TUTOR/ID_LETRA_GRUPO/ID_CUATRIMESTRE directos, así que
-    // aquí NO hace falta el EXISTS contra ASIGNACION_TUTOR.
-    // No se filtra por carrera: una sesión grupal es por grupo, no por
-    // la carrera individual de cada alumno.
-    // ---------------------------------------------------------------
+    // 5. Sesiones grupales completadas (vista del tutor)
     private int contarGruposAtendidos(Connection con, Date desde, Date hasta, Integer idTutor,
                                       Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
         StringBuilder sql = new StringBuilder(
@@ -208,9 +180,7 @@ public class ReportesDao {
         return ejecutarConteo(con, sql.toString(), params);
     }
 
-    // ---------------------------------------------------------------
     // 6. Asistencias 'Presente' registradas en sesiones grupales
-    // ---------------------------------------------------------------
     private int contarAsistencias(Connection con, Date desde, Date hasta, Integer idTutor,
                                   Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
         StringBuilder sql = new StringBuilder(
@@ -243,10 +213,7 @@ public class ReportesDao {
         return ejecutarConteo(con, sql.toString(), params);
     }
 
-    // ---------------------------------------------------------------
-    // 7. Distribución de canalizados por área de apoyo (gráfica de
-    // pastel; la usan tanto la vista del coordinador como la del tutor)
-    // ---------------------------------------------------------------
+    // 7. Distribución de canalizados por área de apoyo (gráfica de pastel)
     private Map<String, Integer> distribucionPorArea(Connection con, Date desde, Date hasta, Integer idTutor,
                                                      Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
         Map<String, Integer> distribucion = new LinkedHashMap<>();
