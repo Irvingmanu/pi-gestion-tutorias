@@ -57,7 +57,7 @@
             <%= tituloBanner %>
         </div>
 
-        <form class="form-wrap-figma mt-3" style="max-width: 920px;" action="<%= request.getContextPath() %>/TutoresServlet" method="post">
+        <form id="formGuardar" class="form-wrap-figma mt-3" style="max-width: 920px;" action="<%= request.getContextPath() %>/gestion-tutores" method="post">
 
             <input type="hidden" name="accion" value="<%= esEdicion ? "editar" : "nuevo" %>">
             <input type="hidden" name="idTutor" value="<%= tutorFormulario != null ? tutorFormulario.getIdTutor() : 0 %>">
@@ -175,7 +175,7 @@
 
             <div class="d-flex justify-content-center gap-3 mt-4">
                 <button type="button" id="btnCancelarFormulario" class="btn-cancelar-figma fw-medium fs-5 px-4 py-2"
-                        data-url-cancelar="<%= request.getContextPath() %>/TutoresServlet" onclick="confirmarCancelacion()">Cancelar</button>
+                        data-url-cancelar="<%= request.getContextPath() %>/gestion-tutores" onclick="confirmarCancelacion()">Cancelar</button>
                 <button type="submit" class="btn-figma fw-medium fs-5 px-4 py-2">Guardar</button>
             </div>
 

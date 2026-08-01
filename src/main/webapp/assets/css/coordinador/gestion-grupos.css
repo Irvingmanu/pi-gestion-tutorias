@@ -67,7 +67,7 @@
    ========================================================================== */
 .tabla-grupos {
     width: 100%;
-    table-layout: fixed;
+    table-layout: auto;
     background-color: #ffffff;
     border-collapse: separate;
     border-spacing: 0;
@@ -76,6 +76,10 @@
     overflow: hidden;
 }
 
+/* table-layout:auto (en vez de fixed) deja que las columnas crezcan segun su
+   contenido: junto con white-space:nowrap de abajo, si el contenido no cabe
+   la tabla se hace mas ancha que su contenedor .table-responsive en vez de
+   partir el texto en varias lineas, activando el scroll horizontal en movil. */
 .tabla-grupos th,
 .tabla-grupos td {
     padding: 6px 10px;
@@ -83,7 +87,7 @@
     border-right: 1px solid var(--borde-tabla);
     vertical-align: middle;
     text-align: center;
-    word-break: break-word;
+    white-space: nowrap;
 }
 .tabla-grupos th:last-child,
 .tabla-grupos td:last-child {

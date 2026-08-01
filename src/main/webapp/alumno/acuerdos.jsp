@@ -1,17 +1,15 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%
-    request.setAttribute("paginaActiva", "acuerdos");
-%>
+<c:set var="paginaActiva" value="acuerdos" scope="request" />
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Acuerdos</title>
-    <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/global.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
 </head>
 <body>
 
@@ -37,29 +35,31 @@
                     </div>
                 </c:when>
                 <c:otherwise>
+                    <div class="d-flex flex-column gap-3">
 
-                    <c:forEach items="${listaIndividuales}" var="individual">
-                        <div class="d-flex align-items-start gap-4 p-4 bg-white rounded-figma shadow-sm border">
-                            <img src="<%= request.getContextPath() %>/assets/img/alumno/individual.png" alt="Acuerdo Individual" style="width: 60px;">
-                            <div>
-                                <div class="fw-bold fs-6">Acuerdo Individual</div>
-                                <div class="text-muted">${individual.fecha}</div>
-                                <p class="mb-0 mt-2">${individual.acuerdos}</p>
+                        <c:forEach items="${listaIndividuales}" var="individual">
+                            <div class="d-flex align-items-center gap-4 p-4 bg-white rounded-figma shadow-sm border">
+                                <img src="${pageContext.request.contextPath}/assets/img/alumno/ListChecks.png" alt="Acuerdo Individual" style="width: 40px;">
+                                <div>
+                                    <div class="fw-bold fs-6">Acuerdo Individual</div>
+                                    <div class="text-muted">${individual.fecha}</div>
+                                    <p class="mb-0 mt-2">${individual.acuerdos}</p>
+                                </div>
                             </div>
-                        </div>
-                    </c:forEach>
+                        </c:forEach>
 
-                    <c:forEach items="${listaGrupales}" var="grupal">
-                        <div class="d-flex align-items-start gap-4 p-4 bg-white rounded-figma shadow-sm border">
-                            <img src="<%= request.getContextPath() %>/assets/img/alumno/grupal.png" alt="Tutoría Grupal" style="width: 60px;">
-                            <div>
-                                <div class="fw-bold fs-6">Tutoría Grupal</div>
-                                <div class="text-muted">${grupal.fecha}</div>
-                                <p class="mb-0 mt-2">${grupal.acuerdos}</p>
+                        <c:forEach items="${listaGrupales}" var="grupal">
+                            <div class="d-flex align-items-center gap-4 p-4 bg-white rounded-figma shadow-sm border">
+                                <img src="${pageContext.request.contextPath}/assets/img/alumno/ListChecks.png" alt="Acuerdo Grupal" style="width: 40px;">
+                                <div>
+                                    <div class="fw-bold fs-6">Acuerdo Grupal</div>
+                                    <div class="text-muted">${grupal.fecha}</div>
+                                    <p class="mb-0 mt-2">${grupal.acuerdos}</p>
+                                </div>
                             </div>
-                        </div>
-                    </c:forEach>
+                        </c:forEach>
 
+                    </div>
                 </c:otherwise>
             </c:choose>
 
@@ -69,6 +69,6 @@
 
 </div>
 
-<script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 </body>
 </html>

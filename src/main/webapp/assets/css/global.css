@@ -130,6 +130,22 @@ body {
     line-height: 1;
 }
 
+/* NAV-TABS (pestañas Bootstrap) — usado en asignacion.jsp, tutoria-individual.jsp.
+   Bootstrap las pinta con su azul de enlace por defecto (--bs-link-color);
+   se sobreescriben las custom properties de .nav-tabs con la paleta del
+   sistema y el mismo redondeo --radius-figma, solo en las esquinas de
+   arriba (asi ya lo aplica Bootstrap via border-top-left/right-radius). */
+.nav-tabs {
+    --bs-nav-link-color: #495057;
+    --bs-nav-link-hover-color: var(--utez-green);
+    --bs-nav-tabs-link-active-color: var(--texto);
+    --bs-nav-tabs-link-active-bg: #ffffff;
+    --bs-nav-tabs-border-radius: var(--radius-figma);
+}
+.nav-tabs .nav-link:focus-visible {
+    box-shadow: 0 0 0 0.2rem rgba(0, 139, 116, 0.25);
+}
+
 /* FORMULARIOS COMPARTIDOS (Nueva/Editar Área, Nuevo/Editar Tutor, Nuevo/Editar Alumno)
    Usados por formulario-area.jsp, formulario-tutor.jsp y formulario-alumno.jsp */
 

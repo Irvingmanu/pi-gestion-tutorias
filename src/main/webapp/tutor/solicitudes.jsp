@@ -80,7 +80,7 @@
                         %>
                         <span class="badge text-bg-<%= badge %>"><%= s.getEstatus() %></span>
 
-                        <a href="<%= request.getContextPath() %>/SolicitudServlet?accion=detalle&idSolicitud=<%= s.getIdSolicitud() %>"
+                        <a href="<%= request.getContextPath() %>/solicitudes?accion=detalle&idSolicitud=<%= s.getIdSolicitud() %>"
                            class="btn-figma fw-medium px-4 py-2">Ver</a>
                     </div>
                 </div>

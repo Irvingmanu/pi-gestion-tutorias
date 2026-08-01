@@ -1,18 +1,15 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%
-    request.setAttribute("paginaActiva", "agenda");
-%>
+<c:set var="paginaActiva" value="agenda" scope="request" />
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Agenda</title>
-    <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/bi/bootstrap-icons.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/global.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
 </head>
 <body>
 
@@ -39,30 +36,33 @@
                     </div>
                 </c:when>
                 <c:otherwise>
-                    <c:forEach items="${listaEventosAgenda}" var="evento">
-                        <div class="d-flex align-items-center justify-content-between p-3 mb-3 bg-white rounded shadow-sm border">
-                            <div class="d-flex align-items-center gap-3">
-                                <div class="d-flex justify-content-center align-items-center" style="width: 60px; height: 60px;">
-                                    <c:choose>
-                                        <c:when test="${evento.tipo == 'Individual'}">
-                                            <i class="bi bi-person fs-1 text-primary"></i>
-                                        </c:when>
-                                        <c:otherwise>
-                                            <i class="bi bi-people fs-1 text-success"></i>
-                                        </c:otherwise>
-                                    </c:choose>
+                    <div class="d-flex flex-column gap-3">
+                        <c:forEach items="${listaEventosAgenda}" var="evento">
+                            <div class="d-flex align-items-center justify-content-between p-4 bg-white rounded-figma shadow-sm border">
+                                <div class="d-flex align-items-center gap-3">
+                                    <div class="d-flex justify-content-center align-items-center" style="width: 60px; height: 60px;">
+                                        <img src="${pageContext.request.contextPath}/assets/img/alumno/Clock.png" alt="Tutoría ${evento.tipo}" style="width: 40px;">
+                                    </div>
+                                    <div>
+                                        <div class="fw-bold">Tutoría ${evento.tipo}</div>
+                                        <div>${evento.descripcion}</div>
+                                        <div class="text-muted">${evento.fechaFormateada}</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div class="fw-bold">Tutoría ${evento.tipo}</div>
-                                    <div>${evento.descripcion}</div>
-                                    <div class="text-muted">${evento.fechaFormateada}</div>
-                                </div>
+                                <c:choose>
+                                    <c:when test="${evento.estadoAsistenciaAlumno == 'Falta'}">
+                                        <span class="fw-bold text-danger">Faltaste a esta sesión</span>
+                                    </c:when>
+                                    <c:when test="${evento.estadoAsistenciaAlumno == 'Justificado'}">
+                                        <span class="fw-bold text-secondary">Falta justificada</span>
+                                    </c:when>
+                                    <c:when test="${evento.estadoAsistenciaAlumno == 'Presente'}">
+                                        <span class="fw-bold text-success">Asistencia registrada</span>
+                                    </c:when>
+                                </c:choose>
                             </div>
-                            <span class="fw-bold ${evento.estado == 'Próximo' ? 'text-secondary' : 'text-success'}">
-                                    ${evento.estado}
-                            </span>
-                        </div>
-                    </c:forEach>
+                        </c:forEach>
+                    </div>
                 </c:otherwise>
             </c:choose>
 
@@ -72,6 +72,6 @@
 
 </div>
 
-<script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 </body>
 </html>

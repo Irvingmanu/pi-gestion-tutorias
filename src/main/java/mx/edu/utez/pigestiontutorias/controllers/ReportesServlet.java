@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-
 import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.models.dao.ReportesDao;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
@@ -16,7 +15,7 @@ import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.util.Map;
 
-@WebServlet(name = "ReportesServlet", urlPatterns = {"/ReportesServlet"})
+@WebServlet(name = "ReportesServlet", urlPatterns = {"/reportes"})
 public class ReportesServlet extends HttpServlet {
 
     private final ReportesDao reportesDao = new ReportesDao();

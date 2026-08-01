@@ -1,34 +1,21 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.ArrayList" %>
-<%@ page import="mx.edu.utez.pigestiontutorias.models.Horario" %>
-<%
-    // Los datos de disponibilidad ya vienen calculados por SolicitudServlet
-    // (accion=nueva), que es el único punto de entrada a esta vista.
-
-    @SuppressWarnings("unchecked")
-    List<Horario> listaHorarios = (List<Horario>) request.getAttribute("listaHorarios");
-    if (listaHorarios == null) {
-        listaHorarios = new ArrayList<>();
-    }
-    Integer idTutorAsignado = (Integer) request.getAttribute("idTutorAsignado");
-
-    boolean puedeEnviar = (idTutorAsignado != null && !listaHorarios.isEmpty());
-    String exito = request.getParameter("exito");
-
-    request.setAttribute("paginaActiva", "solicitud");
-%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var="paginaActiva" value="solicitud" scope="request" />
+<%-- Los datos de disponibilidad ya vienen calculados por SolicitudServlet (accion=nueva),
+     que es el unico punto de entrada a esta vista. "empty" cubre tanto listaHorarios == null
+     como una lista vacia, igual que la validacion original en Java. --%>
+<c:set var="puedeEnviar" value="${not empty idTutorAsignado and not empty listaHorarios}" />
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Solicitud</title>
-    <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/bi/bootstrap-icons.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/alertas.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/bi/bootstrap-icons.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/global.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/alertas.css" rel="stylesheet">
 </head>
 <body>
 
@@ -45,19 +32,20 @@
             Solicitud
         </div>
 
-        <% if ("enviada".equals(exito)) { %>
+        <c:if test="${param.exito == 'enviada'}">
         <div class="alert alert-success" role="alert">
             Tu solicitud fue enviada correctamente. El tutor la revisará pronto.
         </div>
-        <% } else if ("error".equals(exito)) { %>
+        </c:if>
+        <c:if test="${param.exito == 'error'}">
         <div class="alert alert-danger" role="alert">
             Ocurrió un error al enviar tu solicitud. Intenta de nuevo.
         </div>
-        <% } %>
+        </c:if>
 
         <div class="form-wrap-figma" style="max-width: 50%;">
 
-            <form method="post" action="<%= request.getContextPath() %>/SolicitudServlet" id="formSolicitud">
+            <form method="post" action="${pageContext.request.contextPath}/solicitudes" id="formSolicitud">
                 <input type="hidden" name="accion" value="crear">
 
                 <div class="mb-3">
@@ -96,7 +84,7 @@
                 </div>
 
                 <div class="d-flex justify-content-end gap-2">
-                    <a href="<%= request.getContextPath() %>/AgendaServlet"
+                    <a href="${pageContext.request.contextPath}/agenda"
                        class="btn btn-cancelar-figma">Cancelar</a>
                     <button type="submit" class="btn btn-figma" id="btnEnviarSolicitud">Enviar</button>
                 </div>
@@ -110,11 +98,11 @@
 
 <jsp:include page="../includes/alertas.jsp" />
 
-<script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
-<script src="<%= request.getContextPath() %>/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        var puedeEnviar = <%= puedeEnviar %>;
+        var puedeEnviar = ${puedeEnviar};
         var form = document.getElementById('formSolicitud');
 
         form.addEventListener('submit', function (evento) {

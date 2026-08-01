@@ -3,21 +3,24 @@ package mx.edu.utez.pigestiontutorias.models;
 public class AsignacionTutor {
     private int idAsignacion;
     private int idTutor;
+    private int idCarrera;
     private int idLetraGrupo;
     private int idCuatrimestre;
     private int activo;
 
     // Campos extra que NO existen en la tabla, solo para mostrar datos
-    // del tutor/grupo/cuatrimestre en la lista de asignaciones (se llenan con un JOIN)
+    // del tutor/carrera/grupo/cuatrimestre en la lista de asignaciones (se llenan con un JOIN)
     private String nombresTutor;
     private String apellidosTutor;
+    private String nombreCarrera;
     private String letraGrupo;
     private int numeroCuatrimestre;
 
     public AsignacionTutor() {}
 
-    public AsignacionTutor(int idTutor, int idLetraGrupo, int idCuatrimestre) {
+    public AsignacionTutor(int idTutor, int idCarrera, int idLetraGrupo, int idCuatrimestre) {
         this.idTutor = idTutor;
+        this.idCarrera = idCarrera;
         this.idLetraGrupo = idLetraGrupo;
         this.idCuatrimestre = idCuatrimestre;
         this.activo = 1; // Por defecto activo al crear
@@ -28,6 +31,9 @@ public class AsignacionTutor {
 
     public int getIdTutor() { return idTutor; }
     public void setIdTutor(int idTutor) { this.idTutor = idTutor; }
+
+    public int getIdCarrera() { return idCarrera; }
+    public void setIdCarrera(int idCarrera) { this.idCarrera = idCarrera; }
 
     public int getIdLetraGrupo() { return idLetraGrupo; }
     public void setIdLetraGrupo(int idLetraGrupo) { this.idLetraGrupo = idLetraGrupo; }
@@ -43,6 +49,9 @@ public class AsignacionTutor {
 
     public String getApellidosTutor() { return apellidosTutor; }
     public void setApellidosTutor(String apellidosTutor) { this.apellidosTutor = apellidosTutor; }
+
+    public String getNombreCarrera() { return nombreCarrera; }
+    public void setNombreCarrera(String nombreCarrera) { this.nombreCarrera = nombreCarrera; }
 
     public String getLetraGrupo() { return letraGrupo; }
     public void setLetraGrupo(String letraGrupo) { this.letraGrupo = letraGrupo; }

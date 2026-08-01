@@ -9,9 +9,15 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CuatrimestreDao {
+public class CuatrimestreDao implements Dao<Cuatrimestre, Integer> {
 
-    public List<Cuatrimestre> findAll() {
+    @Override
+    public boolean create(Cuatrimestre entidad) {
+        return false;
+    }
+
+    @Override
+    public List<Cuatrimestre> getAll() {
         List<Cuatrimestre> lista = new ArrayList<>();
         String sql = "SELECT ID_CUATRIMESTRE, NUMERO FROM ADMIN.CUATRIMESTRE";
 
@@ -32,5 +38,20 @@ public class CuatrimestreDao {
         }
 
         return lista;
+    }
+
+    @Override
+    public Cuatrimestre getById(Integer id) {
+        return null;
+    }
+
+    @Override
+    public boolean update(Cuatrimestre entidad) {
+        return false;
+    }
+
+    @Override
+    public boolean delete(Integer id) {
+        return false;
     }
 }

@@ -1,14 +1,16 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.text.SimpleDateFormat" %>
-<%@ page import="java.util.Locale" %>
-<%@ page import="mx.edu.utez.pigestiontutorias.models.Solicitud" %>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<c:set var="paginaActiva" value="misSolicitudes" scope="request" />
 <%
-    List<Solicitud> listaSolicitudes = (List<Solicitud>) request.getAttribute("listaSolicitudes");
-    SimpleDateFormat formatoFechaHora = new SimpleDateFormat("dd MMMM yyyy, hh:mm a", new Locale("es", "MX"));
-    SimpleDateFormat formatoFecha = new SimpleDateFormat("dd MMMM yyyy", new Locale("es", "MX"));
-
-    request.setAttribute("paginaActiva", "misSolicitudes");
+    // Unico bloque Java que queda: solo construye los formateadores de fecha
+    // (no hay forma de dar formato "dd MMMM yyyy" en español con JSTL puro
+    // sin agregar la libreria fmt:, que no usamos en el resto del proyecto).
+    // Se exponen a EL via pageContext para que el resto de la vista sea
+    // 100% JSTL/EL, sin bucles ni impresiones en Java.
+    java.text.SimpleDateFormat formatoFechaHora = new java.text.SimpleDateFormat("dd MMMM yyyy, hh:mm a", new java.util.Locale("es", "MX"));
+    java.text.SimpleDateFormat formatoFecha = new java.text.SimpleDateFormat("dd MMMM yyyy", new java.util.Locale("es", "MX"));
+    pageContext.setAttribute("formatoFechaHora", formatoFechaHora);
+    pageContext.setAttribute("formatoFecha", formatoFecha);
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -16,9 +18,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Mis Solicitudes</title>
-    <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/global.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
 </head>
 <body>
 
@@ -37,50 +39,53 @@
 
         <div class="form-wrap-figma" style="max-width: 100%;">
 
-            <% if (listaSolicitudes == null || listaSolicitudes.isEmpty()) { %>
-            <div class="p-4 text-center bg-white rounded shadow-sm border">
-                <p class="fs-5 text-muted mb-0">No has enviado ninguna solicitud todavía.</p>
-            </div>
-            <% } else { %>
-            <div class="d-flex flex-column gap-3">
-                <% for (Solicitud s : listaSolicitudes) { %>
-                <div class="bg-white rounded-figma shadow-sm border p-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div>
-                            <div class="fw-bold fs-6"><%= s.getAsunto() %></div>
-                            <div class="text-muted small mb-2">
-                                Enviada el: <%= s.getFechaRegistro() != null ? formatoFechaHora.format(s.getFechaRegistro()) : "N/D" %>
-                            </div>
-
-                            <p class="mb-1">
-                                <strong>Fecha propuesta:</strong>
-                                <%= s.getFechaPropuesta() != null ? formatoFecha.format(s.getFechaPropuesta()) : "No especificada" %>
-                            </p>
-                            <p class="mb-1">
-                                <strong>Hora de inicio:</strong>
-                                <%= s.getHoraPropuesta() != null ? s.getHoraPropuesta() : "No especificada" %>
-                            </p>
-                            <p class="mb-0">
-                                <strong>Duración:</strong>
-                                <%= s.getDuracion() != null ? s.getDuracion() + " hora(s)" : "No especificada" %>
-                            </p>
-                        </div>
-
-                        <%
-                            String badge;
-                            switch (s.getEstatus()) {
-                                case "Confirmada": badge = "success"; break;
-                                case "Rechazada": badge = "danger"; break;
-                                case "Reprogramada": badge = "info"; break;
-                                default: badge = "secondary";
-                            }
-                        %>
-                        <span class="badge text-bg-<%= badge %> fs-6 px-3 py-2"><%= s.getEstatus() %></span>
+            <c:choose>
+                <c:when test="${empty listaSolicitudes}">
+                    <div class="p-4 text-center bg-white rounded shadow-sm border">
+                        <p class="fs-5 text-muted mb-0">No has enviado ninguna solicitud todavía.</p>
                     </div>
-                </div>
-                <% } %>
-            </div>
-            <% } %>
+                </c:when>
+                <c:otherwise>
+                    <div class="d-flex flex-column gap-3">
+                        <c:forEach items="${listaSolicitudes}" var="s">
+                            <c:choose>
+                                <c:when test="${s.estatus == 'Confirmada'}"><c:set var="badge" value="success" /></c:when>
+                                <c:when test="${s.estatus == 'Rechazada'}"><c:set var="badge" value="danger" /></c:when>
+                                <c:when test="${s.estatus == 'Reprogramada'}"><c:set var="badge" value="info" /></c:when>
+                                <c:otherwise><c:set var="badge" value="secondary" /></c:otherwise>
+                            </c:choose>
+                            <div class="bg-white rounded-figma shadow-sm border p-4">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-bold fs-6">${s.asunto}</div>
+                                        <div class="text-muted small mb-2">
+                                            Enviada el: ${empty s.fechaRegistro ? 'N/D' : formatoFechaHora.format(s.fechaRegistro)}
+                                        </div>
+
+                                        <p class="mb-1">
+                                            <strong>Fecha propuesta:</strong>
+                                            ${empty s.fechaPropuesta ? 'No especificada' : formatoFecha.format(s.fechaPropuesta)}
+                                        </p>
+                                        <p class="mb-1">
+                                            <strong>Hora de inicio:</strong>
+                                            ${empty s.horaPropuesta ? 'No especificada' : s.horaPropuesta}
+                                        </p>
+                                        <p class="mb-0">
+                                            <strong>Duración:</strong>
+                                            <c:choose>
+                                                <c:when test="${empty s.duracion}">No especificada</c:when>
+                                                <c:otherwise>${s.duracion} hora(s)</c:otherwise>
+                                            </c:choose>
+                                        </p>
+                                    </div>
+
+                                    <span class="badge text-bg-${badge} fs-6 px-3 py-2">${s.estatus}</span>
+                                </div>
+                            </div>
+                        </c:forEach>
+                    </div>
+                </c:otherwise>
+            </c:choose>
 
         </div>
 
@@ -88,6 +93,6 @@
 
 </div>
 
-<script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 </body>
 </html>

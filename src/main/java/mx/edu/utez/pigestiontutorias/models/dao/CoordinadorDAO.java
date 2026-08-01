@@ -7,8 +7,34 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.List;
 
-public class CoordinadorDAO {
+public class CoordinadorDAO implements Dao<Coordinador, Integer> {
+
+    @Override
+    public boolean create(Coordinador entidad) {
+        return false;
+    }
+
+    @Override
+    public List<Coordinador> getAll() {
+        return null;
+    }
+
+    @Override
+    public Coordinador getById(Integer id) {
+        return null;
+    }
+
+    @Override
+    public boolean update(Coordinador entidad) {
+        return false;
+    }
+
+    @Override
+    public boolean delete(Integer id) {
+        return false;
+    }
 
     public Coordinador getCoordinadorTemporal() {
         String sql = "SELECT * FROM COORDINADOR WHERE ID_COORDINADOR = 1";

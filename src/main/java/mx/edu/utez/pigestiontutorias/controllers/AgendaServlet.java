@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
-@WebServlet("/AgendaServlet")
+@WebServlet(name = "AgendaServlet", value = "/agenda")
 public class AgendaServlet extends HttpServlet {
 
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();
@@ -31,7 +31,7 @@ public class AgendaServlet extends HttpServlet {
         Alumno alumno = alumnoDAO.getByIdUsuario(idUsuario);
 
         List<EventoAgenda> listaEventos = (alumno != null)
-                ? alumnoDAO.getAgendaAlumno(alumno.getMatricula(), alumno.getIdLetraGrupo())
+                ? alumnoDAO.getAgendaAlumno(alumno.getMatricula(), alumno.getIdCarrera(), alumno.getIdCuatrimestre(), alumno.getIdLetraGrupo())
                 : Collections.emptyList();
 
         request.setAttribute("listaEventosAgenda", listaEventos);

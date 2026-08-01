@@ -15,7 +15,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 
-@WebServlet(name = "SolicitudServlet", urlPatterns = {"/SolicitudServlet"})
+@WebServlet(name = "SolicitudServlet", urlPatterns = {"/solicitudes"})
 public class SolicitudServlet extends HttpServlet {
 
     private static final String[] DIAS_SEMANA = {
@@ -60,10 +60,10 @@ public class SolicitudServlet extends HttpServlet {
         // ---- Detalle de una solicitud (imagen 3: Solicitudes_Info) ----
         if ("detalle".equals(accion)) {
             int idSolicitud = Integer.parseInt(request.getParameter("idSolicitud"));
-            Solicitud solicitud = solicitudDao.findById(idSolicitud);
+            Solicitud solicitud = solicitudDao.getById(idSolicitud);
 
             if (solicitud == null) {
-                response.sendRedirect(request.getContextPath() + "/SolicitudServlet");
+                response.sendRedirect(request.getContextPath() + "/solicitudes");
                 return;
             }
 
@@ -145,7 +145,7 @@ public class SolicitudServlet extends HttpServlet {
 
             LocalDate fechaMinima = LocalDate.now().plusDays(2);
             if (fechaPropuesta == null || fechaPropuesta.isBefore(fechaMinima)) {
-                response.sendRedirect(request.getContextPath() + "/SolicitudServlet?accion=nueva&error=fecha_invalida");
+                response.sendRedirect(request.getContextPath() + "/solicitudes?accion=nueva&error=fecha_invalida");
                 return;
             }
 
@@ -163,7 +163,7 @@ public class SolicitudServlet extends HttpServlet {
 
             solicitud.setHoraPropuesta(request.getParameter("horaPropuesta"));
 
-            boolean exito = solicitudDao.insertar(solicitud);
+            boolean exito = solicitudDao.create(solicitud);
 
             String parametro = exito ? "enviada" : "error";
             response.sendRedirect(request.getContextPath() + "/alumno/solicitud.jsp?exito=" + parametro);
@@ -173,7 +173,7 @@ public class SolicitudServlet extends HttpServlet {
         // ---- Aceptar (pantalla de detalle, botón del tutor) ----
         if ("aceptar".equals(accion)) {
             int idSolicitud = Integer.parseInt(request.getParameter("idSolicitud"));
-            Solicitud solicitud = solicitudDao.findById(idSolicitud);
+            Solicitud solicitud = solicitudDao.getById(idSolicitud);
 
             solicitudDao.actualizarEstatus(idSolicitud, "Confirmada");
 
@@ -191,7 +191,7 @@ public class SolicitudServlet extends HttpServlet {
                 sesionIndividualDao.create(sesion);
             }
 
-            response.sendRedirect(request.getContextPath() + "/SolicitudServlet");
+            response.sendRedirect(request.getContextPath() + "/solicitudes");
             return;
         }
 
@@ -200,17 +200,17 @@ public class SolicitudServlet extends HttpServlet {
             int idSolicitud = Integer.parseInt(request.getParameter("idSolicitud"));
             solicitudDao.actualizarEstatus(idSolicitud, "Rechazada");
 
-            response.sendRedirect(request.getContextPath() + "/SolicitudServlet");
+            response.sendRedirect(request.getContextPath() + "/solicitudes");
             return;
         }
 
         // ---- Reprogramar (el tutor propone una nueva fecha) ----
         if ("reprogramar".equals(accion)) {
             int idSolicitud = Integer.parseInt(request.getParameter("idSolicitud"));
-            Solicitud solicitud = solicitudDao.findById(idSolicitud);
+            Solicitud solicitud = solicitudDao.getById(idSolicitud);
 
             if (solicitud == null) {
-                response.sendRedirect(request.getContextPath() + "/SolicitudServlet");
+                response.sendRedirect(request.getContextPath() + "/solicitudes");
                 return;
             }
 
@@ -243,19 +243,19 @@ public class SolicitudServlet extends HttpServlet {
             }
 
             if (!fechaValida || !horaValida) {
-                response.sendRedirect(request.getContextPath() + "/SolicitudServlet?accion=detalle&idSolicitud="
+                response.sendRedirect(request.getContextPath() + "/solicitudes?accion=detalle&idSolicitud="
                         + idSolicitud + "&error=fecha_invalida");
                 return;
             }
 
             solicitudDao.reprogramar(idSolicitud, Date.valueOf(nuevaFecha), nuevaHora);
 
-            response.sendRedirect(request.getContextPath() + "/SolicitudServlet");
+            response.sendRedirect(request.getContextPath() + "/solicitudes");
             return;
         }
 
         // Acción no reconocida: regresamos a la lista por seguridad
-        response.sendRedirect(request.getContextPath() + "/SolicitudServlet");
+        response.sendRedirect(request.getContextPath() + "/solicitudes");
     }
 
     // -----------------------------------------------------------------

@@ -8,6 +8,7 @@ public class EventoAgenda {
     private String descripcion;
     private String fechaFormateada;
     private String estado;
+    private String estadoAsistenciaAlumno;
 
     private static final String[] MESES = {
             "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
@@ -16,12 +17,24 @@ public class EventoAgenda {
 
     public EventoAgenda() {}
 
-    public EventoAgenda(String tipo, String descripcion, Timestamp fecha) {
+    public EventoAgenda(String tipo, String descripcion, Timestamp fecha, String hora, String estadoAsistenciaAlumno) {
         this.tipo = tipo;
         this.descripcion = descripcion;
+        this.estadoAsistenciaAlumno = estadoAsistenciaAlumno;
 
         if (fecha != null) {
+            // FECHA solo guarda el dia (se crea con Date.valueOf, siempre a medianoche);
+            // la hora real de la cita vive aparte en la columna HORA ("HH:mm"). Sin esto,
+            // la hora mostrada salia siempre 12:00am.
             LocalDateTime dt = fecha.toLocalDateTime();
+            if (hora != null && !hora.isBlank()) {
+                String[] partes = hora.trim().split(":");
+                try {
+                    dt = dt.withHour(Integer.parseInt(partes[0].trim())).withMinute(Integer.parseInt(partes[1].trim()));
+                } catch (NumberFormatException | ArrayIndexOutOfBoundsException ignored) {
+                    // HORA con formato inesperado: se conserva la medianoche de FECHA como respaldo.
+                }
+            }
             this.fechaFormateada = formatearFecha(dt);
             this.estado = dt.isAfter(LocalDateTime.now()) ? "Pendiente" : "Tomada";
         } else {
@@ -57,4 +70,7 @@ public class EventoAgenda {
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
+
+    public String getEstadoAsistenciaAlumno() { return estadoAsistenciaAlumno; }
+    public void setEstadoAsistenciaAlumno(String estadoAsistenciaAlumno) { this.estadoAsistenciaAlumno = estadoAsistenciaAlumno; }
 }

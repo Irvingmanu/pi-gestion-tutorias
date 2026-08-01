@@ -58,7 +58,7 @@
                         <%= area.getCorreoContacto() %>
                     </p>
                     <div class="mt-auto d-flex flex-column gap-2">
-                        <a href="<%= request.getContextPath() %>/AreaServlet?accion=prepararEdicion&idArea=<%= area.getIdArea() %>" class="btn btn-utez-primary fw-medium">Editar</a>
+                        <a href="<%= request.getContextPath() %>/areas-apoyo?accion=prepararEdicion&idArea=<%= area.getIdArea() %>" class="btn btn-utez-primary fw-medium">Editar</a>
                         <button type="button" class="btn btn-utez-danger fw-medium" onclick="prepararEliminacionArea(<%= area.getIdArea() %>)">Eliminar</button>
                     </div>
                 </div>
@@ -73,7 +73,7 @@
 </div>
 
 <!-- ==================== ELIMINAR AREA (confirmacion via mostrarConfirmacion) ==================== -->
-<form id="formEliminarArea" action="<%= request.getContextPath() %>/AreaServlet" method="POST" style="display:none;">
+<form id="formEliminarArea" action="<%= request.getContextPath() %>/areas-apoyo" method="POST" style="display:none;">
     <input type="hidden" name="accion" value="eliminar">
     <input type="hidden" name="idArea" id="inputEliminarIdArea">
 </form>

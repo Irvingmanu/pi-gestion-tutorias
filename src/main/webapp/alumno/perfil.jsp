@@ -7,11 +7,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Perfil Alumno</title>
-    <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/bi/bootstrap-icons.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/alertas.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/bi/bootstrap-icons.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/global.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/alertas.css" rel="stylesheet">
 </head>
 <body>
 
@@ -65,8 +65,8 @@
 
 </div>
 
-<script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
-<script src="<%= request.getContextPath() %>/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 <script>
     document.getElementById('btnCerrarSesion').addEventListener('click', function () {
         mostrarConfirmacion(
@@ -75,7 +75,7 @@
             'Tendrás que iniciar sesión de nuevo para continuar.',
             'Cerrar sesión',
             function () {
-                window.location.href = '<%= request.getContextPath() %>/logout';
+                window.location.href = '${pageContext.request.contextPath}/logout';
             }
         );
     });

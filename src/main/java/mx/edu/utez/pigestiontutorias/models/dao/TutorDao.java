@@ -11,8 +11,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TutorDao {
+public class TutorDao implements Dao<Tutor, Integer> {
 
+    @Override
     public boolean create(Tutor entidad) {
         String passTemporal = "Tut@" + entidad.getNomina();
 
@@ -177,6 +178,7 @@ public class TutorDao {
         return false;
     }
 
+    @Override
     public List<Tutor> getAll() {
         List<Tutor> lista = new ArrayList<>();
         // Trae activos e inactivos: la pantalla de gestion decide que mostrar
@@ -213,6 +215,11 @@ public class TutorDao {
             e.printStackTrace();
         }
         return lista;
+    }
+
+    @Override
+    public Tutor getById(Integer id) {
+        return getByNomina(id);
     }
 
     public Tutor getByNomina(int nomina) {
@@ -254,6 +261,7 @@ public class TutorDao {
         } catch (SQLException e) { e.printStackTrace(); }
         return tutor;
     }
+    @Override
     public boolean update(Tutor entidad) {
         String sqlTutor = "UPDATE TUTOR SET NOMBRES = ?, APELLIDOS = ?, CORREO_INSTITUCIONAL = ?, TELEFONO = ?, DIVISION_ACADEMICA = ? WHERE NOMINA = ?";
         String sqlUsuario = "UPDATE USUARIO SET CORREO_INSTITUCIONAL = ? WHERE ID_USUARIO = ?";
@@ -329,7 +337,8 @@ public class TutorDao {
         }
     }
 
-    public boolean delete(int nomina) {
+    @Override
+    public boolean delete(Integer nomina) {
         // Baja logica: preserva horarios, asignaciones y sesiones vinculadas y bloquea el acceso del tutor.
         String sqlSelect = "SELECT ID_USUARIO FROM TUTOR WHERE NOMINA = ?";
         String sqlTutor = "UPDATE TUTOR SET ACTIVO = 'N' WHERE NOMINA = ?";

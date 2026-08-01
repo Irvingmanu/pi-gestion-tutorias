@@ -9,9 +9,15 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
-public class LetraGrupoDao {
+public class LetraGrupoDao implements Dao<LetraGrupo, Integer> {
 
-    public List<LetraGrupo> findAll() {
+    @Override
+    public boolean create(LetraGrupo entidad) {
+        return false;
+    }
+
+    @Override
+    public List<LetraGrupo> getAll() {
         List<LetraGrupo> lista = new ArrayList<>();
         String sql = "SELECT ID_LETRA, LETRA FROM ADMIN.LETRA_GRUPO";
 
@@ -34,5 +40,18 @@ public class LetraGrupoDao {
         return lista;
     }
 
+    @Override
+    public LetraGrupo getById(Integer id) {
+        return null;
+    }
 
+    @Override
+    public boolean update(LetraGrupo entidad) {
+        return false;
+    }
+
+    @Override
+    public boolean delete(Integer id) {
+        return false;
+    }
 }

@@ -1,4 +1,6 @@
-package mx.edu.utez.pigestiontutorias.models.dao;import mx.edu.utez.pigestiontutorias.models.Carrera;
+package mx.edu.utez.pigestiontutorias.models.dao;
+
+import mx.edu.utez.pigestiontutorias.models.Carrera;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
 import java.sql.Connection;
@@ -7,9 +9,15 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CarreraDao {
+public class CarreraDao implements Dao<Carrera, Integer> {
 
-    public List<Carrera> findAll() {
+    @Override
+    public boolean create(Carrera entidad) {
+        return false;
+    }
+
+    @Override
+    public List<Carrera> getAll() {
         List<Carrera> lista = new ArrayList<>();
         String sql = "SELECT ID_CARRERA, NOMBRE FROM ADMIN.CARRERA";
 
@@ -30,5 +38,20 @@ public class CarreraDao {
         }
 
         return lista;
+    }
+
+    @Override
+    public Carrera getById(Integer id) {
+        return null;
+    }
+
+    @Override
+    public boolean update(Carrera entidad) {
+        return false;
+    }
+
+    @Override
+    public boolean delete(Integer id) {
+        return false;
     }
 }

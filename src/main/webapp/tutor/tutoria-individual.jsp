@@ -1,28 +1,17 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="mx.edu.utez.pigestiontutorias.models.Area" %>
-<%@ page import="mx.edu.utez.pigestiontutorias.models.SesionIndividual" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%
-    request.setAttribute("paginaActiva", "individual");
-
-    List<SesionIndividual> sesionesProgramadas = (List<SesionIndividual>) request.getAttribute("sesionesProgramadas");
-    List<Area> areasConMotivos = (List<Area>) request.getAttribute("areasConMotivos");
-    Map<String, String> nombresAlumnos = (Map<String, String>) request.getAttribute("nombresAlumnos");
-    String mensajeError = (String) request.getAttribute("error");
-%>
+<c:set var="paginaActiva" value="individual" scope="request" />
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Tutoría Individual</title>
-    <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/alertas.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/global.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/alertas.css" rel="stylesheet">
 </head>
 <body>
 
@@ -40,14 +29,14 @@
 
         <ul class="nav nav-tabs mb-4" id="tutoriaTabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="tab-programadas-btn" data-bs-toggle="tab"
-                        data-bs-target="#tab-programadas" type="button" role="tab" aria-selected="true">
+                <button class="nav-link ${tabActiva == 'espontanea' ? '' : 'active'}" id="tab-programadas-btn" data-bs-toggle="tab"
+                        data-bs-target="#tab-programadas" type="button" role="tab" aria-selected="${tabActiva == 'espontanea' ? 'false' : 'true'}">
                     Sesiones Programadas
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="tab-espontanea-btn" data-bs-toggle="tab"
-                        data-bs-target="#tab-espontanea" type="button" role="tab" aria-selected="false">
+                <button class="nav-link ${tabActiva == 'espontanea' ? 'active' : ''}" id="tab-espontanea-btn" data-bs-toggle="tab"
+                        data-bs-target="#tab-espontanea" type="button" role="tab" aria-selected="${tabActiva == 'espontanea' ? 'true' : 'false'}">
                     Tutoría Espontánea
                 </button>
             </li>
@@ -56,63 +45,65 @@
         <div class="tab-content" id="tutoriaTabsContent">
 
             <!-- ==================== TAB 1: SESIONES PROGRAMADAS ==================== -->
-            <div class="tab-pane fade show active" id="tab-programadas" role="tabpanel">
+            <div class="tab-pane fade ${tabActiva == 'espontanea' ? '' : 'show active'}" id="tab-programadas" role="tabpanel">
 
                 <div class="table-responsive">
-                    <% if (sesionesProgramadas == null || sesionesProgramadas.isEmpty()) { %>
-                    <div class="alert alert-info text-center">
-                        No tienes sesiones programadas pendientes de completar.
-                    </div>
-                    <% } else { %>
-                    <table class="tabla-grupos fs-6">
-                        <thead>
-                        <tr>
-                            <th>Matrícula</th>
-                            <th>Alumno</th>
-                            <th>Fecha</th>
-                            <th>Hora</th>
-                            <th>Acciones</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <% for (SesionIndividual sesion : sesionesProgramadas) {
-                            String nombreAlumno = nombresAlumnos != null ? nombresAlumnos.get(sesion.getMatricula()) : sesion.getMatricula();
-                        %>
-                        <tr>
-                            <td><%= sesion.getMatricula() %></td>
-                            <td><%= nombreAlumno %></td>
-                            <td><%= sesion.getFecha() %></td>
-                            <td><%= sesion.getHora() %></td>
-                            <td>
-                                <button type="button" class="btn-figma btn-completar-sesion"
-                                        data-id-sesion="<%= sesion.getIdSesionIndividual() %>"
-                                        data-matricula="<%= sesion.getMatricula() %>"
-                                        data-alumno="<%= nombreAlumno %>"
-                                        data-fecha="<%= sesion.getFecha() %>"
-                                        data-hora="<%= sesion.getHora() %>">
-                                    Completar
-                                </button>
-                            </td>
-                        </tr>
-                        <% } %>
-                        </tbody>
-                    </table>
-                    <% } %>
+                    <c:choose>
+                        <c:when test="${empty sesionesProgramadas}">
+                            <div class="alert alert-info text-center">
+                                No tienes sesiones programadas pendientes de completar.
+                            </div>
+                        </c:when>
+                        <c:otherwise>
+                            <table class="tabla-grupos fs-6">
+                                <thead>
+                                <tr>
+                                    <th>Matrícula</th>
+                                    <th>Alumno</th>
+                                    <th>Fecha</th>
+                                    <th>Hora</th>
+                                    <th>Acciones</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                <c:forEach var="sesion" items="${sesionesProgramadas}">
+                                    <c:set var="nombreAlumno" value="${not empty nombresAlumnos[sesion.matricula] ? nombresAlumnos[sesion.matricula] : sesion.matricula}" />
+                                    <tr>
+                                        <td>${sesion.matricula}</td>
+                                        <td>${nombreAlumno}</td>
+                                        <td>${sesion.fecha}</td>
+                                        <td>${sesion.hora}</td>
+                                        <td>
+                                            <button type="button" class="btn-figma btn-completar-sesion"
+                                                    data-id-sesion="${sesion.idSesionIndividual}"
+                                                    data-matricula="${sesion.matricula}"
+                                                    data-alumno="${nombreAlumno}"
+                                                    data-fecha="${sesion.fecha}"
+                                                    data-hora="${sesion.hora}">
+                                                Completar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </c:forEach>
+                                </tbody>
+                            </table>
+                        </c:otherwise>
+                    </c:choose>
                 </div>
 
             </div>
 
             <!-- ==================== TAB 2: TUTORÍA ESPONTÁNEA ==================== -->
-            <div class="tab-pane fade" id="tab-espontanea" role="tabpanel">
+            <div class="tab-pane fade ${tabActiva == 'espontanea' ? 'show active' : ''}" id="tab-espontanea" role="tabpanel">
 
                 <div class="form-wrap-figma" style="max-width: 920px;">
-                    <form id="formTutoriaEspontanea" action="<%= request.getContextPath() %>/SesionIndividualServlet" method="post">
+                    <form id="formTutoriaEspontanea" action="${pageContext.request.contextPath}/tutoria-individual" method="post">
 
                         <div class="row g-3 mb-4">
                             <div class="col-12">
                                 <label for="matricula" class="form-label fs-6 fw-bold">Matrícula</label>
                                 <input type="text" id="matricula" name="matricula" class="form-control form-control-figma fs-6"
-                                       placeholder="Escribe la matrícula del alumno"
+                                       placeholder="Escribe la matrícula del alumno" value="${matriculaEnviada}"
                                        maxlength="10" minlength="10" pattern="^[a-zA-Z0-9]{10}$"
                                        title="La matrícula debe tener exactamente 10 caracteres, solo letras y números."
                                        oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" required>
@@ -122,11 +113,11 @@
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
                                 <label for="fecha" class="form-label fs-6 fw-bold">Fecha</label>
-                                <input type="date" id="fecha" name="fecha" class="form-control form-control-figma fs-6" required>
+                                <input type="date" id="fecha" name="fecha" class="form-control form-control-figma fs-6" value="${fechaEnviada}" required>
                             </div>
                             <div class="col-md-6">
                                 <label for="hora" class="form-label fs-6 fw-bold">Hora</label>
-                                <input type="time" id="hora" name="hora" class="form-control form-control-figma fs-6" required>
+                                <input type="time" id="hora" name="hora" class="form-control form-control-figma fs-6" value="${horaEnviada}" required>
                             </div>
                         </div>
 
@@ -134,12 +125,12 @@
                             <div class="col-md-6">
                                 <label for="temasTratados" class="form-label fs-6 fw-bold">Temas Tratados</label>
                                 <textarea id="temasTratados" name="temasTratados" class="form-control form-control-figma fs-6"
-                                          rows="3" placeholder="Describe los temas tratados en la sesión" required></textarea>
+                                          rows="3" placeholder="Describe los temas tratados en la sesión" required>${temasEnviados}</textarea>
                             </div>
                             <div class="col-md-6">
                                 <label for="acuerdos" class="form-label fs-6 fw-bold">Acuerdos</label>
                                 <textarea id="acuerdos" name="acuerdos" class="form-control form-control-figma fs-6"
-                                          rows="3" placeholder="Describe los acuerdos alcanzados" required></textarea>
+                                          rows="3" placeholder="Describe los acuerdos alcanzados" required>${acuerdosEnviados}</textarea>
                             </div>
                         </div>
 
@@ -178,7 +169,7 @@
 <div class="modal fade" id="modalCompletarSesion" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content">
-            <form id="formCompletarSesion" action="<%= request.getContextPath() %>/SesionIndividualServlet" method="post">
+            <form id="formCompletarSesion" action="${pageContext.request.contextPath}/tutoria-individual" method="post">
                 <input type="hidden" name="idSesion" id="modalIdSesion">
 
                 <div class="modal-header">
@@ -187,6 +178,17 @@
                 </div>
 
                 <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fs-6 fw-bold d-block">Asistencia</label>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="estatusAsistencia" id="modalAsistenciaPresente" value="Presente" required>
+                            <label class="form-check-label" for="modalAsistenciaPresente">Asistió</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="estatusAsistencia" id="modalAsistenciaFalta" value="Falta" required>
+                            <label class="form-check-label" for="modalAsistenciaFalta">Faltó</label>
+                        </div>
+                    </div>
                     <div class="mb-3">
                         <label for="modalTemasTratados" class="form-label fs-6 fw-bold">Temas Tratados</label>
                         <textarea id="modalTemasTratados" name="temasTratados" class="form-control form-control-figma w-100 fs-6"
@@ -226,104 +228,17 @@
 
 <jsp:include page="../includes/alertas.jsp" />
 
-<script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
-<script src="<%= request.getContextPath() %>/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 
-<% if (mensajeError != null) { %>
+<c:if test="${not empty error}">
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        mostrarAlerta('error', 'Error', '<%= mensajeError %>');
+        mostrarAlerta('error', 'Error', '${error}');
     });
 </script>
-<% } %>
+</c:if>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var modalEl = document.getElementById('modalCompletarSesion');
-        var modal = new bootstrap.Modal(modalEl);
-
-        document.querySelectorAll('.btn-completar-sesion').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                document.getElementById('modalIdSesion').value = btn.dataset.idSesion;
-                document.getElementById('modalAlumnoInfo').textContent =
-                    btn.dataset.alumno + ' (' + btn.dataset.matricula + ') - ' + btn.dataset.fecha + ' ' + btn.dataset.hora;
-                modal.show();
-            });
-        });
-
-        function confirmarCierreModalCompletar() {
-            mostrarConfirmacion(
-                'critica',
-                '¿Estás seguro de salir?',
-                'Se perderán los datos que no hayas guardado.',
-                'Sí, salir',
-                function () {
-                    bootstrap.Modal.getInstance(modalEl).hide();
-                }
-            );
-        }
-
-        document.getElementById('btnCerrarModalCompletar').addEventListener('click', confirmarCierreModalCompletar);
-        document.getElementById('btnCancelarModalCompletar').addEventListener('click', confirmarCierreModalCompletar);
-
-        var formCompletarSesion = document.getElementById('formCompletarSesion');
-        formCompletarSesion.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            if (!formCompletarSesion.checkValidity()) {
-                formCompletarSesion.reportValidity();
-                return;
-            }
-
-            mostrarConfirmacion(
-                'advertencia',
-                '¿Completar sesión?',
-                'Estás a punto de registrar los temas, acuerdos y canalizaciones.',
-                'Sí, guardar',
-                function () {
-                    formCompletarSesion.submit();
-                }
-            );
-        });
-
-        var formTutoriaEspontanea = document.getElementById('formTutoriaEspontanea');
-        formTutoriaEspontanea.addEventListener('submit', function (e) {
-            e.preventDefault();
-
-            if (!formTutoriaEspontanea.checkValidity()) {
-                formTutoriaEspontanea.reportValidity();
-                return;
-            }
-
-            mostrarConfirmacion(
-                'advertencia',
-                '¿Registrar tutoría?',
-                'Estás a punto de registrar la tutoría espontánea con los datos ingresados.',
-                'Sí, guardar',
-                function () {
-                    formTutoriaEspontanea.submit();
-                }
-            );
-        });
-
-        var parametros = new URLSearchParams(window.location.search);
-        var exito = parametros.get('exito');
-        var errorUrl = parametros.get('error');
-
-        if (exito === 'completada') {
-            mostrarToast('exito', '¡Éxito!', 'La sesión fue completada correctamente');
-        } else if (exito === 'tutoria_guardada') {
-            mostrarToast('exito', 'Guardado', 'Tutoría espontánea registrada correctamente.');
-        } else if (errorUrl === 'matricula_invalida') {
-            mostrarAlerta('advertencia', 'Formato incorrecto', 'La matrícula debe tener exactamente 10 caracteres.');
-        } else if (errorUrl === 'matricula_no_existe') {
-            mostrarAlerta('error', 'Matrícula no encontrada', 'El alumno no está registrado en el sistema. Verifica el dato.');
-        }
-
-        if (exito || errorUrl) {
-            window.history.replaceState(null, null, window.location.pathname);
-        }
-    });
-</script>
+<script src="${pageContext.request.contextPath}/assets/js/tutor/tutoria-individual.js"></script>
 </body>
 </html>

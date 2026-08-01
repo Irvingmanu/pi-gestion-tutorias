@@ -105,7 +105,7 @@
             </div>
             <div class="col-md-2 text-center">
                 <label class="campo-label fs-6">Nuevo Alumno</label>
-                <a href="<%= request.getContextPath() %>/AlumnoServlet?accion=nuevo" class="btn-figma text-decoration-none">Agregar</a>
+                <a href="<%= request.getContextPath() %>/gestion-grupos?accion=nuevo" class="btn-figma text-decoration-none">Agregar</a>
             </div>
         </div>
 
@@ -162,7 +162,7 @@
                     <td>
                         <div class="d-flex justify-content-center gap-2">
                             <% if (alumnoActivo) { %>
-                            <a href="<%= request.getContextPath() %>/AlumnoServlet?accion=prepararEdicion&matricula=<%= alumno.getMatricula() %>" class="btn-accion btn-editar">
+                            <a href="<%= request.getContextPath() %>/gestion-grupos?accion=prepararEdicion&matricula=<%= alumno.getMatricula() %>" class="btn-accion btn-editar">
                                 <img src="<%= request.getContextPath() %>/assets/img/coordinador/editar.png" width="16" alt="Editar">
                             </a>
                             <button type="button" class="btn-accion btn-eliminar" onclick="prepararEliminacion('<%= alumno.getMatricula() %>')">
@@ -189,12 +189,12 @@
 
 </div>
 
-<form id="formEliminarAlumno" action="<%= request.getContextPath() %>/AlumnoServlet" method="POST" style="display:none;">
+<form id="formEliminarAlumno" action="<%= request.getContextPath() %>/gestion-grupos" method="POST" style="display:none;">
     <input type="hidden" name="accion" value="eliminar">
     <input type="hidden" name="matricula" id="inputEliminarMatricula">
 </form>
 
-<form id="formReactivarAlumno" action="<%= request.getContextPath() %>/AlumnoServlet" method="POST" style="display:none;">
+<form id="formReactivarAlumno" action="<%= request.getContextPath() %>/gestion-grupos" method="POST" style="display:none;">
     <input type="hidden" name="accion" value="reactivar">
     <input type="hidden" name="matricula" id="inputReactivarMatricula">
 </form>

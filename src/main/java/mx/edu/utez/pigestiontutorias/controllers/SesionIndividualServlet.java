@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@WebServlet("/SesionIndividualServlet")
+@WebServlet(name = "SesionIndividualServlet", value = "/tutoria-individual")
 public class SesionIndividualServlet extends HttpServlet {
 
     private final TutorDao tutorDao = new TutorDao();
@@ -63,11 +63,28 @@ public class SesionIndividualServlet extends HttpServlet {
         String acuerdos = request.getParameter("acuerdos");
         String[] idMotivos = request.getParameterValues("idMotivo");
         String idSesionStr = request.getParameter("idSesion");
+        String estatusAsistencia = request.getParameter("estatusAsistencia");
+        String matricula = request.getParameter("matricula");
+        String fechaStr = request.getParameter("fecha");
+        String hora = request.getParameter("hora");
 
         boolean esCompletado = idSesionStr != null && !idSesionStr.isBlank();
 
         if (temasTratados == null || temasTratados.isBlank() || acuerdos == null || acuerdos.isBlank()) {
             request.setAttribute("error", "Completa todos los campos obligatorios.");
+            if (!esCompletado) {
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
+            }
+            cargarListas(request, tutor);
+            request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
+            return;
+        }
+
+        // El radio "Asistió/Faltó" solo existe en el modal de completar sesión; se valida
+        // aparte porque las sesiones nuevas (alta directa) no lo tienen en el formulario.
+        if (esCompletado && (estatusAsistencia == null
+                || !(estatusAsistencia.equals("Presente") || estatusAsistencia.equals("Falta")))) {
+            request.setAttribute("error", "Indica si el alumno asistió o faltó a la sesión.");
             cargarListas(request, tutor);
             request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
             return;
@@ -77,15 +94,12 @@ public class SesionIndividualServlet extends HttpServlet {
 
         if (esCompletado) {
             int idSesion = Integer.parseInt(idSesionStr.trim());
-            guardado = sesionIndividualDao.completarSesion(idSesion, temasTratados, acuerdos, idMotivos);
+            guardado = sesionIndividualDao.completarSesion(idSesion, temasTratados, acuerdos, idMotivos, estatusAsistencia);
         } else {
-            String matricula = request.getParameter("matricula");
-            String fechaStr = request.getParameter("fecha");
-            String hora = request.getParameter("hora");
-
             if (matricula == null || matricula.isBlank() || fechaStr == null || fechaStr.isBlank()
                     || hora == null || hora.isBlank()) {
                 request.setAttribute("error", "Completa todos los campos obligatorios.");
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
                 cargarListas(request, tutor);
                 request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
                 return;
@@ -95,13 +109,21 @@ public class SesionIndividualServlet extends HttpServlet {
 
             // Blindaje contra ORA-02291: SESION_INDIVIDUAL.MATRICULA es FK a ALUMNO.MATRICULA,
             // asi que una matricula mal formada o inexistente revienta el INSERT en el DAO.
+            // Antes esto era un sendRedirect que perdia todo lo escrito en el formulario;
+            // ahora se reenvia (forward) a la misma pantalla con los datos ya capturados.
             if (matricula.length() != 10) {
-                response.sendRedirect(request.getContextPath() + "/SesionIndividualServlet?error=matricula_invalida");
+                request.setAttribute("error", "La matrícula debe tener exactamente 10 caracteres.");
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
+                cargarListas(request, tutor);
+                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
                 return;
             }
 
             if (alumnoDAO.getById(matricula) == null) {
-                response.sendRedirect(request.getContextPath() + "/SesionIndividualServlet?error=matricula_no_existe");
+                request.setAttribute("error", "El alumno no está registrado en el sistema. Verifica la matrícula.");
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
+                cargarListas(request, tutor);
+                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
                 return;
             }
 
@@ -116,18 +138,35 @@ public class SesionIndividualServlet extends HttpServlet {
             sesion.setAcuerdos(acuerdos);
             sesion.setIdCanalizacion(idCanalizacionPrincipal);
             sesion.setEstado("Tomada");
+            sesion.setEstatusAsistencia("Presente");
 
             guardado = sesionIndividualDao.create(sesion);
         }
 
         if (guardado) {
             String exito = esCompletado ? "completada" : "tutoria_guardada";
-            response.sendRedirect(request.getContextPath() + "/SesionIndividualServlet?exito=" + exito);
+            response.sendRedirect(request.getContextPath() + "/tutoria-individual?exito=" + exito);
         } else {
             request.setAttribute("error", "Ocurrió un error al guardar el registro. Intenta de nuevo.");
+            if (!esCompletado) {
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
+            }
             cargarListas(request, tutor);
             request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
         }
+    }
+
+    // Reabre la pestaña "Tutoria Espontanea" (en vez de la de Sesiones Programadas,
+    // que es la que se ve por defecto) y reenvia al JSP lo que el tutor ya habia
+    // escrito, para que un error de validacion no lo obligue a recapturar todo.
+    private void marcarTabEspontanea(HttpServletRequest request, String matricula, String fecha, String hora,
+                                      String temas, String acuerdos) {
+        request.setAttribute("tabActiva", "espontanea");
+        request.setAttribute("matriculaEnviada", matricula);
+        request.setAttribute("fechaEnviada", fecha);
+        request.setAttribute("horaEnviada", hora);
+        request.setAttribute("temasEnviados", temas);
+        request.setAttribute("acuerdosEnviados", acuerdos);
     }
 
     // Crea una CANALIZACION por cada motivo seleccionado en "Vinculo Directo" y devuelve

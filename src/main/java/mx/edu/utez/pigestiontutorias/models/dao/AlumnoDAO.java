@@ -473,31 +473,43 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         }
     }
 
-    public List<EventoAgenda> getAgendaAlumno(String matricula, int idLetraGrupo) {
+    // idCarrera/idCuatrimestre/idLetraGrupo definen el grupo real del alumno: sin los tres,
+    // dos carreras que comparten letra+cuatrimestre podrian filtrarse sesiones grupales
+    // ajenas (mismo problema de contaminacion cruzada ya corregido en getAcuerdosPorAlumno).
+    public List<EventoAgenda> getAgendaAlumno(String matricula, int idCarrera, int idCuatrimestre, int idLetraGrupo) {
         List<EventoAgenda> listaEventos = new ArrayList<>();
 
         String query =
                 "SELECT 'Individual' AS TIPO, " +
                         "       t.NOMBRES || ' ' || t.APELLIDOS AS DESCRIPCION, " +
-                        "       si.FECHA AS FECHA " +
+                        "       si.FECHA AS FECHA, " +
+                        "       si.HORA AS HORA, " +
+                        "       COALESCE(si.ESTATUS_ASISTENCIA, 'Falta') AS ESTATUS_ASISTENCIA " +
                         "FROM SESION_INDIVIDUAL si " +
                         "JOIN TUTOR t ON si.ID_TUTOR = t.ID_TUTOR " +
                         "WHERE TRIM(si.MATRICULA) = TRIM(?) " +
                         "UNION ALL " +
                         "SELECT 'Grupal' AS TIPO, " +
                         "       'Grupo ' || c.NUMERO || '°' || lg.LETRA AS DESCRIPCION, " +
-                        "       sg.FECHA AS FECHA " +
+                        "       sg.FECHA AS FECHA, " +
+                        "       sg.HORA AS HORA, " +
+                        "       COALESCE(a.ESTATUS_ASISTENCIA, 'Falta') AS ESTATUS_ASISTENCIA " +
                         "FROM SESION_GRUPAL sg " +
                         "JOIN LETRA_GRUPO lg ON sg.ID_LETRA_GRUPO = lg.ID_LETRA " +
                         "JOIN CUATRIMESTRE c ON sg.ID_CUATRIMESTRE = c.ID_CUATRIMESTRE " +
-                        "WHERE sg.ID_LETRA_GRUPO = ? " +
+                        "LEFT JOIN ASISTENCIA a ON a.ID_SESION_GRUPAL = sg.ID_SESION_GRUPAL AND TRIM(a.MATRICULA) = TRIM(?) " +
+                        "WHERE sg.ID_LETRA_GRUPO = ? AND sg.ID_CARRERA = ? AND sg.ID_CUATRIMESTRE = ? " +
                         "ORDER BY FECHA ASC";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(query)) {
 
-            ps.setString(1, matricula != null ? matricula.trim() : "");
-            ps.setInt(2, idLetraGrupo);
+            String matriculaTrim = matricula != null ? matricula.trim() : "";
+            ps.setString(1, matriculaTrim);
+            ps.setString(2, matriculaTrim);
+            ps.setInt(3, idLetraGrupo);
+            ps.setInt(4, idCarrera);
+            ps.setInt(5, idCuatrimestre);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -505,7 +517,9 @@ public class AlumnoDAO implements Dao<Alumno, String> {
                     listaEventos.add(new EventoAgenda(
                             rs.getString("TIPO"),
                             rs.getString("DESCRIPCION"),
-                            fecha
+                            fecha,
+                            rs.getString("HORA"),
+                            rs.getString("ESTATUS_ASISTENCIA")
                     ));
                 }
             }

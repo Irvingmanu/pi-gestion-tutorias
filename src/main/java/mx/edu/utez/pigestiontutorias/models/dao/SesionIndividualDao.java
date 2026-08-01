@@ -12,8 +12,8 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
     @Override
     public boolean create(SesionIndividual s) {
         String sql = "INSERT INTO SESION_INDIVIDUAL " +
-                "(ID_TUTOR, MATRICULA, FECHA, HORA, TEMAS_TRATADOS, ACUERDOS, ID_CANALIZACION, ESTADO) " +
-                "VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
+                "(ID_TUTOR, MATRICULA, FECHA, HORA, TEMAS_TRATADOS, ACUERDOS, ID_CANALIZACION, ESTADO, ESTATUS_ASISTENCIA) " +
+                "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -32,6 +32,7 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
             }
 
             ps.setString(8, s.getEstado() != null ? s.getEstado() : "Registrada");
+            ps.setString(9, s.getEstatusAsistencia() != null ? s.getEstatusAsistencia() : "Presente");
 
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -107,12 +108,12 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
     // La primera canalizacion creada queda enlazada a la sesion via ID_CANALIZACION;
     // las demas quedan igual en CANALIZACION (por matricula/area) porque SESION_INDIVIDUAL
     // solo tiene una columna de enlace.
-    public boolean completarSesion(int idSesion, String temas, String acuerdos, String[] idMotivos) {
+    public boolean completarSesion(int idSesion, String temas, String acuerdos, String[] idMotivos, String estatusAsistencia) {
         String sqlMatricula = "SELECT MATRICULA FROM SESION_INDIVIDUAL WHERE ID_SESION_INDIVIDUAL = ?";
         String sqlMotivoArea = "SELECT ID_AREA FROM MOTIVO_AREA WHERE ID_MOTIVO = ?";
         String sqlCanalizacion = "INSERT INTO CANALIZACION(ID_AREA, ID_MOTIVO, MATRICULA, FECHA_CANALIZACION, ESTATUS, OBSERVACIONES) " +
                 "VALUES (?, ?, ?, SYSDATE, 'Pendiente', ?)";
-        String sqlUpdate = "UPDATE SESION_INDIVIDUAL SET ESTADO = 'Tomada', TEMAS_TRATADOS = ?, ACUERDOS = ?, ID_CANALIZACION = ? " +
+        String sqlUpdate = "UPDATE SESION_INDIVIDUAL SET ESTADO = 'Tomada', TEMAS_TRATADOS = ?, ACUERDOS = ?, ID_CANALIZACION = ?, ESTATUS_ASISTENCIA = ? " +
                 "WHERE ID_SESION_INDIVIDUAL = ?";
 
         Connection con = null;
@@ -181,7 +182,8 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
                 } else {
                     psUpdate.setNull(3, Types.NUMERIC);
                 }
-                psUpdate.setInt(4, idSesion);
+                psUpdate.setString(4, estatusAsistencia);
+                psUpdate.setInt(5, idSesion);
                 actualizado = psUpdate.executeUpdate() > 0;
             }
 

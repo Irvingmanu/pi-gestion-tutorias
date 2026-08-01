@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@WebServlet(name = "TutoresServlet", value = "/TutoresServlet")
+@WebServlet(name = "TutoresServlet", value = "/gestion-tutores")
 public class TutoresServlet extends HttpServlet {
 
     private final TutorDao tutorDAO = new TutorDao();
@@ -158,7 +158,7 @@ public class TutoresServlet extends HttpServlet {
 
         if (operacionExitosa) {
             String exito = esEdicion ? "actualizado" : "guardado";
-            response.sendRedirect(request.getContextPath() + "/TutoresServlet?exito=" + exito);
+            response.sendRedirect(request.getContextPath() + "/gestion-tutores?exito=" + exito);
         } else {
             request.setAttribute("error", "registro_fallido");
             request.setAttribute("tutor", tutor);
@@ -180,7 +180,7 @@ public class TutoresServlet extends HttpServlet {
                 parametro = "error=tutor_en_uso";
             }
         }
-        response.sendRedirect(request.getContextPath() + "/TutoresServlet?" + parametro);
+        response.sendRedirect(request.getContextPath() + "/gestion-tutores?" + parametro);
     }
 
     private void procesarReactivacion(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -196,6 +196,6 @@ public class TutoresServlet extends HttpServlet {
                 parametro = "error=reactivacion_fallida";
             }
         }
-        response.sendRedirect(request.getContextPath() + "/TutoresServlet?" + parametro);
+        response.sendRedirect(request.getContextPath() + "/gestion-tutores?" + parametro);
     }
 }

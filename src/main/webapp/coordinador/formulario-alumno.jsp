@@ -60,7 +60,7 @@
         </div>
 
         <!-- Formulario de nuevo/edicion de alumno -->
-        <form class="form-wrap-figma mt-3" style="max-width: 720px;" action="<%= request.getContextPath() %>/AlumnoServlet" method="post">
+        <form class="form-wrap-figma mt-3" style="max-width: 720px;" action="<%= request.getContextPath() %>/gestion-grupos" method="post">
 
             <input type="hidden" name="accion" value="<%= esEdicion ? "editar" : "nuevo" %>">
 
@@ -174,7 +174,7 @@
 
             <div class="d-flex justify-content-center gap-3 mt-4">
                 <button type="button" id="btnCancelarFormulario" class="btn-cancelar-figma fw-medium fs-5 px-4 py-2"
-                        data-url-cancelar="<%= request.getContextPath() %>/AlumnoServlet" onclick="confirmarCancelacion()">Cancelar</button>
+                        data-url-cancelar="<%= request.getContextPath() %>/gestion-grupos" onclick="confirmarCancelacion()">Cancelar</button>
                 <button type="submit" class="btn-figma fw-medium fs-5 px-4 py-2">Guardar</button>
             </div>
 

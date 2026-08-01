@@ -32,15 +32,15 @@
             <img src="<%= request.getContextPath() %>/assets/img/tutor/logoUtez.png" alt="UTEZ">
         </div>
 
-        <a href="<%= request.getContextPath() %>/tutor/registro-individual.jsp" class="nav-item-grupos">
+        <a href="<%= request.getContextPath() %>/tutoria-individual" class="nav-item-grupos">
             <img src="<%= request.getContextPath() %>/assets/img/tutor/tutoriaIndividual.png" alt="Tutoría Individual">
             <span>Tutoría Individual</span>
         </a>
-        <a href="<%= request.getContextPath() %>/tutor/registro-grupal.jsp" class="nav-item-grupos">
+        <a href="<%= request.getContextPath() %>/tutoria-grupal" class="nav-item-grupos">
             <img src="<%= request.getContextPath() %>/assets/img/tutor/tutoriaGrupal.png" alt="Tutoría Grupal">
             <span>Tutoría Grupal</span>
         </a>
-        <a href="<%= request.getContextPath() %>/SolicitudServlet" class="nav-item-grupos">
+        <a href="<%= request.getContextPath() %>/solicitudes" class="nav-item-grupos">
             <img src="<%= request.getContextPath() %>/assets/img/tutor/solicitudes.png" alt="Solicitudes">
             <span>Solicitudes</span>
         </a>

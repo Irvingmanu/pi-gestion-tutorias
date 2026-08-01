@@ -10,7 +10,32 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HorarioDao {
+public class HorarioDao implements Dao<Horario, Integer> {
+
+    @Override
+    public boolean create(Horario entidad) {
+        return false;
+    }
+
+    @Override
+    public List<Horario> getAll() {
+        return null;
+    }
+
+    @Override
+    public Horario getById(Integer id) {
+        return null;
+    }
+
+    @Override
+    public boolean update(Horario entidad) {
+        return false;
+    }
+
+    @Override
+    public boolean delete(Integer id) {
+        return false;
+    }
 
     // Lista los horarios activos de un tutor, para el <select> del alumno
     // al llenar la solicitud.

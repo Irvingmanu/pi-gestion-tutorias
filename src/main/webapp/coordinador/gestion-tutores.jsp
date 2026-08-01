@@ -58,7 +58,7 @@
                 </div>
                 <div class="text-center">
                     <label class="campo-label fs-6">Nuevo Tutor</label>
-                    <a href="<%= ctx %>/TutoresServlet?accion=nuevo" class="btn-figma">Agregar</a>
+                    <a href="<%= ctx %>/gestion-tutores?accion=nuevo" class="btn-figma text-decoration-none">Agregar</a>
                 </div>
             </div>
         </div>
@@ -111,7 +111,7 @@
                     <td>
                         <div class="d-flex justify-content-center gap-2">
                             <% if (tutorActivo) { %>
-                            <a href="<%= ctx %>/TutoresServlet?accion=prepararEdicion&nomina=<%= tutor.getNomina() %>" class="btn-accion btn-editar">
+                            <a href="<%= ctx %>/gestion-tutores?accion=prepararEdicion&nomina=<%= tutor.getNomina() %>" class="btn-accion btn-editar">
                                 <img src="<%= ctx %>/assets/img/coordinador/editar.png" width="16" alt="Editar">
                             </a>
                             <button type="button" class="btn-accion btn-eliminar" onclick="prepararEliminacion('<%= tutor.getNomina() %>')">
@@ -138,12 +138,12 @@
 
 </div>
 
-<form id="formEliminarTutor" action="<%= ctx %>/TutoresServlet" method="POST" style="display:none;">
+<form id="formEliminarTutor" action="<%= ctx %>/gestion-tutores" method="POST" style="display:none;">
     <input type="hidden" name="accion" value="eliminar">
     <input type="hidden" name="nomina" id="inputEliminarNomina">
 </form>
 
-<form id="formReactivarTutor" action="<%= ctx %>/TutoresServlet" method="POST" style="display:none;">
+<form id="formReactivarTutor" action="<%= ctx %>/gestion-tutores" method="POST" style="display:none;">
     <input type="hidden" name="accion" value="reactivar">
     <input type="hidden" name="nomina" id="inputReactivarNomina">
 </form>

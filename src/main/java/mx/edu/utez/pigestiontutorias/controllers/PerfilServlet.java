@@ -10,7 +10,7 @@ import mx.edu.utez.pigestiontutorias.models.dao.CoordinadorDAO;
 
 import java.io.IOException;
 
-@WebServlet("/PerfilServlet")
+@WebServlet(name = "PerfilServlet", value = "/perfil")
 public class PerfilServlet extends HttpServlet {
 
     private final CoordinadorDAO coordinadorDAO = new CoordinadorDAO();

@@ -116,7 +116,7 @@
                 <% } %>
 
                 <div class="d-none mt-4" id="panelReprogramar">
-                    <form id="formReprogramar" method="post" action="<%= request.getContextPath() %>/SolicitudServlet">
+                    <form id="formReprogramar" method="post" action="<%= request.getContextPath() %>/solicitudes">
                         <input type="hidden" name="accion" value="reprogramar">
                         <input type="hidden" name="idSolicitud" value="<%= solicitud.getIdSolicitud() %>">
 
@@ -142,7 +142,7 @@
                 </div>
                 <% } else { %>
                 <div class="d-flex justify-content-end">
-                    <a href="<%= request.getContextPath() %>/SolicitudServlet" class="btn-figma fw-medium px-4 py-2">Volver</a>
+                    <a href="<%= request.getContextPath() %>/solicitudes" class="btn-figma fw-medium px-4 py-2">Volver</a>
                 </div>
                 <% } %>
 
@@ -150,12 +150,12 @@
         </div>
 
         <!-- Formularios ocultos: el servlet ya maneja accion=aceptar / accion=rechazar -->
-        <form id="formAceptar" method="post" action="<%= request.getContextPath() %>/SolicitudServlet" class="d-none">
+        <form id="formAceptar" method="post" action="<%= request.getContextPath() %>/solicitudes" class="d-none">
             <input type="hidden" name="accion" value="aceptar">
             <input type="hidden" name="idSolicitud" value="<%= solicitud.getIdSolicitud() %>">
         </form>
 
-        <form id="formRechazar" method="post" action="<%= request.getContextPath() %>/SolicitudServlet" class="d-none">
+        <form id="formRechazar" method="post" action="<%= request.getContextPath() %>/solicitudes" class="d-none">
             <input type="hidden" name="accion" value="rechazar">
             <input type="hidden" name="idSolicitud" value="<%= solicitud.getIdSolicitud() %>">
         </form>

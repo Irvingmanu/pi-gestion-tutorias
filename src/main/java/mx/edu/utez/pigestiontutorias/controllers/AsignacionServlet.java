@@ -17,19 +17,19 @@ public class AsignacionServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         CarreraDao carreraDao = new CarreraDao();
-        List<Carrera> listaCarreras = carreraDao.findAll();
+        List<Carrera> listaCarreras = carreraDao.getAll();
 
         TutorDao tutorDao = new TutorDao();
         List<Tutor> listaTutores = tutorDao.findAll();
 
         CuatrimestreDao cuatrimestreDao = new CuatrimestreDao();
-        List<Cuatrimestre> listaCuatrimestres = cuatrimestreDao.findAll();
+        List<Cuatrimestre> listaCuatrimestres = cuatrimestreDao.getAll();
 
         LetraGrupoDao letraGrupoDao = new LetraGrupoDao();
-        List<LetraGrupo> listaLetras = letraGrupoDao.findAll();
+        List<LetraGrupo> listaLetras = letraGrupoDao.getAll();
 
         AsignacionTutorDao asignacionTutorDao = new AsignacionTutorDao();
-        List<AsignacionTutor> listaAsignaciones = asignacionTutorDao.findAllActivas();
+        List<AsignacionTutor> listaAsignaciones = asignacionTutorDao.getAll();
 
         request.setAttribute("carreras", listaCarreras);
         request.setAttribute("listaTutores", listaTutores);
@@ -49,23 +49,24 @@ public class AsignacionServlet extends HttpServlet {
 
         if ("eliminar".equals(accion)) {
             int idAsignacion = Integer.parseInt(request.getParameter("id_asignacion"));
-            boolean eliminado = dao.desactivar(idAsignacion);
+            boolean eliminado = dao.delete(idAsignacion);
             String parametro = eliminado ? "exito=eliminado" : "error=true";
             response.sendRedirect(request.getContextPath() + "/asignacion?" + parametro);
             return;
         }
 
         int idTutor = Integer.parseInt(request.getParameter("id_tutor"));
+        int idCarrera = Integer.parseInt(request.getParameter("id_carrera"));
         int idLetraGrupo = Integer.parseInt(request.getParameter("id_letra_grupo"));
         int idCuatrimestre = Integer.parseInt(request.getParameter("id_cuatrimestre"));
 
-        if (dao.existeAsignacionActiva(idLetraGrupo, idCuatrimestre)) {
+        if (dao.existeAsignacionActiva(idLetraGrupo, idCarrera, idCuatrimestre)) {
             response.sendRedirect(request.getContextPath() + "/asignacion?error=grupo_asignado");
             return;
         }
 
-        AsignacionTutor nuevaAsignacion = new AsignacionTutor(idTutor, idLetraGrupo, idCuatrimestre);
-        boolean guardado = dao.insertar(nuevaAsignacion);
+        AsignacionTutor nuevaAsignacion = new AsignacionTutor(idTutor, idCarrera, idLetraGrupo, idCuatrimestre);
+        boolean guardado = dao.create(nuevaAsignacion);
 
         if (guardado) {
             response.sendRedirect(request.getContextPath() + "/asignacion?exito=true");

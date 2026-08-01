@@ -12,7 +12,7 @@ import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet("/AlumnoServlet")
+@WebServlet(name = "AlumnoServlet", value = "/gestion-grupos")
 public class AlumnoServlet extends HttpServlet {
 
     private static final String REGEX_NOMBRE = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$";
@@ -28,9 +28,15 @@ public class AlumnoServlet extends HttpServlet {
         if ("agenda".equals(accion)) {
 
             String matricula = request.getParameter("matricula");
-            int idLetraGrupo = Integer.parseInt(request.getParameter("idLetraGrupo"));
+            // El grupo real (carrera+cuatrimestre+letra) se re-consulta desde el alumno en BD
+            // en vez de confiar en parametros de request: evita que alguien arme la URL con
+            // un idLetraGrupo/idCarrera/idCuatrimestre que no le corresponda a esa matricula.
+            Alumno alumnoConsultado = alumnoDAO.getById(matricula);
 
-            List<EventoAgenda> listaEventos = alumnoDAO.getAgendaAlumno(matricula, idLetraGrupo);
+            List<EventoAgenda> listaEventos = (alumnoConsultado != null)
+                    ? alumnoDAO.getAgendaAlumno(alumnoConsultado.getMatricula(), alumnoConsultado.getIdCarrera(),
+                            alumnoConsultado.getIdCuatrimestre(), alumnoConsultado.getIdLetraGrupo())
+                    : java.util.Collections.emptyList();
 
             request.setAttribute("listaEventosAgenda", listaEventos);
             request.getRequestDispatcher("/alumno/agenda.jsp").forward(request, response);
@@ -40,14 +46,14 @@ public class AlumnoServlet extends HttpServlet {
         if ("eliminar".equals(accion)) {
             boolean eliminado = alumnoDAO.delete(request.getParameter("matricula"));
             String parametro = eliminado ? "exito=eliminado" : "error=alumno_en_uso";
-            response.sendRedirect(request.getContextPath() + "/AlumnoServlet?" + parametro);
+            response.sendRedirect(request.getContextPath() + "/gestion-grupos?" + parametro);
             return;
         }
 
         if ("reactivar".equals(accion)) {
             boolean reactivado = alumnoDAO.reactivar(request.getParameter("matricula"));
             String parametro = reactivado ? "exito=reactivado" : "error=reactivacion_fallida";
-            response.sendRedirect(request.getContextPath() + "/AlumnoServlet?" + parametro);
+            response.sendRedirect(request.getContextPath() + "/gestion-grupos?" + parametro);
             return;
         }
 
@@ -77,14 +83,14 @@ public class AlumnoServlet extends HttpServlet {
         if ("eliminar".equals(accion)) {
             boolean eliminado = alumnoDAO.delete(request.getParameter("matricula"));
             String parametro = eliminado ? "exito=eliminado" : "error=alumno_en_uso";
-            response.sendRedirect(request.getContextPath() + "/AlumnoServlet?" + parametro);
+            response.sendRedirect(request.getContextPath() + "/gestion-grupos?" + parametro);
             return;
         }
 
         if ("reactivar".equals(accion)) {
             boolean reactivado = alumnoDAO.reactivar(request.getParameter("matricula"));
             String parametro = reactivado ? "exito=reactivado" : "error=reactivacion_fallida";
-            response.sendRedirect(request.getContextPath() + "/AlumnoServlet?" + parametro);
+            response.sendRedirect(request.getContextPath() + "/gestion-grupos?" + parametro);
             return;
         }
 
@@ -163,6 +169,6 @@ public class AlumnoServlet extends HttpServlet {
             parametroExito = "guardado";
         }
 
-        response.sendRedirect(request.getContextPath() + "/AlumnoServlet?exito=" + parametroExito);
+        response.sendRedirect(request.getContextPath() + "/gestion-grupos?exito=" + parametroExito);
     }
 }

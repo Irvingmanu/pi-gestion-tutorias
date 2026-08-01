@@ -8,12 +8,28 @@ import java.sql.Date;
 import java.time.LocalDate;
 import java.util.*;
 
-public class SolicitudDao {
+public class SolicitudDao implements Dao<Solicitud, Integer> {
+
+    @Override
+    public List<Solicitud> getAll() {
+        return null;
+    }
+
+    @Override
+    public boolean update(Solicitud entidad) {
+        return false;
+    }
+
+    @Override
+    public boolean delete(Integer id) {
+        return false;
+    }
 
     // ---------------------------------------------------------------
     // 1. Insertar una nueva solicitud (la crea el alumno)
     // ---------------------------------------------------------------
-    public boolean insertar(Solicitud solicitud) {
+    @Override
+    public boolean create(Solicitud solicitud) {
         String sql = "INSERT INTO ADMIN.SOLICITUD_TUTORIA " +
                 "(MATRICULA, ID_TUTOR, ID_HORARIO, ASUNTO, DESCRIPCION, ESTATUS, FECHA_PROPUESTA, DURACION, HORA_PROPUESTA) " +
                 "VALUES (?, ?, ?, ?, ?, 'Pendiente', ?, ?, ?)";
@@ -26,19 +42,19 @@ public class SolicitudDao {
             if (solicitud.getIdHorario() != null) {
                 ps.setInt(3, solicitud.getIdHorario());
             } else {
-                ps.setNull(3, java.sql.Types.INTEGER);
+                ps.setNull(3, Types.INTEGER);
             }
             ps.setString(4, solicitud.getAsunto());
             ps.setString(5, solicitud.getDescripcion());
             if (solicitud.getFechaPropuesta() != null) {
                 ps.setDate(6, solicitud.getFechaPropuesta());
             } else {
-                ps.setNull(6, java.sql.Types.DATE);
+                ps.setNull(6, Types.DATE);
             }
             if (solicitud.getDuracion() != null) {
                 ps.setInt(7, solicitud.getDuracion());
             } else {
-                ps.setNull(7, java.sql.Types.INTEGER);
+                ps.setNull(7, Types.INTEGER);
             }
             ps.setString(8, solicitud.getHoraPropuesta());
 
@@ -88,7 +104,8 @@ public class SolicitudDao {
     // ---------------------------------------------------------------
     // 3. Obtener una sola solicitud por su id (pantalla de detalle)
     // ---------------------------------------------------------------
-    public Solicitud findById(int idSolicitud) {
+    @Override
+    public Solicitud getById(Integer idSolicitud) {
         String sql = "SELECT s.ID_SOLICITUD, s.MATRICULA, s.ID_TUTOR, " +
                 "s.ASUNTO, s.DESCRIPCION, s.ESTATUS, s.FECHA_PROPUESTA, s.NUEVA_FECHA, s.NUEVA_HORA, " +
                 "s.DURACION, s.HORA_PROPUESTA, s.FECHA_REGISTRO, " +

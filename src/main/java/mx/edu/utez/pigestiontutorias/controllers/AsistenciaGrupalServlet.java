@@ -1,16 +1,16 @@
-package mx.edu.utez.pigestiontutorias.controllers.filters;
-
-import mx.edu.utez.pigestiontutorias.models.Alumno;
-import mx.edu.utez.pigestiontutorias.models.dao.AsistenciaGrupalDao;
-import mx.edu.utez.pigestiontutorias.models.dao.CarreraDao;
-import mx.edu.utez.pigestiontutorias.models.dao.CuatrimestreDao;
-import mx.edu.utez.pigestiontutorias.models.dao.LetraGrupoDao;
+package mx.edu.utez.pigestiontutorias.controllers;
 
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import mx.edu.utez.pigestiontutorias.models.Alumno;
+import mx.edu.utez.pigestiontutorias.models.dao.AsistenciaGrupalDao;
+import mx.edu.utez.pigestiontutorias.models.dao.CarreraDao;
+import mx.edu.utez.pigestiontutorias.models.dao.CuatrimestreDao;
+import mx.edu.utez.pigestiontutorias.models.dao.LetraGrupoDao;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -25,9 +25,9 @@ public class AsistenciaGrupalServlet extends HttpServlet {
         AsistenciaGrupalDao asistenciaDao = new AsistenciaGrupalDao();
 
         // 1. Cargar las listas para los menús desplegables (selects)
-        request.setAttribute("listaGrupos", grupoDao.findAll());
-        request.setAttribute("listaCarreras", carreraDao.findAll());
-        request.setAttribute("listaCuatrimestres", cuatrimestreDao.findAll());
+        request.setAttribute("listaGrupos", grupoDao.getAll());
+        request.setAttribute("listaCarreras", carreraDao.getAll());
+        request.setAttribute("listaCuatrimestres", cuatrimestreDao.getAll());
 
         // 2. Capturar los filtros si el usuario ya los seleccionó
         String grupoParam = request.getParameter("idLetraGrupo");

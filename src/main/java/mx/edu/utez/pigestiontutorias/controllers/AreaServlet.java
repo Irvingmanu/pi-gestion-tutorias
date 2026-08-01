@@ -12,7 +12,7 @@ import mx.edu.utez.pigestiontutorias.models.dao.MotivoDAO;
 
 import java.io.IOException;
 
-@WebServlet("/AreaServlet")
+@WebServlet(name = "AreaServlet", value = "/areas-apoyo")
 public class AreaServlet extends HttpServlet {
 
     private static final String REGEX_NOMBRE = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s./]+$";
@@ -174,7 +174,7 @@ public class AreaServlet extends HttpServlet {
 
     // Vuelve al maestro-detalle de un area ya existente tras agregar/eliminar un motivo
     private void redirigirAEdicion(HttpServletRequest request, HttpServletResponse response, int idArea, String exito) throws IOException {
-        response.sendRedirect(request.getContextPath() + "/AreaServlet?accion=prepararEdicion&idArea=" + idArea + "&exito=" + exito);
+        response.sendRedirect(request.getContextPath() + "/areas-apoyo?accion=prepararEdicion&idArea=" + idArea + "&exito=" + exito);
     }
 
     // Reenvia al formulario tras un error de validacion, conservando lo que el usuario capturo

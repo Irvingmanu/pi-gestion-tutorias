@@ -4,10 +4,38 @@ import mx.edu.utez.pigestiontutorias.models.Canalizacion;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
 import java.sql.*;
+import java.util.List;
 
-public class CanalizacionDao {
+public class CanalizacionDao implements Dao<Canalizacion, Integer> {
+
+    @Override
+    public boolean create(Canalizacion entidad) {
+        return crearYObtenerId(entidad) > 0;
+    }
+
+    @Override
+    public List<Canalizacion> getAll() {
+        return null;
+    }
+
+    @Override
+    public Canalizacion getById(Integer id) {
+        return null;
+    }
+
+    @Override
+    public boolean update(Canalizacion entidad) {
+        return false;
+    }
+
+    @Override
+    public boolean delete(Integer id) {
+        return false;
+    }
 
     // Inserta la canalización y devuelve el ID generado, para enlazarlo con SESION_INDIVIDUAL
+    // (create() de la interfaz no sirve aquí porque SesionIndividualServlet necesita
+    // el ID generado para enlazarlo a SESION_INDIVIDUAL.ID_CANALIZACION).
     public int crearYObtenerId(Canalizacion c) {
         String sql = "INSERT INTO CANALIZACION(ID_AREA, ID_MOTIVO, MATRICULA, FECHA_CANALIZACION, ESTATUS, OBSERVACIONES) " +
                 "VALUES(?, ?, ?, SYSDATE, 'Pendiente', ?)";

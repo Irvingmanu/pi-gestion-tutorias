@@ -55,10 +55,11 @@
     text-decoration: none;
     transform: translateY(-1px);
 }
-/* Protección: el hover normal no debe pisar el fondo del item .active */
+/* Protección: el hover normal no debe pisar el fondo del item .active.
+   Sin sombra: solo cambio de fondo, para que no se vea como una "burbuja"
+   flotante independiente dentro de .sidebar-grupos. */
 .nav-item-grupos:not(.active):hover {
     background-color: #f8f9fa;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 /* Estado activo (nodo FrameGrupos): fondo gris #F2F2F2, tal como en el archivo */
 .nav-item-grupos.active {
@@ -67,6 +68,152 @@
 .nav-item-grupos.active:hover {
     background-color: var(--gris-fondo);
 }
+/* Fondo transparente por defecto (no-activo, no-hover): antes esto forzaba
+   #ffffff, lo que hacia que cada item se viera como una burbuja blanca
+   propia y desconectada dentro de .sidebar-grupos, sobre todo en el
+   offcanvas movil donde el fondo detras es semitransparente/oscuro. */
 .nav-item-grupos:not(.active) {
-    background-color: #ffffff;
+    background-color: transparent;
+}
+
+/* ==========================================================================
+   OFFCANVAS RESPONSIVO — menu hamburguesa tipo overlay en movil, misma
+   barra fija de siempre en md+ (>=768px).
+   .offcanvas-md ya trae el comportamiento nativo de Bootstrap: por debajo
+   de 768px es un panel fijo que se desliza con backdrop oscuro; en 768px+
+   se vuelve transparente y pasa a fluir en linea (ver bootstrap.css). Aqui
+   solo hace falta reaplicar el estilo visual de .sidebar-grupos sobre
+   .offcanvas-body, porque Bootstrap fuerza background-color:transparent
+   !important y padding:0 en el body a partir de md.
+   ========================================================================== */
+.offcanvas-md {
+    --bs-offcanvas-width: 220px;
+}
+
+/* En movil el panel offcanvas de Bootstrap trae su propio fondo blanco solido
+   + borde derecho, lo que se veia como una "caja" contenedora envolviendo la
+   tarjeta redondeada de .sidebar-grupos (caja dentro de caja). Se anula todo
+   eso para que SOLO .sidebar-grupos sea visible, flotando sobre el backdrop,
+   igual que la barra fija de escritorio pero deslizable. Sin offcanvas-header:
+   en movil se cierra tocando el backdrop, no hace falta boton "X". */
+@media (max-width: 767.98px) {
+    /* Clipped Drawer (Material Design): el menu nace justo debajo de
+       .mobile-topbar (56px) y ocupa el resto del alto, en vez de taparla
+       o empezar desde arriba de la pantalla como un offcanvas comun. */
+    .offcanvas-md {
+        background-color: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        outline: none;
+        top: 56px !important;
+        /* Fallback primero (100vh, navegadores viejos), luego 100dvh: en
+           movil 100vh usa el alto MAXIMO del viewport ignorando la barra
+           nativa del navegador, dejando el panel "mas alto" de lo que en
+           realidad se ve en pantalla y cortando el ultimo item (Perfil).
+           100dvh respeta el alto real visible en cada momento. */
+        height: calc(100vh - 56px) !important;
+        height: calc(100dvh - 56px) !important;
+    }
+    /* Pegado al borde izquierdo y de punta a punta verticalmente (sin
+       margen ni redondeo): un panel plano clasico de Material, no una
+       tarjeta flotante — coherente con el resto del "clipped drawer". */
+    .offcanvas-md .offcanvas-body.sidebar-grupos {
+        flex-grow: 1;
+        margin-top: 0;
+        margin-left: 0;
+        background-color: #ffffff !important;
+        box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+        border-radius: 0 !important;
+        /* Red de seguridad: si aun asi el contenido (muchos items en una
+           pantalla chica) no cabe, se desliza en vez de cortarse. */
+        overflow-y: auto;
+    }
+}
+
+/* En md+ Bootstrap fuerza background-color:transparent !important y padding:0
+   en el body; se reaplica el estilo visual de .sidebar-grupos para que la
+   barra se vea exactamente igual que antes del refactor a offcanvas. */
+@media (min-width: 768px) {
+    .offcanvas-md .offcanvas-body.sidebar-grupos {
+        background-color: rgba(255, 255, 255, 0.9) !important;
+        padding: 16px 8px;
+    }
+}
+
+/* Barra superior movil con logo + boton hamburguesa. Se saca del flujo del
+   layout (position: fixed) porque el contenedor de cada pagina es un
+   .container-fluid.d-flex de una sola fila (sidebar + contenido); en fixed
+   no depende de ese flujo y se puede agregar sin tocar cada JSP de pagina. */
+.mobile-topbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    /* Mayor que el backdrop del offcanvas (1040) y que el panel (1045):
+       la barra superior nunca se oscurece ni queda tapada al abrir el menu. */
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    padding: 0 16px;
+    background-color: #ffffff !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+.mobile-topbar-logo {
+    height: 32px;
+    width: auto;
+}
+.mobile-topbar-menu-icon {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+/* Truco visual del icono (solo CSS, sin JS extra): el Offcanvas de Bootstrap
+   NO inyecta aria-expanded en el boton trigger (eso es propio de Collapse,
+   no de Offcanvas), asi que no hay atributo que leer ahi. En su lugar se usa
+   :has() para leer el estado (.showing/.show) del propio <aside> siguiente,
+   que Bootstrap si actualiza automaticamente al abrir/cerrar. */
+.mobile-topbar .icono-cerrar {
+    display: none;
+}
+.mobile-topbar:has(+ .offcanvas-md.show) .icono-abrir,
+.mobile-topbar:has(+ .offcanvas-md.showing) .icono-abrir {
+    display: none;
+}
+.mobile-topbar:has(+ .offcanvas-md.show) .icono-cerrar,
+.mobile-topbar:has(+ .offcanvas-md.showing) .icono-cerrar {
+    display: inline-block;
+}
+/* Boton hamburguesa limpio: sin el borde/fondo/foco gris por defecto de
+   Bootstrap, solo el icono flotando sobre la barra. */
+.mobile-topbar .navbar-toggler {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding: 0.25rem;
+}
+.mobile-topbar .navbar-toggler:focus,
+.mobile-topbar .navbar-toggler:hover {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+}
+/* Flexbox: por defecto un flex-item tiene min-width:auto, es decir nunca se
+   encoge mas alla del ancho minimo de su contenido. Una tabla con
+   white-space:nowrap dentro de esta columna tiene un ancho minimo enorme,
+   que sin esto infla toda la fila (sidebar + contenido) empujando el layout
+   completo en vez de dejar que .table-responsive haga su propio scroll
+   horizontal interno. Por eso .tabla-grupos parecia "aplastarse" en vez de
+   activar el scroll aunque ya tuviera white-space:nowrap. */
+.mobile-topbar ~ .flex-grow-1 {
+    min-width: 0;
+}
+/* Compensa la altura de la barra fija para que no tape el contenido.
+   .offcanvas-md ya no necesita este margen: ahora usa top/height propios
+   (ver bloque "Clipped Drawer" arriba) para nacer debajo de la barra. */
+@media (max-width: 767.98px) {
+    .mobile-topbar ~ .flex-grow-1 {
+        margin-top: 56px;
+    }
 }

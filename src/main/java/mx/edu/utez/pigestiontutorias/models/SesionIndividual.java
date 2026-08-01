@@ -12,6 +12,7 @@ public class SesionIndividual {
     private String acuerdos;
     private Integer idCanalizacion; // puede ser null
     private String estado;
+    private String estatusAsistencia; // 'Presente' o 'Falta'
 
     public SesionIndividual() {}
 
@@ -41,4 +42,7 @@ public class SesionIndividual {
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
+
+    public String getEstatusAsistencia() { return estatusAsistencia; }
+    public void setEstatusAsistencia(String estatusAsistencia) { this.estatusAsistencia = estatusAsistencia; }
 }

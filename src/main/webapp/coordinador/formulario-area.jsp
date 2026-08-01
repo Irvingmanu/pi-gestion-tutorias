@@ -48,7 +48,7 @@
 
         <% if (!esEdicion) { %>
         <!-- ==================== MODO NUEVA AREA: un solo form ==================== -->
-        <form class="form-wrap-figma mt-3" style="max-width: 900px;" action="<%= request.getContextPath() %>/AreaServlet"
+        <form class="form-wrap-figma mt-3" style="max-width: 900px;" action="<%= request.getContextPath() %>/areas-apoyo"
               method="post" onsubmit="return confirmarGuardarArea(event)">
 
             <input type="hidden" name="accion" value="guardarArea">
@@ -115,7 +115,7 @@
 
             <!-- Columna izquierda: form del AREA (maestro), solo actualiza sus datos -->
             <div class="col-md-6">
-                <form id="formEditarArea" class="form-wrap-figma" action="<%= request.getContextPath() %>/AreaServlet"
+                <form id="formEditarArea" class="form-wrap-figma" action="<%= request.getContextPath() %>/areas-apoyo"
                       method="post" onsubmit="return confirmarGuardarArea(event)">
 
                     <input type="hidden" name="accion" value="guardarArea">
@@ -151,7 +151,7 @@
                 <label class="form-label fs-6 fw-bold">Motivos de Canalización</label>
 
                 <!-- Alta: form independiente que agrega un solo motivo a esta area -->
-                <form class="d-flex gap-2 mb-3" action="<%= request.getContextPath() %>/AreaServlet" method="post">
+                <form class="d-flex gap-2 mb-3" action="<%= request.getContextPath() %>/areas-apoyo" method="post">
                     <input type="hidden" name="accion" value="agregarMotivo">
                     <input type="hidden" name="idArea" value="<%= areaEdit.getIdArea() %>">
                     <input type="text" name="nuevoMotivo" class="form-control form-control-figma w-100 fs-6"
@@ -170,7 +170,7 @@
                                     <span id="lbl-motivo-${motivo.idMotivo}"><c:out value="${motivo.nombreMotivo}"/></span>
 
                                     <form id="form-edit-${motivo.idMotivo}" class="d-none d-flex gap-2"
-                                          action="<%= request.getContextPath() %>/AreaServlet" method="post">
+                                          action="<%= request.getContextPath() %>/areas-apoyo" method="post">
                                         <input type="hidden" name="accion" value="editarMotivo">
                                         <input type="hidden" name="idArea" value="<%= areaEdit.getIdArea() %>">
                                         <input type="hidden" name="idMotivo" value="${motivo.idMotivo}">
@@ -219,7 +219,7 @@
         </div>
 
         <!-- Form oculto compartido: elimina un motivo tras confirmar en prepararEliminacionMotivo() -->
-        <form id="formEliminarMotivo" action="<%= request.getContextPath() %>/AreaServlet" method="post" style="display:none;">
+        <form id="formEliminarMotivo" action="<%= request.getContextPath() %>/areas-apoyo" method="post" style="display:none;">
             <input type="hidden" name="accion" value="eliminarMotivo">
             <input type="hidden" name="idArea" id="inputEliminarMotivoIdArea">
             <input type="hidden" name="idMotivo" id="inputEliminarMotivoId">
