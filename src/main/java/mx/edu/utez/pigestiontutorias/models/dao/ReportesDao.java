@@ -22,19 +22,19 @@ public class ReportesDao {
     }
 
     public ReporteResumen generarReporte(Integer idTutor, Integer idCarrera, Integer idCuatrimestre,
-                                         Integer idLetraGrupo, LocalDate desde, LocalDate hasta) {
+                                         Integer idLetraGrupo, String matricula, LocalDate desde, LocalDate hasta) {
         ReporteResumen reporte = new ReporteResumen();
         Date sqlDesde = Date.valueOf(desde);
         Date sqlHasta = Date.valueOf(hasta);
 
         try (Connection con = SQLConnector.getConnection()) {
-            reporte.totalAtendidos = contarAlumnosAtendidos(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo);
-            reporte.totalPidieronTutorias = contarPidieronTutorias(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo);
-            reporte.totalCanalizados = contarCanalizados(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo);
-            reporte.totalPendientes = contarPendientes(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo);
+            reporte.totalAtendidos = contarAlumnosAtendidos(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
+            reporte.totalPidieronTutorias = contarPidieronTutorias(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
+            reporte.totalCanalizados = contarCanalizados(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
+            reporte.totalPendientes = contarPendientes(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
             reporte.totalGruposAtendidos = contarGruposAtendidos(con, sqlDesde, sqlHasta, idTutor, idCuatrimestre, idLetraGrupo);
-            reporte.totalAsistencias = contarAsistencias(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo);
-            reporte.distribucionCanalizados = distribucionPorArea(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo);
+            reporte.totalAsistencias = contarAsistencias(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
+            reporte.distribucionCanalizados = distribucionPorArea(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
         } catch (SQLException e) {
             System.err.println("Error al generar el reporte: " + e.getMessage());
             e.printStackTrace();
@@ -43,8 +43,12 @@ public class ReportesDao {
         return reporte;
     }
 
+    // Nota: el parametro "matricula" se conserva en las firmas para no romper
+    // las llamadas existentes, pero ya no se usa para filtrar (se quito el
+    // buscador de alumno de la pantalla de Reportes Globales).
     private void agregarFiltrosAlumno(StringBuilder sql, List<Object> params, String aliasAlumno,
-                                      Integer idTutor, Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) {
+                                      Integer idTutor, Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo,
+                                      String matricula) {
         if (idTutor != null) {
             sql.append(" AND EXISTS (SELECT 1 FROM ASIGNACION_TUTOR asg " +
                     "WHERE asg.ID_TUTOR = ? AND asg.ACTIVO = 'S' " +
@@ -64,6 +68,11 @@ public class ReportesDao {
             sql.append(" AND ").append(aliasAlumno).append(".ID_LETRA_GRUPO = ? ");
             params.add(idLetraGrupo);
         }
+        // Filtro por alumno removido de Reportes Globales:
+        // if (matricula != null && !matricula.isBlank()) {
+        //     sql.append(" AND TRIM(").append(aliasAlumno).append(".MATRICULA) = ? ");
+        //     params.add(matricula.trim());
+        // }
     }
 
     private int ejecutarConteo(Connection con, String sql, List<Object> params) throws SQLException {
@@ -80,6 +89,8 @@ public class ReportesDao {
             Object valor = params.get(i);
             if (valor instanceof Date) {
                 ps.setDate(i + 1, (Date) valor);
+            } else if (valor instanceof String) {
+                ps.setString(i + 1, (String) valor);
             } else {
                 ps.setInt(i + 1, (Integer) valor);
             }
@@ -88,7 +99,7 @@ public class ReportesDao {
 
     // 1. Alumnos atendidos: al menos una sesión individual "Tomada"
     private int contarAlumnosAtendidos(Connection con, Date desde, Date hasta, Integer idTutor,
-                                       Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
+                                       Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(DISTINCT a.MATRICULA) AS TOTAL " +
                         "FROM ALUMNO a " +
@@ -98,14 +109,14 @@ public class ReportesDao {
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, idCuatrimestre, idLetraGrupo);
+        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
 
         return ejecutarConteo(con, sql.toString(), params);
     }
 
     // 2. Alumnos que pidieron tutoría: al menos una solicitud registrada
     private int contarPidieronTutorias(Connection con, Date desde, Date hasta, Integer idTutor,
-                                       Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
+                                       Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(DISTINCT a.MATRICULA) AS TOTAL " +
                         "FROM ALUMNO a " +
@@ -115,14 +126,14 @@ public class ReportesDao {
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, idCuatrimestre, idLetraGrupo);
+        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
 
         return ejecutarConteo(con, sql.toString(), params);
     }
 
     // 3. Alumnos canalizados a algún área de apoyo
     private int contarCanalizados(Connection con, Date desde, Date hasta, Integer idTutor,
-                                  Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
+                                  Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(DISTINCT a.MATRICULA) AS TOTAL " +
                         "FROM ALUMNO a " +
@@ -132,14 +143,14 @@ public class ReportesDao {
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, idCuatrimestre, idLetraGrupo);
+        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
 
         return ejecutarConteo(con, sql.toString(), params);
     }
 
     // 4. Solicitudes pendientes de responder
     private int contarPendientes(Connection con, Date desde, Date hasta, Integer idTutor,
-                                 Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
+                                 Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(*) AS TOTAL " +
                         "FROM ALUMNO a " +
@@ -149,12 +160,13 @@ public class ReportesDao {
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, idCuatrimestre, idLetraGrupo);
+        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
 
         return ejecutarConteo(con, sql.toString(), params);
     }
 
-    // 5. Sesiones grupales completadas (vista del tutor)
+    // 5. Sesiones grupales completadas (no aplica filtro por alumno individual:
+    //    la sesión es del grupo completo, no de un alumno en particular)
     private int contarGruposAtendidos(Connection con, Date desde, Date hasta, Integer idTutor,
                                       Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
         StringBuilder sql = new StringBuilder(
@@ -182,7 +194,7 @@ public class ReportesDao {
 
     // 6. Asistencias 'Presente' registradas en sesiones grupales
     private int contarAsistencias(Connection con, Date desde, Date hasta, Integer idTutor,
-                                  Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
+                                  Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(*) AS TOTAL " +
                         "FROM ASISTENCIA asi " +
@@ -209,13 +221,18 @@ public class ReportesDao {
             sql.append(" AND sg.ID_LETRA_GRUPO = ? ");
             params.add(idLetraGrupo);
         }
+        // Filtro por alumno removido de Reportes Globales:
+        // if (matricula != null && !matricula.isBlank()) {
+        //     sql.append(" AND TRIM(a.MATRICULA) = ? ");
+        //     params.add(matricula.trim());
+        // }
 
         return ejecutarConteo(con, sql.toString(), params);
     }
 
     // 7. Distribución de canalizados por área de apoyo (gráfica de pastel)
     private Map<String, Integer> distribucionPorArea(Connection con, Date desde, Date hasta, Integer idTutor,
-                                                     Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo) throws SQLException {
+                                                     Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo, String matricula) throws SQLException {
         Map<String, Integer> distribucion = new LinkedHashMap<>();
 
         StringBuilder sql = new StringBuilder(
@@ -228,7 +245,7 @@ public class ReportesDao {
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, idCuatrimestre, idLetraGrupo);
+        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
         sql.append(" GROUP BY ar.NOMBRE ORDER BY TOTAL DESC");
 
         try (PreparedStatement ps = con.prepareStatement(sql.toString())) {

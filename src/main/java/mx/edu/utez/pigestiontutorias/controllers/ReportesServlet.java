@@ -35,10 +35,17 @@ public class ReportesServlet extends HttpServlet {
         }
 
         Integer idUsuario = (Integer) session.getAttribute("idUsuario");
-        Tutor tutor = tutorDao.findByIdUsuario(idUsuario);
-        if (tutor == null) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
-            return;
+        Integer idTutorFiltro;
+
+        Tutor tutorSesion = tutorDao.findByIdUsuario(idUsuario);
+        if (tutorSesion != null) {
+            // El usuario es tutor: siempre se filtra por si mismo, sin importar
+            // que venga un idTutor distinto en la URL (evita que un tutor vea datos de otro).
+            idTutorFiltro = tutorSesion.getIdTutor();
+        } else {
+            // El usuario es coordinador (u otro rol sin tutor asociado):
+            // puede elegir un tutor especifico desde el select, o dejarlo vacio para ver todo.
+            idTutorFiltro = parseIntOrNull(request.getParameter("idTutor"));
         }
 
         Integer idCuatrimestre = parseIntOrNull(request.getParameter("idCuatrimestre"));
@@ -54,15 +61,16 @@ public class ReportesServlet extends HttpServlet {
         LocalDate hasta = parseFechaOrDefault(hastaParam, LocalDate.now());
 
         ReportesDao.ReporteResumen reporte = reportesDao.generarReporte(
-                tutor.getIdTutor(), idCarrera, idCuatrimestre, idLetraGrupo, desde, hasta);
+                idTutorFiltro, idCarrera, idCuatrimestre, idLetraGrupo, null, desde, hasta);
 
         String formato = request.getParameter("formato");
         if ("csv".equalsIgnoreCase(formato)) {
             String nombreCarrera = request.getParameter("nombreCarrera");
             String nombreCuatrimestre = request.getParameter("nombreCuatrimestre");
             String nombreGrupo = request.getParameter("nombreGrupo");
+            String nombreTutor = request.getParameter("nombreTutor");
             exportarCsv(response, reporte, desde, hasta, tieneFiltroFechas,
-                    nombreCarrera, nombreCuatrimestre, nombreGrupo);
+                    nombreCarrera, nombreCuatrimestre, nombreGrupo, nombreTutor);
             return;
         }
 
@@ -96,7 +104,8 @@ public class ReportesServlet extends HttpServlet {
 
     private void exportarCsv(HttpServletResponse response, ReportesDao.ReporteResumen reporte,
                              LocalDate desde, LocalDate hasta, boolean tieneFiltroFechas,
-                             String nombreCarrera, String nombreCuatrimestre, String nombreGrupo) throws IOException {
+                             String nombreCarrera, String nombreCuatrimestre, String nombreGrupo,
+                             String nombreTutor) throws IOException {
 
         String nombreArchivo;
         String tituloPeriodo;
@@ -116,7 +125,6 @@ public class ReportesServlet extends HttpServlet {
 
         PrintWriter out = response.getWriter();
 
-        // BOM UTF-8 vía Writer (nunca mezclar con getOutputStream())
         out.write('\uFEFF');
 
         out.println("Reporte de Tutorias");
@@ -124,6 +132,7 @@ public class ReportesServlet extends HttpServlet {
         out.println("Cuatrimestre," + (esVacio(nombreCuatrimestre) ? "Todos" : nombreCuatrimestre));
         out.println("Grupo," + (esVacio(nombreGrupo) ? "Todos" : nombreGrupo));
         out.println("Carrera," + (esVacio(nombreCarrera) ? "Todas" : nombreCarrera));
+        out.println("Tutor," + (esVacio(nombreTutor) ? "Todos" : nombreTutor));
         out.println();
 
         out.println("Indicador,Cantidad");

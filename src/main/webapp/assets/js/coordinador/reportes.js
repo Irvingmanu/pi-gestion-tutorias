@@ -1,21 +1,11 @@
-// Compartido entre coordinador/reportes-globales.jsp y tutor/reportes.jsp.
-// Pinta las tarjetas KPI que existan en el DOM (si una vista no tiene
-// cierta tarjeta, simplemente se ignora) y la gráfica de pastel, que es
-// idéntica en ambas pantallas. La gráfica de barras SÍ cambia entre
-// coordinador y tutor, así que cada JSP la define con su propio callback.
-
 let graficaPastelReporte = null;
 
 function cargarReporte(opciones) {
-    // opciones = {
-    //   contextPath: '<%= request.getContextPath() %>',
-    //   filtros: ['filtroCarrera', 'filtroCuatrimestre', 'filtroGrupo', 'filtroDesde', 'filtroHasta'],
-    //   onDatos: function (data) { ... } // opcional, para pintar la gráfica de barras propia de la vista
-    // }
     const mapaParametros = {
         filtroCarrera: 'idCarrera',
         filtroCuatrimestre: 'idCuatrimestre',
         filtroGrupo: 'idLetraGrupo',
+        filtroTutor: 'idTutor',
         filtroDesde: 'desde',
         filtroHasta: 'hasta'
     };
@@ -33,7 +23,7 @@ function cargarReporte(opciones) {
 
     fetch(opciones.contextPath + '/ReportesServlet?' + params.toString())
         .then(function (resp) {
-            if (!resp.ok) throw new Error('Error del servidor');
+            if (!resp.ok) throw new Error('Error del servidor: ' + resp.status);
             return resp.json();
         })
         .then(function (data) {
@@ -44,13 +34,22 @@ function cargarReporte(opciones) {
             pintarKpi('kpiGruposAtendidos', data.totalGruposAtendidos);
             pintarKpi('kpiAsistencias', data.totalAsistencias);
 
-            pintarPastelReporte(data.distribucionCanalizados || []);
+            try {
+                pintarPastelReporte(data.distribucionCanalizados || []);
+            } catch (errPastel) {
+                console.error('Error al pintar gráfica de pastel:', errPastel);
+            }
 
             if (typeof opciones.onDatos === 'function') {
-                opciones.onDatos(data);
+                try {
+                    opciones.onDatos(data);
+                } catch (errBarras) {
+                    console.error('Error al pintar gráfica de barras:', errBarras);
+                }
             }
         })
-        .catch(function () {
+        .catch(function (err) {
+            console.error('Error al cargar el reporte:', err);
             if (aviso) {
                 aviso.textContent = 'No se pudo cargar el reporte. Intenta de nuevo.';
                 aviso.classList.remove('d-none');
@@ -80,6 +79,10 @@ function pintarPastelReporte(distribucion) {
                 backgroundColor: ['#008B74', '#8FD9C4', '#0B2544', '#7FA8C9', '#CC5052']
             }]
         },
-        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { position: 'bottom' } }
+        }
     });
 }

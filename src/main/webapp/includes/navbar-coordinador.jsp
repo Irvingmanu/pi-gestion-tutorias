@@ -35,7 +35,7 @@
             <img src="<%= ctx %>/assets/img/coordinador/asignacion.png" alt="Asignación">
             <span>Asignación</span>
         </a>
-        <a href="<%= ctx %>/coordinador/reportes-globales.jsp" class="nav-item-grupos<%= "reportes".equals(paginaActiva) ? " active" : "" %>">
+        <a href="<%= ctx %>/coordinador/reportes-globales" class="nav-item-grupos<%= "reportes".equals(paginaActiva) ? " active" : "" %>">
             <img src="<%= ctx %>/assets/img/coordinador/reportes.png" alt="Reportes">
             <span>Reportes</span>
         </a>
