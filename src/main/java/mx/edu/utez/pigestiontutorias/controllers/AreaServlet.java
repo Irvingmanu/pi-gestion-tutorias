@@ -11,6 +11,7 @@ import mx.edu.utez.pigestiontutorias.models.dao.AreaDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.MotivoDAO;
 
 import java.io.IOException;
+import java.util.List;
 
 @WebServlet(name = "AreaServlet", value = "/areas-apoyo")
 public class AreaServlet extends HttpServlet {
@@ -28,7 +29,7 @@ public class AreaServlet extends HttpServlet {
         if ("eliminar".equals(accion)) {
             boolean eliminado = areaDAO.delete(Integer.parseInt(request.getParameter("idArea")));
             String parametro = eliminado ? "exito=eliminado" : "error=area_en_uso";
-            response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp?" + parametro);
+            response.sendRedirect(request.getContextPath() + "/areas-apoyo?" + parametro);
             return;
         }
 
@@ -130,7 +131,7 @@ public class AreaServlet extends HttpServlet {
         if (esEdicion) {
             area.setIdArea(Integer.parseInt(idAreaParam));
             areaDAO.update(area);
-            response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp?exito=editado");
+            response.sendRedirect(request.getContextPath() + "/areas-apoyo?exito=editado");
         } else {
             int idArea = areaDAO.createAndGetId(area);
 
@@ -145,7 +146,7 @@ public class AreaServlet extends HttpServlet {
                 }
             }
 
-            response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp?exito=guardado");
+            response.sendRedirect(request.getContextPath() + "/areas-apoyo?exito=guardado");
         }
     }
 
@@ -157,7 +158,7 @@ public class AreaServlet extends HttpServlet {
             int idArea = Integer.parseInt(request.getParameter("idArea"));
             boolean eliminado = areaDAO.delete(idArea);
             String parametro = eliminado ? "exito=eliminado" : "error=area_en_uso";
-            response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp?" + parametro);
+            response.sendRedirect(request.getContextPath() + "/areas-apoyo?" + parametro);
             return;
         }
 
@@ -169,7 +170,11 @@ public class AreaServlet extends HttpServlet {
             return;
         }
 
-        response.sendRedirect(request.getContextPath() + "/coordinador/areas-apoyo.jsp");
+        // Listado principal: carga las areas y reenvia (forward) al JSP,
+        // conservando exito/error que vengan en la query string.
+        List<Area> listaAreas = areaDAO.getAll();
+        request.setAttribute("listaAreas", listaAreas);
+        request.getRequestDispatcher("/coordinador/areas-apoyo.jsp").forward(request, response);
     }
 
     // Vuelve al maestro-detalle de un area ya existente tras agregar/eliminar un motivo
