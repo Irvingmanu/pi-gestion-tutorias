@@ -42,7 +42,7 @@ public class SQLConnector {
                 System.err.println("Advertencia: Faltan variables de entorno de la BD. Buscando en credentials.properties...");
                 Properties creds = new Properties();
 
-                try (InputStream is = classLoader.getResourceAsStream("wallet/db.properties")) {
+                try (InputStream is = classLoader.getResourceAsStream("credentials.properties")) {
                     if (is == null) {
                         throw new RuntimeException("No se encontró el archivo db.properties ni las variables de entorno de la base de datos.");
                     }
