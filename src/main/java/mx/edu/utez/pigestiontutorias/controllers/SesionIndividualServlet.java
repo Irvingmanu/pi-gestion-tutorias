@@ -20,6 +20,7 @@ public class SesionIndividualServlet extends HttpServlet {
 
     private final TutorDao tutorDao = new TutorDao();
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();
+    private final AsignacionTutorDao asignacionTutorDao = new AsignacionTutorDao();
     private final AreaDAO areaDAO = new AreaDAO();
     private final MotivoDAO motivoDAO = new MotivoDAO();
     private final CanalizacionDao canalizacionDao = new CanalizacionDao();
@@ -105,7 +106,7 @@ public class SesionIndividualServlet extends HttpServlet {
                 return;
             }
 
-            matricula = matricula.trim();
+            matricula = matricula.trim().toUpperCase();
 
             // Blindaje contra ORA-02291: SESION_INDIVIDUAL.MATRICULA es FK a ALUMNO.MATRICULA,
             // asi que una matricula mal formada o inexistente revienta el INSERT en el DAO.
@@ -121,6 +122,14 @@ public class SesionIndividualServlet extends HttpServlet {
 
             if (alumnoDAO.getById(matricula) == null) {
                 request.setAttribute("error", "El alumno no está registrado en el sistema. Verifica la matrícula.");
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
+                cargarListas(request, tutor);
+                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
+                return;
+            }
+
+            if (!asignacionTutorDao.alumnoPerteneceATutor(tutor.getIdTutor(), matricula)) {
+                request.setAttribute("error", "El alumno con esta matrícula existe, pero no está asignado a tus grupos.");
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
                 cargarListas(request, tutor);
                 request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
@@ -160,7 +169,7 @@ public class SesionIndividualServlet extends HttpServlet {
     // que es la que se ve por defecto) y reenvia al JSP lo que el tutor ya habia
     // escrito, para que un error de validacion no lo obligue a recapturar todo.
     private void marcarTabEspontanea(HttpServletRequest request, String matricula, String fecha, String hora,
-                                      String temas, String acuerdos) {
+                                     String temas, String acuerdos) {
         request.setAttribute("tabActiva", "espontanea");
         request.setAttribute("matriculaEnviada", matricula);
         request.setAttribute("fechaEnviada", fecha);

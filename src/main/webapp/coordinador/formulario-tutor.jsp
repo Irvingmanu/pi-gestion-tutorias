@@ -136,8 +136,8 @@
                         <label for="nomina" class="form-label fs-6 fw-bold">Nómina</label>
                         <input type="text" id="nomina" name="nomina" class="form-control form-control-figma w-100 fs-6"
                                value="<%= tutorFormulario != null && tutorFormulario.getNomina() > 0 ? tutorFormulario.getNomina() : "" %>"
-                               placeholder="Escribe la nómina" pattern="^[0-9]+$"
-                               title="La nómina solo debe contener números."
+                               placeholder="Escribe la nómina" maxlength="4" minlength="4" pattern="^[0-9]{4}$"
+                               title="La nómina debe tener exactamente 4 dígitos numéricos."
                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                             <%= esEdicion ? "readonly" : "" %> required>
                     </div>

@@ -35,7 +35,7 @@ public class AlumnoServlet extends HttpServlet {
 
             List<EventoAgenda> listaEventos = (alumnoConsultado != null)
                     ? alumnoDAO.getAgendaAlumno(alumnoConsultado.getMatricula(), alumnoConsultado.getIdCarrera(),
-                            alumnoConsultado.getIdCuatrimestre(), alumnoConsultado.getIdLetraGrupo())
+                    alumnoConsultado.getIdCuatrimestre(), alumnoConsultado.getIdLetraGrupo())
                     : java.util.Collections.emptyList();
 
             request.setAttribute("listaEventosAgenda", listaEventos);
@@ -94,8 +94,10 @@ public class AlumnoServlet extends HttpServlet {
             return;
         }
 
+        String matricula = request.getParameter("matricula");
+
         Alumno alumno = new Alumno();
-        alumno.setMatricula(request.getParameter("matricula"));
+        alumno.setMatricula(matricula != null ? matricula.trim().toUpperCase() : null);
         alumno.setNombres(request.getParameter("nombres"));
         alumno.setApellidos(request.getParameter("apellidos"));
         alumno.setCorreoInstitucional(request.getParameter("correo"));

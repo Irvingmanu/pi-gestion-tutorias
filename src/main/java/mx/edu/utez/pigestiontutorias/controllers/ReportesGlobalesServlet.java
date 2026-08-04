@@ -17,7 +17,7 @@ import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet("/coordinador/reportes-globales")
+@WebServlet("/reportes-globales")
 public class ReportesGlobalesServlet extends HttpServlet {
 
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();

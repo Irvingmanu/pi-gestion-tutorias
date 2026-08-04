@@ -1,24 +1,17 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.util.List" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ page import="mx.edu.utez.pigestiontutorias.models.Alumno" %>
-<%@ page import="mx.edu.utez.pigestiontutorias.models.Genero" %>
-<%@ page import="mx.edu.utez.pigestiontutorias.models.Carrera" %>
-<%@ page import="mx.edu.utez.pigestiontutorias.models.Cuatrimestre" %>
-<%@ page import="mx.edu.utez.pigestiontutorias.models.LetraGrupo" %>
 <%
     request.setAttribute("paginaActiva", "grupos");
 
     Alumno alumnoEdit = (Alumno) request.getAttribute("alumnoEdit");
     Alumno alumnoConError = (Alumno) request.getAttribute("alumno");
     Alumno alumnoFormulario = alumnoEdit != null ? alumnoEdit : alumnoConError;
-
-    List<Genero> listaGeneros = (List<Genero>) request.getAttribute("listaGeneros");
-    List<Carrera> listaCarreras = (List<Carrera>) request.getAttribute("listaCarreras");
-    List<Cuatrimestre> listaCuatrimestres = (List<Cuatrimestre>) request.getAttribute("listaCuatrimestres");
-    List<LetraGrupo> listaLetrasGrupo = (List<LetraGrupo>) request.getAttribute("listaLetrasGrupo");
+    request.setAttribute("alumnoFormulario", alumnoFormulario);
 
     boolean esEdicion = alumnoEdit != null || "editar".equals(request.getParameter("accion"));
-    String tituloBanner = esEdicion ? "Editar Alumno" : "Nuevo Alumno";
+    request.setAttribute("esEdicion", esEdicion);
+    request.setAttribute("tituloBanner", esEdicion ? "Editar Alumno" : "Nuevo Alumno");
 
     String codigoError = (String) request.getAttribute("error");
     String mensajeError = null;
@@ -31,17 +24,18 @@
     } else if ("formato_invalido".equals(codigoError)) {
         mensajeError = "Verifica los datos. El formato de uno o más campos es incorrecto.";
     }
+    request.setAttribute("mensajeError", mensajeError);
 %>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión de Tutorías - <%= tituloBanner %></title>
-    <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/alertas.css" rel="stylesheet">
+    <title>Sistema de Gestión de Tutorías - ${tituloBanner}</title>
+    <link href="${pageContext.request.contextPath}/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/global.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/alertas.css" rel="stylesheet">
 </head>
 <body>
 
@@ -56,13 +50,13 @@
         <h2 class="titulo-principal h5 mb-3 mt-2">Sistema de Gestión de Tutorías</h2>
 
         <div class="banner-grupos h5 mb-4">
-            <%= tituloBanner %>
+            ${tituloBanner}
         </div>
 
         <!-- Formulario de nuevo/edicion de alumno -->
-        <form class="form-wrap-figma mt-3" style="max-width: 720px;" action="<%= request.getContextPath() %>/gestion-grupos" method="post">
+        <form id="formGuardar" class="form-wrap-figma mt-3" style="max-width: 720px;" action="${pageContext.request.contextPath}/gestion-grupos" method="post">
 
-            <input type="hidden" name="accion" value="<%= esEdicion ? "editar" : "nuevo" %>">
+            <input type="hidden" name="accion" value="${esEdicion ? 'editar' : 'nuevo'}">
 
             <div class="row">
 
@@ -72,21 +66,21 @@
                     <div class="mb-4">
                         <label for="nombres" class="form-label fs-6 fw-bold">Nombres</label>
                         <input type="text" id="nombres" name="nombres" class="form-control form-control-figma w-100 fs-6"
-                               value="<%= alumnoFormulario != null ? alumnoFormulario.getNombres() : "" %>" placeholder="Escribe los nombres"
+                               value="${alumnoFormulario.nombres}" placeholder="Escribe los nombres"
                                pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" title="Solo se permiten letras y espacios." required>
                     </div>
 
                     <div class="mb-4">
                         <label for="apellidos" class="form-label fs-6 fw-bold">Apellidos</label>
                         <input type="text" id="apellidos" name="apellidos" class="form-control form-control-figma w-100 fs-6"
-                               value="<%= alumnoFormulario != null ? alumnoFormulario.getApellidos() : "" %>" placeholder="Escribe los apellidos"
+                               value="${alumnoFormulario.apellidos}" placeholder="Escribe los apellidos"
                                pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" title="Solo se permiten letras y espacios." required>
                     </div>
 
                     <div class="mb-4">
                         <label for="correo" class="form-label fs-6 fw-bold">Correo</label>
                         <input type="email" id="correo" name="correo" class="form-control form-control-figma w-100 fs-6"
-                               value="<%= alumnoFormulario != null ? alumnoFormulario.getCorreoInstitucional() : "" %>"
+                               value="${alumnoFormulario.correoInstitucional}"
                                placeholder="Escribe el correo" pattern="^[a-zA-Z0-9._-]+@utez\.edu\.mx$"
                                title="El correo debe tener un formato válido y terminar en @utez.edu.mx"
                                oninput="this.value = this.value.replace(/[^a-zA-Z0-9.\-_@]/g, '')" required>
@@ -95,17 +89,18 @@
                     <div class="mb-4">
                         <label for="matricula" class="form-label fs-6 fw-bold">Matrícula</label>
                         <input type="text" id="matricula" name="matricula" class="form-control form-control-figma w-100 fs-6"
-                               value="<%= alumnoFormulario != null ? alumnoFormulario.getMatricula() : "" %>" placeholder="Escribe la matrícula"
+                               value="${alumnoFormulario.matricula}" placeholder="Escribe la matrícula"
+                               style="text-transform: uppercase;"
                                maxlength="10" minlength="10" pattern="^[a-zA-Z0-9]{10}$"
                                title="La matrícula debe tener exactamente 10 caracteres, solo letras y números."
-                               oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')"
-                               <%= esEdicion ? "readonly" : "" %> required>
+                               oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()"
+                               ${esEdicion ? 'readonly' : ''} required>
                     </div>
 
                     <div class="mb-4">
                         <label for="telefono" class="form-label fs-6 fw-bold">Teléfono</label>
                         <input type="text" id="telefono" name="telefono" class="form-control form-control-figma w-100 fs-6"
-                               value="<%= alumnoFormulario != null ? alumnoFormulario.getTelefono() : "" %>" placeholder="Escribe el teléfono"
+                               value="${alumnoFormulario.telefono}" placeholder="Escribe el teléfono"
                                pattern="^\d{10}$" maxlength="10" minlength="10"
                                title="Debe contener exactamente 10 dígitos numéricos."
                                oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
@@ -119,52 +114,48 @@
                     <div class="mb-4">
                         <label for="genero" class="form-label fs-6 fw-bold">Género</label>
                         <select id="genero" name="idGenero" class="form-select form-control-figma w-100 fs-6" required>
-                            <option value="" <%= alumnoFormulario == null ? "selected" : "" %>>Seleccione el género</option>
-                            <% for (Genero genero : listaGeneros) { %>
-                            <option value="<%= genero.getId() %>"
-                                    <%= (alumnoFormulario != null && alumnoFormulario.getIdGenero() == genero.getId()) ? "selected" : "" %>>
-                                <%= genero.getNombre() %>
-                            </option>
-                            <% } %>
+                            <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione el género</option>
+                            <c:forEach var="genero" items="${listaGeneros}">
+                                <option value="${genero.id}" ${alumnoFormulario != null && alumnoFormulario.idGenero == genero.id ? 'selected' : ''}>
+                                    ${genero.nombre}
+                                </option>
+                            </c:forEach>
                         </select>
                     </div>
 
                     <div class="mb-4">
                         <label for="carrera" class="form-label fs-6 fw-bold">Carrera</label>
                         <select id="carrera" name="idCarrera" class="form-select form-control-figma w-100 fs-6" required>
-                            <option value="" <%= alumnoFormulario == null ? "selected" : "" %>>Seleccione la carrera</option>
-                            <% for (Carrera carrera : listaCarreras) { %>
-                            <option value="<%= carrera.getIdCarrera() %>"
-                                    <%= (alumnoFormulario != null && alumnoFormulario.getIdCarrera() == carrera.getIdCarrera()) ? "selected" : "" %>>
-                                <%= carrera.getNombre() %>
-                            </option>
-                            <% } %>
+                            <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione la carrera</option>
+                            <c:forEach var="carrera" items="${listaCarreras}">
+                                <option value="${carrera.idCarrera}" ${alumnoFormulario != null && alumnoFormulario.idCarrera == carrera.idCarrera ? 'selected' : ''}>
+                                    ${carrera.nombre}
+                                </option>
+                            </c:forEach>
                         </select>
                     </div>
 
                     <div class="mb-4">
                         <label for="cuatrimestre" class="form-label fs-6 fw-bold">Cuatrimestre</label>
                         <select id="cuatrimestre" name="idCuatrimestre" class="form-select form-control-figma w-100 fs-6" required>
-                            <option value="" <%= alumnoFormulario == null ? "selected" : "" %>>Seleccione el cuatrimestre</option>
-                            <% for (Cuatrimestre cuatrimestre : listaCuatrimestres) { %>
-                            <option value="<%= cuatrimestre.getIdCuatrimestre() %>"
-                                    <%= (alumnoFormulario != null && alumnoFormulario.getIdCuatrimestre() == cuatrimestre.getIdCuatrimestre()) ? "selected" : "" %>>
-                                <%= cuatrimestre.getNumero() %>°
-                            </option>
-                            <% } %>
+                            <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione el cuatrimestre</option>
+                            <c:forEach var="cuatrimestre" items="${listaCuatrimestres}">
+                                <option value="${cuatrimestre.idCuatrimestre}" ${alumnoFormulario != null && alumnoFormulario.idCuatrimestre == cuatrimestre.idCuatrimestre ? 'selected' : ''}>
+                                    ${cuatrimestre.numero}°
+                                </option>
+                            </c:forEach>
                         </select>
                     </div>
 
                     <div class="mb-4">
                         <label for="letraGrupo" class="form-label fs-6 fw-bold">Grupo</label>
                         <select id="letraGrupo" name="idLetraGrupo" class="form-select form-control-figma w-100 fs-6" required>
-                            <option value="" <%= alumnoFormulario == null ? "selected" : "" %>>Seleccione el grupo</option>
-                            <% for (LetraGrupo letraGrupo : listaLetrasGrupo) { %>
-                            <option value="<%= letraGrupo.getIdLetra() %>"
-                                    <%= (alumnoFormulario != null && alumnoFormulario.getIdLetraGrupo() == letraGrupo.getIdLetra()) ? "selected" : "" %>>
-                                <%= letraGrupo.getLetra() %>
-                            </option>
-                            <% } %>
+                            <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione el grupo</option>
+                            <c:forEach var="letraGrupo" items="${listaLetrasGrupo}">
+                                <option value="${letraGrupo.idLetra}" ${alumnoFormulario != null && alumnoFormulario.idLetraGrupo == letraGrupo.idLetra ? 'selected' : ''}>
+                                    ${letraGrupo.letra}
+                                </option>
+                            </c:forEach>
                         </select>
                     </div>
 
@@ -174,7 +165,7 @@
 
             <div class="d-flex justify-content-center gap-3 mt-4">
                 <button type="button" id="btnCancelarFormulario" class="btn-cancelar-figma fw-medium fs-5 px-4 py-2"
-                        data-url-cancelar="<%= request.getContextPath() %>/gestion-grupos" onclick="confirmarCancelacion()">Cancelar</button>
+                        data-url-cancelar="${pageContext.request.contextPath}/gestion-grupos" onclick="confirmarCancelacion()">Cancelar</button>
                 <button type="submit" class="btn-figma fw-medium fs-5 px-4 py-2">Guardar</button>
             </div>
 
@@ -186,16 +177,16 @@
 
 <jsp:include page="../includes/alertas.jsp" />
 
-<script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
-<script src="<%= request.getContextPath() %>/assets/js/alertas.js"></script>
-<script src="<%= request.getContextPath() %>/assets/js/coordinador/alumnos.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/coordinador/alumnos.js"></script>
 
-<% if (mensajeError != null) { %>
+<c:if test="${not empty mensajeError}">
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        mostrarAlerta('error', 'Error', '<%= mensajeError %>');
+        mostrarAlerta('error', 'Error', '${mensajeError}');
     });
 </script>
-<% } %>
+</c:if>
 </body>
 </html>

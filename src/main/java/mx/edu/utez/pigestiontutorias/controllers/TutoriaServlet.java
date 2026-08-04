@@ -80,6 +80,8 @@ public class TutoriaServlet extends HttpServlet {
             return;
         }
 
+        matricula = matricula.trim().toUpperCase();
+
         Integer idCanalizacion = null;
 
         // Si el tutor eligió canalizar a alguna área, primero se registra la canalización

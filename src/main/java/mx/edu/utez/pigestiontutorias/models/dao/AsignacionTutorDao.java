@@ -236,4 +236,35 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
 
         return false;
     }
+
+    // Blindaje de Tutoria Espontanea: el campo de matricula queda libre por UX, pero aqui se
+    // verifica que el alumno realmente pertenezca a alguno de los grupos (Carrera+Cuatrimestre+
+    // Letra) asignados al tutor, cruzando ALUMNO -> ASIGNACION_TUTOR, antes de dejarlo registrar
+    // una sesion individual con esa matricula.
+    public boolean alumnoPerteneceATutor(int idTutor, String matricula) {
+        String sql = "SELECT COUNT(*) FROM ALUMNO al " +
+                "JOIN ASIGNACION_TUTOR a ON a.ID_CARRERA = al.ID_CARRERA " +
+                "AND a.ID_CUATRIMESTRE = al.ID_CUATRIMESTRE " +
+                "AND a.ID_LETRA_GRUPO = al.ID_LETRA_GRUPO " +
+                "WHERE al.MATRICULA = ? AND a.ID_TUTOR = ? AND a.ACTIVO = 'S'";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, matricula);
+            ps.setInt(2, idTutor);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al validar la pertenencia del alumno al tutor: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return false;
+    }
 }

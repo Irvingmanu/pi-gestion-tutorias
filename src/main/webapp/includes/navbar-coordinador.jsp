@@ -27,7 +27,7 @@
             <img src="${pageContext.request.contextPath}/assets/img/coordinador/asignacion.png" alt="Asignación">
             <span>Asignación</span>
         </a>
-        <a href="${pageContext.request.contextPath}/coordinador/reportes-globales" class="nav-item-grupos${paginaActiva == 'reportes' ? ' active' : ''}">
+        <a href="${pageContext.request.contextPath}/reportes-globales" class="nav-item-grupos${paginaActiva == 'reportes' ? ' active' : ''}">
             <img src="${pageContext.request.contextPath}/assets/img/coordinador/reportes.png" alt="Reportes">
             <span>Reportes</span>
         </a>
