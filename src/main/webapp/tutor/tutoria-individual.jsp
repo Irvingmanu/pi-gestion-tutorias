@@ -104,9 +104,10 @@
                                 <label for="matricula" class="form-label fs-6 fw-bold">Matrícula</label>
                                 <input type="text" id="matricula" name="matricula" class="form-control form-control-figma fs-6"
                                        placeholder="Escribe la matrícula del alumno" value="${matriculaEnviada}"
+                                       style="text-transform: uppercase;"
                                        maxlength="10" minlength="10" pattern="^[a-zA-Z0-9]{10}$"
                                        title="La matrícula debe tener exactamente 10 caracteres, solo letras y números."
-                                       oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '')" required>
+                                       oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()" required>
                             </div>
                         </div>
 
@@ -138,15 +139,15 @@
 
                         <div class="row g-3 mb-4">
                             <c:forEach var="area" items="${areasConMotivos}">
-                            <div class="col-md-6">
-                                <label for="motivo-espontanea-${area.idArea}" class="form-label fs-6 fw-bold">${area.nombre}</label>
-                                <select id="motivo-espontanea-${area.idArea}" name="idMotivo" class="form-select form-control-figma fs-6">
-                                    <option value="">Ninguno</option>
-                                    <c:forEach var="motivo" items="${area.motivos}">
-                                    <option value="${motivo.idMotivo}">${motivo.nombreMotivo}</option>
-                                    </c:forEach>
-                                </select>
-                            </div>
+                                <div class="col-md-6">
+                                    <label for="motivo-espontanea-${area.idArea}" class="form-label fs-6 fw-bold">${area.nombre}</label>
+                                    <select id="motivo-espontanea-${area.idArea}" name="idMotivo" class="form-select form-control-figma fs-6">
+                                        <option value="">Ninguno</option>
+                                        <c:forEach var="motivo" items="${area.motivos}">
+                                            <option value="${motivo.idMotivo}">${motivo.nombreMotivo}</option>
+                                        </c:forEach>
+                                    </select>
+                                </div>
                             </c:forEach>
                         </div>
 
@@ -204,15 +205,15 @@
 
                     <div class="row g-3">
                         <c:forEach var="area" items="${areasConMotivos}">
-                        <div class="col-md-6">
-                            <label for="motivo-modal-${area.idArea}" class="form-label fs-6 fw-bold">${area.nombre}</label>
-                            <select id="motivo-modal-${area.idArea}" name="idMotivo" class="form-select form-control-figma w-100 fs-6">
-                                <option value="">Ninguno</option>
-                                <c:forEach var="motivo" items="${area.motivos}">
-                                <option value="${motivo.idMotivo}">${motivo.nombreMotivo}</option>
-                                </c:forEach>
-                            </select>
-                        </div>
+                            <div class="col-md-6">
+                                <label for="motivo-modal-${area.idArea}" class="form-label fs-6 fw-bold">${area.nombre}</label>
+                                <select id="motivo-modal-${area.idArea}" name="idMotivo" class="form-select form-control-figma w-100 fs-6">
+                                    <option value="">Ninguno</option>
+                                    <c:forEach var="motivo" items="${area.motivos}">
+                                        <option value="${motivo.idMotivo}">${motivo.nombreMotivo}</option>
+                                    </c:forEach>
+                                </select>
+                            </div>
                         </c:forEach>
                     </div>
                 </div>
@@ -232,11 +233,11 @@
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 
 <c:if test="${not empty error}">
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        mostrarAlerta('error', 'Error', '${error}');
-    });
-</script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            mostrarAlerta('error', 'Error', '${error}');
+        });
+    </script>
 </c:if>
 
 <script src="${pageContext.request.contextPath}/assets/js/tutor/tutoria-individual.js"></script>

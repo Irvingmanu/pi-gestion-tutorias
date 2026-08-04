@@ -36,16 +36,12 @@ public class ReportesServlet extends HttpServlet {
 
         Integer idUsuario = (Integer) session.getAttribute("idUsuario");
         Integer idTutorFiltro;
-        String nombreTutorSesion = null;
 
         Tutor tutorSesion = tutorDao.findByIdUsuario(idUsuario);
         if (tutorSesion != null) {
             // El usuario es tutor: siempre se filtra por si mismo, sin importar
             // que venga un idTutor distinto en la URL (evita que un tutor vea datos de otro).
             idTutorFiltro = tutorSesion.getIdTutor();
-            // Se calcula el nombre a partir de la sesion (no del parametro de la URL),
-            // asi el CSV siempre muestra el tutor correcto y no se puede falsear desde el navegador.
-            nombreTutorSesion = tutorSesion.getNombres() + " " + tutorSesion.getApellidos();
         } else {
             // El usuario es coordinador (u otro rol sin tutor asociado):
             // puede elegir un tutor especifico desde el select, o dejarlo vacio para ver todo.
@@ -72,11 +68,7 @@ public class ReportesServlet extends HttpServlet {
             String nombreCarrera = request.getParameter("nombreCarrera");
             String nombreCuatrimestre = request.getParameter("nombreCuatrimestre");
             String nombreGrupo = request.getParameter("nombreGrupo");
-            // Si el usuario es tutor, se ignora cualquier parametro nombreTutor de la URL
-            // y se usa el nombre real de la sesion.
-            String nombreTutor = (nombreTutorSesion != null)
-                    ? nombreTutorSesion
-                    : request.getParameter("nombreTutor");
+            String nombreTutor = request.getParameter("nombreTutor");
             exportarCsv(response, reporte, desde, hasta, tieneFiltroFechas,
                     nombreCarrera, nombreCuatrimestre, nombreGrupo, nombreTutor);
             return;

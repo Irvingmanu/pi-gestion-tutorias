@@ -32,8 +32,25 @@ public class FiltroAutenticacion extends HttpFilter {
         boolean isResource = requestURI.contains("/assets/") || requestURI.contains("/includes/");
 
         if (loggedIn) {
-            if (loginRequest && !requestURI.endsWith("/logout")) {
-                response.sendRedirect(request.getContextPath() + "/index.jsp");
+            // También agregamos index.jsp y la raíz "/" a las rutas que no deberían ver si ya tienen sesión
+            boolean tryingToAccessLogin = loginRequest || requestURI.endsWith("/index.jsp") || requestURI.equals(request.getContextPath() + "/");
+
+            if (tryingToAccessLogin && !requestURI.endsWith("/logout")) {
+
+                // Leemos qué rol tiene el usuario actualmente
+                String rol = (String) session.getAttribute("rol");
+                String destino = "/"; // Destino por defecto
+
+                if ("Coordinador".equalsIgnoreCase(rol)) {
+                    destino = "/gestion-tutores";
+                } else if ("Tutor".equalsIgnoreCase(rol)) {
+                    destino = "/tutoria-individual";
+                } else if ("Alumno".equalsIgnoreCase(rol)) {
+                    destino = "/agenda";
+                }
+
+                // Lo mandamos a su panel correspondiente
+                response.sendRedirect(request.getContextPath() + destino);
                 return;
             } else {
                 chain.doFilter(request, response);

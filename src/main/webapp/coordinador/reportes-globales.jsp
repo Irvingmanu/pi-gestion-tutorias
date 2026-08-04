@@ -145,9 +145,12 @@
             </div>
         </div>
 
-        <div class="d-flex justify-content-end mt-4">
-            <button type="button" id="btnExportar" class="btn btn-figma">
-                <i class="bi bi-download"></i> Exportar Excel
+        <div class="d-flex justify-content-end mt-4 gap-2">
+            <button type="button" id="btnExportarExcel" class="btn btn-figma">
+                <i class="bi bi-file-earmark-excel"></i> Exportar Excel
+            </button>
+            <button type="button" id="btnExportarPdf" class="btn btn-figma">
+                <i class="bi bi-file-earmark-pdf"></i> Exportar PDF
             </button>
         </div>
 
@@ -264,7 +267,7 @@
     habilitarClickCompletoFecha('filtroDesde');
     habilitarClickCompletoFecha('filtroHasta');
 
-    function construirUrlExport() {
+    function construirUrlExport(formato) {
         const params = new URLSearchParams();
 
         const selectCarrera = document.getElementById('filtroCarrera');
@@ -292,10 +295,61 @@
         }
         if (desde) params.append('desde', desde);
         if (hasta) params.append('hasta', hasta);
-        params.append('formato', 'csv');
+        params.append('formato', formato);
 
         return CONTEXT_PATH + '/ReportesServlet?' + params.toString();
     }
+
+    async function descargarReporte(formato) {
+        const url = construirUrlExport(formato);
+        try {
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error('Respuesta no válida del servidor');
+
+            const blob = await resp.blob();
+            const disposition = resp.headers.get('Content-Disposition') || '';
+            const match = disposition.match(/filename="?([^"]+)"?/);
+            const nombreArchivo = match ? match[1] : 'reporte_tutorias.' + formato;
+
+            const linkUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = linkUrl;
+            a.download = nombreArchivo;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(linkUrl);
+
+            mostrarToast('exito', 'Éxito', 'El reporte se descargó correctamente');
+        } catch (err) {
+            console.error(err);
+            mostrarToast('error', 'Error', 'Ocurrió un error al exportar el reporte');
+        }
+    }
+
+    document.getElementById('btnExportarExcel').addEventListener('click', function () {
+        mostrarConfirmacion(
+            'advertencia',
+            '¿Deseas descargar?',
+            'Estás a punto de exportar el reporte en formato Excel.',
+            'Sí, descargar',
+            () => {
+                descargarReporte('excel');
+            }
+        );
+    });
+
+    document.getElementById('btnExportarPdf').addEventListener('click', function () {
+        mostrarConfirmacion(
+            'advertencia',
+            '¿Deseas descargar?',
+            'Estás a punto de exportar el reporte en formato PDF.',
+            'Sí, descargar',
+            () => {
+                descargarReporte('pdf');
+            }
+        );
+    });
 
     async function descargarReporteCsv() {
         const url = construirUrlExport();
@@ -324,17 +378,7 @@
         }
     }
 
-    document.getElementById('btnExportar').addEventListener('click', function () {
-        mostrarConfirmacion(
-            'advertencia',
-            '¿Deseas descargar?',
-            'Estás a punto de exportar el reporte en formato CSV.',
-            'Sí, descargar',
-            () => {
-                descargarReporteCsv();
-            }
-        );
-    });
+
 </script>
 </body>
 </html>

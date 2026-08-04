@@ -18,6 +18,8 @@ import java.util.Map;
 @WebServlet(name = "TutoresServlet", value = "/gestion-tutores")
 public class TutoresServlet extends HttpServlet {
 
+    private static final String REGEX_NOMINA = "^[0-9]{4}$";
+
     private final TutorDao tutorDAO = new TutorDao();
 
     @Override
@@ -92,9 +94,21 @@ public class TutoresServlet extends HttpServlet {
         // 2. CREAR / ACTUALIZAR TUTOR
         Tutor tutor = new Tutor();
         String nominaStr = request.getParameter("nomina");
-        if (nominaStr != null && !nominaStr.trim().isEmpty()) {
-            tutor.setNomina(Integer.parseInt(nominaStr.trim()));
+
+        // Blindaje de servidor: el <input> de nomina es maxlength/minlength/pattern="^[0-9]{4}$"
+        // y queda readonly en edicion, pero eso es solo UX. Como con la matricula en
+        // AlumnoServlet, se revalida aqui por si alguien manipula el HTML (inspeccionar/DevTools)
+        // y manda una nomina con letras o de largo distinto a 4.
+        boolean nominaValida = nominaStr != null && nominaStr.trim().matches(REGEX_NOMINA);
+        if (nominaValida) {
+            int nominaParseada = Integer.parseInt(nominaStr.trim());
+            // "0000" cumple el regex de 4 digitos pero no es una nomina real (parsea a 0).
+            nominaValida = nominaParseada > 0;
+            if (nominaValida) {
+                tutor.setNomina(nominaParseada);
+            }
         }
+
         tutor.setNombres(request.getParameter("nombres"));
         tutor.setApellidos(request.getParameter("apellidos"));
         tutor.setCorreoInstitucional(request.getParameter("correo"));
@@ -128,6 +142,14 @@ public class TutoresServlet extends HttpServlet {
         }
 
         boolean esEdicion = "editar".equals(accion);
+
+        if (!nominaValida) {
+            request.setAttribute("error", "formato_invalido");
+            request.setAttribute("tutor", tutor);
+            request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
+            request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);
+            return;
+        }
 
         String errorDuplicado = null;
         if (esEdicion) {
