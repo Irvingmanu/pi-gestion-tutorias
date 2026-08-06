@@ -46,34 +46,6 @@ function prepararEliminacionArea(idArea) {
     );
 }
 
-// Elimina un motivo individual desde la tabla de la vista de edicion
-function prepararEliminacionMotivo(idMotivo, idArea) {
-    mostrarConfirmacion(
-        'critica',
-        '¿Eliminar motivo?',
-        'Esta acción eliminará permanentemente este motivo de canalización.',
-        'Eliminar',
-        function () {
-            document.getElementById('inputEliminarMotivoId').value = idMotivo;
-            document.getElementById('inputEliminarMotivoIdArea').value = idArea;
-            document.getElementById('formEliminarMotivo').submit();
-        }
-    );
-}
-
-// Alterna entre el texto del motivo y su form de edicion en linea (sin AJAX)
-function toggleEditarMotivo(idMotivo) {
-    let etiqueta = document.getElementById('lbl-motivo-' + idMotivo);
-    let formulario = document.getElementById('form-edit-' + idMotivo);
-
-    if (!etiqueta || !formulario) {
-        return;
-    }
-
-    etiqueta.classList.toggle('d-none');
-    formulario.classList.toggle('d-none');
-}
-
 // Toasts/alertas de exito y error via parametros en la URL (?exito=, ?error=)
 document.addEventListener('DOMContentLoaded', function () {
     const parametros = new URLSearchParams(window.location.search);
