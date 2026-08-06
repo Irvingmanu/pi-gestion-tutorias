@@ -40,14 +40,25 @@
     <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
     <link href="<%= request.getContextPath() %>/assets/css/alertas.css" rel="stylesheet">
     <link href="<%= request.getContextPath() %>/assets/css/coordinador/gestion-tutores.css" rel="stylesheet">
+
     <style>
-        /* Pequeño ajuste para que los iconos de feedback de Bootstrap no se encimen si usas padding personalizado */
-        .form-control-figma.is-invalid {
-            border-color: #dc3545;
+        /* Ajuste para iconos de error en inputs personalizados */
+        .form-control-figma.is-invalid, .form-select.is-invalid {
+            border-color: #dc3545 !important;
             background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
             background-repeat: no-repeat;
             background-position: right calc(.375em + .1875rem) center;
             background-size: calc(.75em + .375rem) calc(.75em + .375rem);
+        }
+
+        /* Estilo para degradar el botón cuando está deshabilitado */
+        .btn-figma:disabled {
+            background-color: #7ab899 !important; /* Un verde más pálido/opaco */
+            color: #ffffff;
+            cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none;
+            border: none;
         }
     </style>
 </head>
@@ -67,7 +78,7 @@
             <%= tituloBanner %>
         </div>
 
-        <!-- Se agregó el atributo 'novalidate' para desactivar los tooltips nativos del navegador -->
+        <!-- Atributo novalidate para quitar los mensajes por defecto del navegador -->
         <form id="formGuardar" class="form-wrap-figma mt-3 needs-validation" style="max-width: 1100px;" action="<%= request.getContextPath() %>/gestion-tutores" method="post" novalidate>
 
             <input type="hidden" name="accion" value="<%= esEdicion ? "editar" : "nuevo" %>">
@@ -86,9 +97,7 @@
                                value="<%= tutorFormulario != null && tutorFormulario.getNombres() != null ? tutorFormulario.getNombres() : "" %>"
                                placeholder="Escribe los nombres" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                                required>
-                        <div class="invalid-feedback">
-                            Ingresa un nombre válido (solo letras).
-                        </div>
+                        <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
                     <div class="mb-4">
@@ -97,9 +106,7 @@
                                value="<%= tutorFormulario != null && tutorFormulario.getApellidos() != null ? tutorFormulario.getApellidos() : "" %>"
                                placeholder="Escribe los apellidos" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                                required>
-                        <div class="invalid-feedback">
-                            Ingresa apellidos válidos (solo letras).
-                        </div>
+                        <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
                     <div class="mb-4">
@@ -108,9 +115,7 @@
                                value="<%= tutorFormulario != null && tutorFormulario.getTelefono() != null ? tutorFormulario.getTelefono() : "" %>"
                                placeholder="+52 ..." pattern="^\d{10}$" maxlength="10" minlength="10"
                                oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
-                        <div class="invalid-feedback">
-                            Ingresa un teléfono válido de 10 dígitos.
-                        </div>
+                        <div class="invalid-feedback">Debe contener exactamente 10 dígitos numéricos.</div>
                     </div>
 
                     <div class="mb-4">
@@ -119,9 +124,7 @@
                                value="<%= tutorFormulario != null && tutorFormulario.getCorreoInstitucional() != null ? tutorFormulario.getCorreoInstitucional() : "" %>"
                                placeholder="Escribe el correo" pattern="^[a-zA-Z0-9._-]+@utez\.edu\.mx$"
                                oninput="this.value = this.value.replace(/[^a-zA-Z0-9.\-_@]/g, '')" required>
-                        <div class="invalid-feedback">
-                            El correo debe terminar en @utez.edu.mx
-                        </div>
+                        <div class="invalid-feedback">Debe ser un correo válido terminado en @utez.edu.mx.</div>
                     </div>
                 </div>
 
@@ -136,9 +139,7 @@
                                placeholder="Escribe la nómina" maxlength="4" minlength="4" pattern="^[0-9]{4}$"
                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                             <%= esEdicion ? "readonly" : "" %> required>
-                        <div class="invalid-feedback">
-                            La nómina debe tener exactamente 4 dígitos.
-                        </div>
+                        <div class="invalid-feedback">La nómina debe tener exactamente 4 dígitos.</div>
                     </div>
 
                     <div class="mb-4">
@@ -154,9 +155,7 @@
                             <%  }
                             } %>
                         </select>
-                        <div class="invalid-feedback">
-                            Por favor selecciona una academia.
-                        </div>
+                        <div class="invalid-feedback">Por favor selecciona una academia.</div>
                     </div>
                 </div>
 
@@ -181,10 +180,14 @@
                         <div class="d-flex align-items-center gap-2 mb-2">
                             <div class="row g-2 flex-grow-1 align-items-center">
                                 <div class="col-6">
-                                    <input type="time" id="horarioDesde" class="form-control form-control-figma fs-6" value="08:00" min="08:00" max="20:00" style="cursor: pointer;" onclick="this.showPicker()" onchange="validarLimitesHora(this)">
+                                    <input type="time" id="horarioDesde" class="form-control form-control-figma fs-6"
+                                           value="08:00" min="08:00" max="20:00" style="cursor: pointer;"
+                                           onclick="this.showPicker()" onchange="validarLimitesHora(this)">
                                 </div>
                                 <div class="col-6">
-                                    <input type="time" id="horarioHasta" class="form-control form-control-figma fs-6" value="10:00" min="08:00" max="20:00" style="cursor: pointer;" onclick="this.showPicker()" onchange="validarLimitesHora(this)">
+                                    <input type="time" id="horarioHasta" class="form-control form-control-figma fs-6"
+                                           value="10:00" min="08:00" max="20:00" style="cursor: pointer;"
+                                           onclick="this.showPicker()" onchange="validarLimitesHora(this)">
                                 </div>
                             </div>
                             <button type="button" id="btnAgregarHorario" class="btn-figma btn-figma-sm flex-shrink-0" title="Agregar Horario">+</button>
@@ -209,7 +212,7 @@
             <div class="d-flex justify-content-center gap-3 mt-4 border-top pt-4">
                 <button type="button" id="btnCancelarFormulario" class="btn-cancelar-figma fw-medium fs-5 px-4 py-2"
                         data-url-cancelar="<%= request.getContextPath() %>/gestion-tutores" onclick="confirmarCancelacion()">Cancelar</button>
-                <!-- Se agregó un ID al botón de Guardar y se inicializa deshabilitado -->
+                <!-- Botón de Guardar con ID para manipularlo con JS -->
                 <button type="submit" id="btnGuardar" class="btn-figma fw-medium fs-5 px-4 py-2" disabled>Guardar</button>
             </div>
 
@@ -233,7 +236,6 @@
 </script>
 <% } %>
 
-<!-- Lógica para Validación Visual y Activación del Botón -->
 <script>
     function validarLimitesHora(input) {
         const minHora = '08:00';
@@ -249,7 +251,6 @@
         const btnGuardar = document.getElementById('btnGuardar');
         const inputsRequeridos = form.querySelectorAll('input[required], select[required]');
 
-        // Función que verifica si todo el formulario cumple los requisitos
         function verificarFormulario() {
             let esValido = true;
             inputsRequeridos.forEach(input => {
@@ -257,13 +258,12 @@
                     esValido = false;
                 }
             });
-            // Habilita o deshabilita el botón según el resultado
+
             btnGuardar.disabled = !esValido;
         }
 
-        // Listener para cada campo: pinta de rojo si está mal, quita el rojo si está bien
         inputsRequeridos.forEach(input => {
-            // Validar mientras escribe
+
             input.addEventListener('input', function () {
                 if (this.checkValidity()) {
                     this.classList.remove('is-invalid');
@@ -273,7 +273,6 @@
                 verificarFormulario();
             });
 
-            // Validar también cuando quita el foco (clic afuera)
             input.addEventListener('blur', function () {
                 if (!this.checkValidity()) {
                     this.classList.add('is-invalid');
@@ -282,7 +281,6 @@
             });
         });
 
-        // Verificación inicial por si estamos en modo edición y los campos ya vienen llenos
         verificarFormulario();
     });
 </script>
