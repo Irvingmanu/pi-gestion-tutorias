@@ -74,14 +74,21 @@
             </div>
         </div>
 
-        <div class="row g-3 mb-3">
+        <!-- NUEVO: checkbox de inactivos + boton Buscar en la misma fila -->
+        <div class="row g-3 mb-3 align-items-center">
             <div class="col-md-6 d-flex align-items-center gap-2">
                 <input type="checkbox" id="mostrarInactivos" class="form-check-input">
                 <label class="form-check-label fs-6" for="mostrarInactivos">Mostrar alumnos dados de baja</label>
             </div>
+            <div class="col-md-6 text-md-end">
+                <button type="button" id="btnBuscarAlumnos" class="btn-figma px-4">Buscar</button>
+            </div>
         </div>
 
-        <div class="table-responsive mb-auto">
+        <!-- ==================== FUENTE DE DATOS OCULTA ====================
+             El JSP renderiza la tabla igual que siempre; alumnos.js la lee
+             de aqui (oculta) y pinta las tablas agrupadas mas abajo. -->
+        <div class="table-responsive mb-auto" id="tablaOriginalAlumnos" style="display:none;">
             <c:if test="${empty listaAlumnos}">
                 <div class="alert alert-info text-center">
                     No hay alumnos registrados todavía.
@@ -109,7 +116,7 @@
                         <th>Acciones</th>
                     </tr>
                     </thead>
-                    <tbody id="tablaAlumnos">
+                    <tbody id="tablaAlumnosOriginal">
                     <c:forEach var="alumno" items="${listaAlumnos}">
                         <tr class="${alumno.activo == 'N' ? 'fila-inactiva' : ''}"
                             data-nombre="${fn:toLowerCase(alumno.nombres)} ${fn:toLowerCase(alumno.apellidos)}"
@@ -147,13 +154,14 @@
                             </td>
                         </tr>
                     </c:forEach>
-                    <tr id="filaSinResultados" style="display: none;">
-                        <td colspan="7" class="text-center">No se encontraron alumnos con los filtros seleccionados.</td>
-                    </tr>
                     </tbody>
                 </table>
             </c:if>
         </div>
+
+        <!-- ==================== TABLAS AGRUPADAS (Carrera + Cuatrimestre + Grupo) ====================
+             Se generan dinamicamente en alumnos.js a partir de la fuente oculta de arriba. -->
+        <div id="contenedorGruposAlumnos" class="mb-auto"></div>
 
     </div>
 
