@@ -80,9 +80,7 @@
                 <input type="checkbox" id="mostrarInactivos" class="form-check-input">
                 <label class="form-check-label fs-6" for="mostrarInactivos">Mostrar alumnos dados de baja</label>
             </div>
-            <div class="col-md-6 text-md-end">
-                <button type="button" id="btnBuscarAlumnos" class="btn-figma px-4">Buscar</button>
-            </div>
+
         </div>
 
         <!-- ==================== FUENTE DE DATOS OCULTA ====================

@@ -138,7 +138,7 @@ function construirTablaGrupo(grupoInfo) {
     bloque.className = 'mb-4';
 
     let titulo = document.createElement('div');
-    titulo.className = 'banner-grupos h6 mb-2';
+    titulo.className = 'titulo-grupo-tabla h6 mb-2';
     titulo.textContent = grupoInfo.carrera + ' - ' + grupoInfo.cuatri + '° ' + grupoInfo.grupo;
     bloque.appendChild(titulo);
 
@@ -173,23 +173,7 @@ function construirTablaGrupo(grupoInfo) {
     return bloque;
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-    let buscarAlumno = document.getElementById('buscarAlumno');
-    let carrera = document.getElementById('carrera');
-    let grupo = document.getElementById('grupo');
-    let cuatrimestre = document.getElementById('cuatrimestre');
-    let mostrarInactivos = document.getElementById('mostrarInactivos');
-    let btnBuscar = document.getElementById('btnBuscarAlumnos');
 
-    inicializarAgrupacionAlumnos();
-
-    if (buscarAlumno) buscarAlumno.addEventListener('input', filtrarAlumnos);
-    if (carrera) carrera.addEventListener('change', filtrarAlumnos);
-    if (grupo) grupo.addEventListener('change', filtrarAlumnos);
-    if (cuatrimestre) cuatrimestre.addEventListener('change', filtrarAlumnos);
-    if (mostrarInactivos) mostrarInactivos.addEventListener('change', filtrarAlumnos);
-    if (btnBuscar) btnBuscar.addEventListener('click', filtrarAlumnos);
-});
 
 // Toasts/alertas de exito y error via parametros en la URL (?exito=, ?error=) — sin cambios
 document.addEventListener('DOMContentLoaded', function () {

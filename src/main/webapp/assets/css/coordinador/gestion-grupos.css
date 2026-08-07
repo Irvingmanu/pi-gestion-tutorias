@@ -15,6 +15,12 @@
     margin-bottom: 4px;
     display: block;
 }
+.titulo-grupo-tabla {
+    color: #000;
+    font-weight: 600;
+    padding: 6px 4px;
+    border-bottom: 2px solid #dee2e6;
+}
 
 /* Buscar Alumno — nodo 1061:10118. Alto ya no fijo: lo define el padding,
    igual que un .form-control estandar de Bootstrap */
