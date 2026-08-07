@@ -1,5 +1,6 @@
 package mx.edu.utez.pigestiontutorias.models.dao;
 
+import mx.edu.utez.pigestiontutorias.models.Canalizacion;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
 import java.sql.*;
@@ -19,6 +20,7 @@ public class ReportesDao {
         public int totalGruposAtendidos;
         public int totalAsistencias;
         public Map<String, Integer> distribucionCanalizados = new LinkedHashMap<>();
+        public List<Canalizacion> canalizaciones = new ArrayList<>();
     }
 
     public ReporteResumen generarReporte(Integer idTutor, Integer idCarrera, Integer idCuatrimestre,
@@ -35,6 +37,7 @@ public class ReportesDao {
             reporte.totalGruposAtendidos = contarGruposAtendidos(con, sqlDesde, sqlHasta, idTutor, idCuatrimestre, idLetraGrupo);
             reporte.totalAsistencias = contarAsistencias(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
             reporte.distribucionCanalizados = distribucionPorArea(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
+            reporte.canalizaciones = listarCanalizaciones(con, sqlDesde, sqlHasta, idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
         } catch (SQLException e) {
             System.err.println("Error al generar el reporte: " + e.getMessage());
             e.printStackTrace();
@@ -258,5 +261,47 @@ public class ReportesDao {
         }
 
         return distribucion;
+    }
+
+    // 8. Listado detallado de canalizaciones (para la tabla de Reportes, no solo el conteo
+    // agregado que ya da distribucionPorArea). Reutiliza agregarFiltrosAlumno igual que el
+    // resto de los conteos, asi que respeta los mismos filtros de tutor/carrera/cuatrimestre/grupo.
+    private List<Canalizacion> listarCanalizaciones(Connection con, Date desde, Date hasta, Integer idTutor,
+                                                     Integer idCarrera, Integer idCuatrimestre, Integer idLetraGrupo, String matricula) throws SQLException {
+        List<Canalizacion> lista = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder(
+                "SELECT c.ID_CANALIZACION, c.MATRICULA, c.FECHA_CANALIZACION, c.ESTATUS, c.OBSERVACIONES, " +
+                        "ar.NOMBRE AS NOMBRE_AREA, m.NOMBRE_MOTIVO " +
+                        "FROM ALUMNO a " +
+                        "JOIN CANALIZACION c ON c.MATRICULA = a.MATRICULA " +
+                        "JOIN AREA_APOYO ar ON ar.ID_AREA = c.ID_AREA " +
+                        "LEFT JOIN MOTIVO_AREA m ON m.ID_MOTIVO = c.ID_MOTIVO " +
+                        "WHERE c.FECHA_CANALIZACION BETWEEN ? AND ? ");
+
+        List<Object> params = new ArrayList<>();
+        params.add(desde);
+        params.add(hasta);
+        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, idCuatrimestre, idLetraGrupo, matricula);
+        sql.append(" ORDER BY c.FECHA_CANALIZACION DESC");
+
+        try (PreparedStatement ps = con.prepareStatement(sql.toString())) {
+            aplicarParametros(ps, params);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Canalizacion c = new Canalizacion();
+                    c.setIdCanalizacion(rs.getInt("ID_CANALIZACION"));
+                    c.setMatricula(rs.getString("MATRICULA"));
+                    c.setFechaCanalizacion(rs.getDate("FECHA_CANALIZACION"));
+                    c.setEstatus(rs.getString("ESTATUS"));
+                    c.setObservaciones(rs.getString("OBSERVACIONES"));
+                    c.setNombreArea(rs.getString("NOMBRE_AREA"));
+                    c.setNombreMotivo(rs.getString("NOMBRE_MOTIVO"));
+                    lista.add(c);
+                }
+            }
+        }
+
+        return lista;
     }
 }

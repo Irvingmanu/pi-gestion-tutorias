@@ -41,6 +41,12 @@ function cargarReporte(opciones) {
                 console.error('Error al pintar gráfica de pastel:', errPastel);
             }
 
+            try {
+                pintarTablaCanalizaciones(data.canalizaciones || []);
+            } catch (errTabla) {
+                console.error('Error al pintar tabla de canalizaciones:', errTabla);
+            }
+
             if (typeof opciones.onDatos === 'function') {
                 try {
                     opciones.onDatos(data);
@@ -61,6 +67,35 @@ function cargarReporte(opciones) {
 function pintarKpi(id, valor) {
     const el = document.getElementById(id);
     if (el) el.textContent = (valor !== undefined && valor !== null) ? valor : '--';
+}
+
+// Escapa texto libre antes de insertarlo como HTML: nombreMotivo/observaciones puede venir
+// de un campo de texto libre que capturo el tutor (observacionesCanalizacion), asi que no es
+// seguro insertarlo directo en innerHTML.
+function escaparHtml(texto) {
+    const div = document.createElement('div');
+    div.textContent = texto === undefined || texto === null ? '' : String(texto);
+    return div.innerHTML;
+}
+
+function pintarTablaCanalizaciones(lista) {
+    const tbody = document.getElementById('tablaCanalizacionesBody');
+    if (!tbody) return;
+
+    if (lista.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No hay canalizaciones registradas en este periodo.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = lista.map(function (c) {
+        const badge = c.estatus === 'Pendiente' ? 'warning' : 'success';
+        return '<tr>' +
+            '<td>' + escaparHtml(c.nombreArea) + '</td>' +
+            '<td>' + escaparHtml(c.nombreMotivo) + '</td>' +
+            '<td><span class="badge text-bg-' + badge + '">' + escaparHtml(c.estatus) + '</span></td>' +
+            '<td>' + escaparHtml(c.fechaCanalizacion) + '</td>' +
+            '</tr>';
+    }).join('');
 }
 
 function pintarPastelReporte(distribucion) {

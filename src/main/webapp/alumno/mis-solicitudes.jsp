@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="paginaActiva" value="misSolicitudes" scope="request" />
 <%
     // Unico bloque Java que queda: solo construye los formateadores de fecha
@@ -64,11 +64,11 @@
 
                                         <p class="mb-1">
                                             <strong>Fecha propuesta:</strong>
-                                            ${empty s.fechaPropuesta ? 'No especificada' : formatoFecha.format(s.fechaPropuesta)}
+                                                ${empty s.fechaPropuesta ? 'No especificada' : formatoFecha.format(s.fechaPropuesta)}
                                         </p>
                                         <p class="mb-1">
                                             <strong>Hora de inicio:</strong>
-                                            ${empty s.horaPropuesta ? 'No especificada' : s.horaPropuesta}
+                                                ${empty s.horaPropuesta ? 'No especificada' : s.horaPropuesta}
                                         </p>
                                         <p class="mb-0">
                                             <strong>Duración:</strong>

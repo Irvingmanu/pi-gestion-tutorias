@@ -12,6 +12,7 @@ import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.models.dao.CanalizacionDao;
 import mx.edu.utez.pigestiontutorias.models.dao.SesionIndividualDao;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
+import mx.edu.utez.pigestiontutorias.utils.UrlUtils;
 
 import java.io.IOException;
 import java.sql.Date;
@@ -91,7 +92,7 @@ public class TutoriaServlet extends HttpServlet {
             c.setMatricula(matricula);
             c.setObservaciones(observaciones);
 
-            int idGenerado = canalizacionDao.crearYObtenerId(c);
+            int idGenerado = canalizacionDao.crearYObtenerId(c, UrlUtils.baseUrl(request));
             if (idGenerado > 0) {
                 idCanalizacion = idGenerado;
             }

@@ -40,6 +40,10 @@
             <img src="<%= ctx %>/assets/img/alumno/acuerdos.png" alt="Acuerdos">
             <span>Acuerdos</span>
         </a>
+        <a href="<%= ctx %>/alumno/canalizaciones" class="nav-item-grupos<%= "canalizaciones".equals(paginaActiva) ? " active" : "" %>">
+            <img src="<%= ctx %>/assets/img/alumno/canalizaciones.png" alt="Canalizaciones">
+            <span>Canalizaciones</span>
+        </a>
         <a href="<%= ctx %>/alumno/perfil.jsp" class="nav-item-grupos mt-auto<%= "perfil".equals(paginaActiva) ? " active" : "" %>">
             <img src="<%= ctx %>/assets/img/alumno/perfil.png" alt="Perfil">
             <span>Perfil</span>

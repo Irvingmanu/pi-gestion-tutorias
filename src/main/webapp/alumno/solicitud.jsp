@@ -1,5 +1,5 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="paginaActiva" value="solicitud" scope="request" />
 <%-- Los datos de disponibilidad ya vienen calculados por SolicitudServlet (accion=nueva),
      que es el unico punto de entrada a esta vista. "empty" cubre tanto listaHorarios == null
@@ -33,14 +33,14 @@
         </div>
 
         <c:if test="${param.exito == 'enviada'}">
-        <div class="alert alert-success" role="alert">
-            Tu solicitud fue enviada correctamente. El tutor la revisará pronto.
-        </div>
+            <div class="alert alert-success" role="alert">
+                Tu solicitud fue enviada correctamente. El tutor la revisará pronto.
+            </div>
         </c:if>
         <c:if test="${param.exito == 'error'}">
-        <div class="alert alert-danger" role="alert">
-            Ocurrió un error al enviar tu solicitud. Intenta de nuevo.
-        </div>
+            <div class="alert alert-danger" role="alert">
+                Ocurrió un error al enviar tu solicitud. Intenta de nuevo.
+            </div>
         </c:if>
 
         <div class="form-wrap-figma" style="max-width: 50%;">
@@ -100,95 +100,15 @@
 
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        var puedeEnviar = ${puedeEnviar};
-        var form = document.getElementById('formSolicitud');
 
-        form.addEventListener('submit', function (evento) {
-            if (!puedeEnviar) {
-                evento.preventDefault();
-                mostrarAlerta(
-                    'advertencia',
-                    'No puedes enviar tu solicitud',
-                    'Todavía no tienes un tutor asignado o tu tutor no tiene horarios de atención registrados. Consulta con el coordinador.'
-                );
-            }
-        });
-    });
-</script>
+<!-- Puente entre EL y el JS externo: valores calculados por el servidor -->
 <script>
+    window.PUEDE_ENVIAR = ${puedeEnviar};
     // Disponibilidad real de las próximas 2 semanas, calculada en
     // SolicitudServlet.construirDisponibilidadJson (cruza HORARIO_ATENCION
     // del tutor con las horas ya ocupadas en SOLICITUD_TUTORIA/SESION_INDIVIDUAL).
-    const disponibilidad = ${empty disponibilidadJson ? '{}' : disponibilidadJson};
-
-    document.addEventListener('DOMContentLoaded', function () {
-        var selectDia = document.getElementById('fechaPropuesta');
-        var selectDuracion = document.getElementById('duracionPropuesta');
-        var selectHora = document.getElementById('horaPropuesta');
-
-        Object.keys(disponibilidad).forEach(function (fecha) {
-            var opcion = document.createElement('option');
-            opcion.value = fecha;
-            opcion.textContent = fecha;
-            selectDia.appendChild(opcion);
-        });
-
-        function reiniciarSelect(select, textoPlaceholder) {
-            select.innerHTML = '';
-            var opcionVacia = document.createElement('option');
-            opcionVacia.value = '';
-            opcionVacia.textContent = textoPlaceholder;
-            opcionVacia.disabled = true;
-            opcionVacia.selected = true;
-            select.appendChild(opcionVacia);
-        }
-
-        function sumarUnaHora(hora) {
-            var partes = hora.split(':');
-            var horaSiguiente = parseInt(partes[0], 10) + 1;
-            return String(horaSiguiente).padStart(2, '0') + ':' + partes[1];
-        }
-
-        // Al elegir el Día, se habilita Duración (sus opciones 1/2 horas ya
-        // están fijas en el HTML, aquí solo se activa el select)
-        selectDia.addEventListener('change', function () {
-            selectDuracion.disabled = false;
-            selectDuracion.querySelector('option[value=""]').textContent = 'Seleccione duración';
-            selectDuracion.value = '';
-
-            reiniciarSelect(selectHora, 'Seleccione la duración primero');
-            selectHora.disabled = true;
-        });
-
-        // Al elegir la Duración, se calcula y llena la Hora de inicio
-        selectDuracion.addEventListener('change', function () {
-            reiniciarSelect(selectHora, 'Seleccione hora');
-
-            var fecha = selectDia.value;
-            var duracion = parseInt(selectDuracion.value, 10);
-            var horasDelDia = disponibilidad[fecha] || [];
-
-            var horasValidas = horasDelDia.filter(function (hora) {
-                if (duracion === 1) {
-                    return true;
-                }
-                // Duración de 2 horas: solo si el bloque inmediatamente
-                // siguiente también está disponible ese mismo día.
-                return horasDelDia.indexOf(sumarUnaHora(hora)) !== -1;
-            });
-
-            horasValidas.forEach(function (hora) {
-                var opcion = document.createElement('option');
-                opcion.value = hora;
-                opcion.textContent = hora;
-                selectHora.appendChild(opcion);
-            });
-
-            selectHora.disabled = horasValidas.length === 0;
-        });
-    });
+    window.DISPONIBILIDAD = ${empty disponibilidadJson ? '{}' : disponibilidadJson};
 </script>
+<script src="${pageContext.request.contextPath}/assets/js/alumno/solicitud.js"></script>
 </body>
 </html>
