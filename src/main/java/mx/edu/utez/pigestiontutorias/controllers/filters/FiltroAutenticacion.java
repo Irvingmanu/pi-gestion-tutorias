@@ -31,6 +31,13 @@ public class FiltroAutenticacion extends HttpFilter {
 
         boolean isResource = requestURI.contains("/assets/") || requestURI.contains("/includes/");
 
+        // El encargado de un area no tiene cuenta en el sistema: llega a esta ruta desde el
+        // link del correo de confirmacion de canalizacion, sin sesion iniciada. No se agrega
+        // a loginRequest a proposito: si un usuario SI tiene sesion activa y da clic en el link,
+        // debe poder ver igual la pagina de confirmacion, no que lo redirijamos a su panel.
+        boolean rutaConfirmacionCanalizacion = requestURI.endsWith("/confirmar-canalizacion")
+                || requestURI.endsWith("/confirmar-canalizacion.jsp");
+
         if (loggedIn) {
             // También agregamos index.jsp y la raíz "/" a las rutas que no deberían ver si ya tienen sesión
             boolean tryingToAccessLogin = loginRequest || requestURI.endsWith("/index.jsp") || requestURI.equals(request.getContextPath() + "/");
@@ -56,7 +63,7 @@ public class FiltroAutenticacion extends HttpFilter {
                 chain.doFilter(request, response);
             }
         } else {
-            if (loginRequest || isResource) {
+            if (loginRequest || isResource || rutaConfirmacionCanalizacion) {
                 chain.doFilter(request, response);
             } else {
                 response.sendRedirect(request.getContextPath() + "/login.jsp");

@@ -1,5 +1,6 @@
 package mx.edu.utez.pigestiontutorias.models.dao;
 
+import mx.edu.utez.pigestiontutorias.models.Canalizacion;
 import mx.edu.utez.pigestiontutorias.models.SesionIndividual;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
@@ -8,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
+
+    private final CanalizacionDao canalizacionDao = new CanalizacionDao();
 
     @Override
     public boolean create(SesionIndividual s) {
@@ -108,14 +111,16 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
     // La primera canalizacion creada queda enlazada a la sesion via ID_CANALIZACION;
     // las demas quedan igual en CANALIZACION (por matricula/area) porque SESION_INDIVIDUAL
     // solo tiene una columna de enlace.
-    public boolean completarSesion(int idSesion, String temas, String acuerdos, String[] idMotivos, String estatusAsistencia) {
+    // baseUrl se usa para armar el link del correo de confirmacion (ver CanalizacionDao);
+    // los correos se mandan DESPUES del commit, para no notificar al encargado de una
+    // canalizacion que la transaccion pudiera revertir mas adelante.
+    public boolean completarSesion(int idSesion, String temas, String acuerdos, String[] idMotivos, String estatusAsistencia, String baseUrl) {
         String sqlMatricula = "SELECT MATRICULA FROM SESION_INDIVIDUAL WHERE ID_SESION_INDIVIDUAL = ?";
         String sqlMotivoArea = "SELECT ID_AREA FROM MOTIVO_AREA WHERE ID_MOTIVO = ?";
-        String sqlCanalizacion = "INSERT INTO CANALIZACION(ID_AREA, ID_MOTIVO, MATRICULA, FECHA_CANALIZACION, ESTATUS, OBSERVACIONES) " +
-                "VALUES (?, ?, ?, SYSDATE, 'Pendiente', ?)";
         String sqlUpdate = "UPDATE SESION_INDIVIDUAL SET ESTADO = 'Tomada', TEMAS_TRATADOS = ?, ACUERDOS = ?, ID_CANALIZACION = ?, ESTATUS_ASISTENCIA = ? " +
                 "WHERE ID_SESION_INDIVIDUAL = ?";
 
+        List<Canalizacion> canalizacionesCreadas = new ArrayList<>();
         Connection con = null;
         try {
             con = SQLConnector.getConnection();
@@ -155,19 +160,18 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
                         continue;
                     }
 
-                    try (PreparedStatement psCanal = con.prepareStatement(sqlCanalizacion, new String[]{"ID_CANALIZACION"})) {
-                        psCanal.setInt(1, idArea);
-                        psCanal.setInt(2, idMotivo);
-                        psCanal.setString(3, matricula);
-                        psCanal.setString(4, "Canalización registrada al completar la sesión");
-                        psCanal.executeUpdate();
+                    Canalizacion c = new Canalizacion();
+                    c.setIdArea(idArea);
+                    c.setIdMotivo(idMotivo);
+                    c.setMatricula(matricula);
+                    c.setObservaciones("Canalización registrada al completar la sesión");
 
+                    int idGenerado = canalizacionDao.crearEnTransaccion(con, c);
+                    if (idGenerado > 0) {
+                        c.setIdCanalizacion(idGenerado);
+                        canalizacionesCreadas.add(c);
                         if (idCanalizacionPrincipal == null) {
-                            try (ResultSet keys = psCanal.getGeneratedKeys()) {
-                                if (keys.next()) {
-                                    idCanalizacionPrincipal = keys.getInt(1);
-                                }
-                            }
+                            idCanalizacionPrincipal = idGenerado;
                         }
                     }
                 }
@@ -188,6 +192,13 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
             }
 
             con.commit();
+
+            if (baseUrl != null) {
+                for (Canalizacion creada : canalizacionesCreadas) {
+                    canalizacionDao.enviarCorreoConfirmacion(creada, baseUrl);
+                }
+            }
+
             return actualizado;
         } catch (SQLException e) {
             e.printStackTrace();

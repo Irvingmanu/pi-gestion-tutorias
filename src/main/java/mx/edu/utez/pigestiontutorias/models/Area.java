@@ -7,6 +7,7 @@ public class Area {
     private String nombre;
     private String encargado;
     private String correoContacto;
+    private String enlaceCita;
     private List<Motivo> motivos;
 
     public Area() {
@@ -49,6 +50,14 @@ public class Area {
 
     public void setCorreoContacto(String correoContacto) {
         this.correoContacto = correoContacto;
+    }
+
+    public String getEnlaceCita() {
+        return enlaceCita;
+    }
+
+    public void setEnlaceCita(String enlaceCita) {
+        this.enlaceCita = enlaceCita;
     }
 
     public List<Motivo> getMotivos() {

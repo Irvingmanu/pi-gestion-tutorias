@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import mx.edu.utez.pigestiontutorias.models.*;
 import mx.edu.utez.pigestiontutorias.models.dao.*;
+import mx.edu.utez.pigestiontutorias.utils.UrlUtils;
 
 import java.io.IOException;
 import java.sql.Date;
@@ -70,6 +71,7 @@ public class SesionIndividualServlet extends HttpServlet {
         String hora = request.getParameter("hora");
 
         boolean esCompletado = idSesionStr != null && !idSesionStr.isBlank();
+        String baseUrl = UrlUtils.baseUrl(request);
 
         if (temasTratados == null || temasTratados.isBlank() || acuerdos == null || acuerdos.isBlank()) {
             request.setAttribute("error", "Completa todos los campos obligatorios.");
@@ -95,7 +97,7 @@ public class SesionIndividualServlet extends HttpServlet {
 
         if (esCompletado) {
             int idSesion = Integer.parseInt(idSesionStr.trim());
-            guardado = sesionIndividualDao.completarSesion(idSesion, temasTratados, acuerdos, idMotivos, estatusAsistencia);
+            guardado = sesionIndividualDao.completarSesion(idSesion, temasTratados, acuerdos, idMotivos, estatusAsistencia, baseUrl);
         } else {
             if (matricula == null || matricula.isBlank() || fechaStr == null || fechaStr.isBlank()
                     || hora == null || hora.isBlank()) {
@@ -136,7 +138,7 @@ public class SesionIndividualServlet extends HttpServlet {
                 return;
             }
 
-            Integer idCanalizacionPrincipal = registrarCanalizaciones(idMotivos, matricula);
+            Integer idCanalizacionPrincipal = registrarCanalizaciones(idMotivos, matricula, baseUrl);
 
             SesionIndividual sesion = new SesionIndividual();
             sesion.setIdTutor(tutor.getIdTutor());
@@ -169,7 +171,7 @@ public class SesionIndividualServlet extends HttpServlet {
     // que es la que se ve por defecto) y reenvia al JSP lo que el tutor ya habia
     // escrito, para que un error de validacion no lo obligue a recapturar todo.
     private void marcarTabEspontanea(HttpServletRequest request, String matricula, String fecha, String hora,
-                                     String temas, String acuerdos) {
+                                      String temas, String acuerdos) {
         request.setAttribute("tabActiva", "espontanea");
         request.setAttribute("matriculaEnviada", matricula);
         request.setAttribute("fechaEnviada", fecha);
@@ -180,7 +182,7 @@ public class SesionIndividualServlet extends HttpServlet {
 
     // Crea una CANALIZACION por cada motivo seleccionado en "Vinculo Directo" y devuelve
     // la primera generada, para enlazarla como ID_CANALIZACION de la sesion nueva.
-    private Integer registrarCanalizaciones(String[] idMotivos, String matricula) {
+    private Integer registrarCanalizaciones(String[] idMotivos, String matricula, String baseUrl) {
         if (idMotivos == null) {
             return null;
         }
@@ -203,7 +205,7 @@ public class SesionIndividualServlet extends HttpServlet {
             c.setMatricula(matricula);
             c.setObservaciones(motivo.getNombreMotivo());
 
-            int idGenerado = canalizacionDao.crearYObtenerId(c);
+            int idGenerado = canalizacionDao.crearYObtenerId(c, baseUrl);
             if (idGenerado > 0 && idPrincipal == null) {
                 idPrincipal = idGenerado;
             }

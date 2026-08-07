@@ -38,9 +38,9 @@ public class RecuperarServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String dato = request.getParameter("dato");
-        Usuario usuario = usuarioDao.buscarPorCorreoOMatricula(dato);
+        Usuario usuario = usuarioDao.buscarPorCorreoOMatricula(dato != null ? dato.trim() : null);
 
-        if (usuario != null) {
+        if (usuario != null && usuario.getCorreoInstitucional() != null && !usuario.getCorreoInstitucional().isBlank()) {
             String codigo = generarCodigo(6);
             boolean guardado = usuarioDao.guardarCodigoRecuperacion(usuario.getIdUsuario(), codigo);
             if (guardado) {

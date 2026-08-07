@@ -145,6 +145,29 @@
             </div>
         </div>
 
+        <div class="row g-3 mt-1">
+            <div class="col-12">
+                <div class="p-3 bg-white rounded-figma shadow-sm border">
+                    <div class="fw-bold mb-2">Canalizaciones Detalladas</div>
+                    <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Área</th>
+                                    <th>Motivo</th>
+                                    <th>Estatus</th>
+                                    <th>Fecha</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaCanalizacionesBody">
+                                <tr><td colspan="4" class="text-center text-muted">--</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="d-flex justify-content-end mt-4 gap-2">
             <button type="button" id="btnExportarExcel" class="btn btn-figma">
                 <i class="bi bi-file-earmark-excel"></i> Exportar Excel

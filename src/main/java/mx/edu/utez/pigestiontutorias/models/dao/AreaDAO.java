@@ -21,13 +21,14 @@ public class AreaDAO implements Dao<Area, Integer> {
 
     // Devuelve el ID_AREA generado para poder insertar sus motivos hijos
     public int createAndGetId(Area entidad) {
-        String sql = "INSERT INTO AREA_APOYO(NOMBRE, ENCARGADO, CORREO_CONTACTO) VALUES(?, ?, ?)";
+        String sql = "INSERT INTO AREA_APOYO(NOMBRE, ENCARGADO, CORREO_CONTACTO, ENLACE_CITA) VALUES(?, ?, ?, ?)";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql, new String[]{"ID_AREA"})) {
 
             ps.setString(1, entidad.getNombre());
             ps.setString(2, entidad.getEncargado());
             ps.setString(3, entidad.getCorreoContacto());
+            ps.setString(4, entidad.getEnlaceCita());
 
             int filasAfectadas = ps.executeUpdate();
             if (filasAfectadas > 0) {
@@ -92,6 +93,7 @@ public class AreaDAO implements Dao<Area, Integer> {
                 a.setNombre(rs.getString("NOMBRE"));
                 a.setEncargado(rs.getString("ENCARGADO"));
                 a.setCorreoContacto(rs.getString("CORREO_CONTACTO"));
+                a.setEnlaceCita(rs.getString("ENLACE_CITA"));
                 listaAreas.add(a);
             }
         } catch (SQLException e) {
@@ -124,6 +126,7 @@ public class AreaDAO implements Dao<Area, Integer> {
                     a.setNombre(rs.getString("NOMBRE"));
                     a.setEncargado(rs.getString("ENCARGADO"));
                     a.setCorreoContacto(rs.getString("CORREO_CONTACTO"));
+                    a.setEnlaceCita(rs.getString("ENLACE_CITA"));
                     a.setMotivos(motivoDAO.getByIdArea(a.getIdArea()));
                     return a;
                 }
@@ -136,14 +139,19 @@ public class AreaDAO implements Dao<Area, Integer> {
 
     @Override
     public boolean update(Area entidad) {
-        String sql = "UPDATE AREA_APOYO SET NOMBRE = ?, ENCARGADO = ?, CORREO_CONTACTO = ? WHERE ID_AREA = ?";
+        // ENLACE_CITA usa COALESCE porque el formulario de coordinador (formulario-area.jsp)
+        // todavia no tiene un campo para capturarlo: si viene null aqui, se conserva el valor
+        // que ya estaba en BD en vez de borrarlo en cada edicion de nombre/encargado/correo.
+        String sql = "UPDATE AREA_APOYO SET NOMBRE = ?, ENCARGADO = ?, CORREO_CONTACTO = ?, " +
+                "ENLACE_CITA = COALESCE(?, ENLACE_CITA) WHERE ID_AREA = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, entidad.getNombre());
             ps.setString(2, entidad.getEncargado());
             ps.setString(3, entidad.getCorreoContacto());
-            ps.setInt(4, entidad.getIdArea());
+            ps.setString(4, entidad.getEnlaceCita());
+            ps.setInt(5, entidad.getIdArea());
 
             int filasAfectadas = ps.executeUpdate();
             return filasAfectadas > 0;

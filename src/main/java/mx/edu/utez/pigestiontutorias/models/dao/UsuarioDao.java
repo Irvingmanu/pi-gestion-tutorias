@@ -31,7 +31,7 @@ public class UsuarioDao {
 
     public Usuario buscarPorCorreoOMatricula(String dato) {
         Usuario usuario = null;
-        String sql = "SELECT * FROM USUARIO WHERE CORREO_INSTITUCIONAL = ? OR IDENTIFICADOR = ?";
+        String sql = "SELECT * FROM USUARIO WHERE UPPER(CORREO_INSTITUCIONAL) = UPPER(?) OR UPPER(IDENTIFICADOR) = UPPER(?)";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 

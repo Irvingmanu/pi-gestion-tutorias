@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import mx.edu.utez.pigestiontutorias.models.Canalizacion;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.models.dao.ReportesDao;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
@@ -95,6 +96,21 @@ public class ReportesServlet extends HttpServlet {
             primero = false;
         }
 
+        json.append("],");
+        json.append("\"canalizaciones\":[");
+
+        boolean primeraCanalizacion = true;
+        for (Canalizacion c : reporte.canalizaciones) {
+            if (!primeraCanalizacion) json.append(",");
+            String fecha = c.getFechaCanalizacion() != null ? c.getFechaCanalizacion().toLocalDate().format(FORMATO_FECHA) : "";
+            String motivo = c.getNombreMotivo() != null ? c.getNombreMotivo() : c.getObservaciones();
+            json.append("{\"nombreArea\":\"").append(escaparJson(c.getNombreArea())).append("\",");
+            json.append("\"nombreMotivo\":\"").append(escaparJson(motivo)).append("\",");
+            json.append("\"estatus\":\"").append(escaparJson(c.getEstatus())).append("\",");
+            json.append("\"fechaCanalizacion\":\"").append(escaparJson(fecha)).append("\"}");
+            primeraCanalizacion = false;
+        }
+
         json.append("]");
         json.append("}");
 
@@ -147,6 +163,15 @@ public class ReportesServlet extends HttpServlet {
         out.println("Area de Canalizacion,Total");
         for (Map.Entry<String, Integer> entrada : reporte.distribucionCanalizados.entrySet()) {
             out.println(entrada.getKey() + "," + entrada.getValue());
+        }
+
+        out.println();
+        out.println("Canalizaciones Detalladas");
+        out.println("Area,Motivo,Estatus,Fecha");
+        for (Canalizacion c : reporte.canalizaciones) {
+            String fecha = c.getFechaCanalizacion() != null ? c.getFechaCanalizacion().toLocalDate().format(FORMATO_FECHA) : "";
+            String motivo = c.getNombreMotivo() != null ? c.getNombreMotivo() : c.getObservaciones();
+            out.println(c.getNombreArea() + "," + motivo + "," + c.getEstatus() + "," + fecha);
         }
 
         out.flush();
