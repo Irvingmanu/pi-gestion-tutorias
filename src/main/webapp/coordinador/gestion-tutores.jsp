@@ -1,23 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
-<%@ page import="java.util.List" %>
-<%@ page import="java.util.Map" %>
-<%@ page import="java.util.ArrayList" %>
-<%@ page import="java.util.HashMap" %>
-<%@ page import="mx.edu.utez.pigestiontutorias.models.Tutor" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <%
-    String paginaActiva = "tutores";
-    request.setAttribute("paginaActiva", paginaActiva);
-    String ctx = request.getContextPath();
-
-    List<Tutor> listaTutores = (List<Tutor>) request.getAttribute("listaTutores");
-    if (listaTutores == null) {
-        listaTutores = new ArrayList<>();
-    }
-
-    Map<Integer, String> nombresAcademia = (Map<Integer, String>) request.getAttribute("nombresAcademia");
-    if (nombresAcademia == null) {
-        nombresAcademia = new HashMap<>();
-    }
+    request.setAttribute("paginaActiva", "tutores");
 %>
 <!DOCTYPE html>
 <html lang="es">
@@ -25,12 +10,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Gestión de Tutores</title>
-    <link href="<%= ctx %>/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= ctx %>/assets/css/global.css" rel="stylesheet">
-    <link href="<%= ctx %>/assets/css/coordinador/navbar.css" rel="stylesheet">
-    <link href="<%= ctx %>/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
-    <link href="<%= ctx %>/assets/css/coordinador/gestion-tutores.css" rel="stylesheet">
-    <link href="<%= ctx %>/assets/css/alertas.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/global.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/gestion-tutores.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/alertas.css" rel="stylesheet">
 </head>
 <body>
 
@@ -58,7 +43,7 @@
                 </div>
                 <div class="text-center">
                     <label class="campo-label fs-6">Nuevo Tutor</label>
-                    <a href="<%= ctx %>/gestion-tutores?accion=nuevo" class="btn-figma text-decoration-none">Agregar</a>
+                    <a href="${pageContext.request.contextPath}/gestion-tutores?accion=nuevo" class="btn-figma text-decoration-none">Agregar</a>
                 </div>
             </div>
         </div>
@@ -72,86 +57,91 @@
 
         <!-- Tabla de tutores -->
         <div class="table-responsive mb-auto">
-            <% if (listaTutores.isEmpty()) { %>
-            <div class="alert alert-info text-center">
-                No hay tutores registrados todavía.
-            </div>
-            <% } else { %>
-            <table class="tabla-grupos fs-6">
-                <colgroup>
-                    <col class="col-nomina">
-                    <col class="col-nombre-t">
-                    <col class="col-correo-t">
-                    <col class="col-telefono">
-                    <col class="col-academia">
-                    <col class="col-acciones-t">
-                </colgroup>
-                <thead>
-                <tr>
-                    <th>Nomina</th>
-                    <th>Nombre</th>
-                    <th>Correo</th>
-                    <th>Teléfono</th>
-                    <th>Academia</th>
-                    <th>Acciones</th>
-                </tr>
-                </thead>
-                <tbody id="tablaTutores">
-                <% for (Tutor tutor : listaTutores) {
-                    boolean tutorActivo = !"N".equals(tutor.getActivo());
-                %>
-                <tr class="<%= tutorActivo ? "" : "fila-inactiva" %>"
-                    data-nombre="<%= tutor.getNombres().toLowerCase() %> <%= tutor.getApellidos().toLowerCase() %>"
-                    data-activo="<%= tutorActivo ? "S" : "N" %>">
-                    <td><%= tutor.getNomina() %></td>
-                    <td><%= tutor.getNombres() %> <%= tutor.getApellidos() %><% if (!tutorActivo) { %> <span class="badge-inactivo">(Baja)</span><% } %></td>
-                    <td><%= tutor.getCorreoInstitucional() %></td>
-                    <td><%= tutor.getTelefono() %></td>
-                    <td><%= nombresAcademia.get(tutor.getIdAcademia()) %></td>
-                    <td>
-                        <div class="d-flex justify-content-center gap-2">
-                            <% if (tutorActivo) { %>
-                            <a href="<%= ctx %>/gestion-tutores?accion=prepararEdicion&nomina=<%= tutor.getNomina() %>" class="btn-accion btn-editar">
-                                <img src="<%= ctx %>/assets/img/coordinador/editar.png" width="16" alt="Editar">
-                            </a>
-                            <button type="button" class="btn-accion btn-eliminar" onclick="prepararEliminacion('<%= tutor.getNomina() %>')">
-                                <img src="<%= ctx %>/assets/img/coordinador/eliminar.png" width="16" alt="Eliminar">
-                            </button>
-                            <% } else { %>
-                            <button type="button" class="btn-accion btn-reactivar" onclick="prepararReactivacion('<%= tutor.getNomina() %>')">
-                                <img src="<%= ctx %>/assets/img/coordinador/reactivar.png" width="16" alt="Reactivar">
-                            </button>
-                            <% } %>
-                        </div>
-                    </td>
-                </tr>
-                <% } %>
-                <tr id="filaSinResultados" style="display: none;">
-                    <td colspan="6" class="text-center">No se encontraron tutores con los filtros seleccionados.</td>
-                </tr>
-                </tbody>
-            </table>
-            <% } %>
+            <c:if test="${empty listaTutores}">
+                <div class="alert alert-info text-center">
+                    No hay tutores registrados todavía.
+                </div>
+            </c:if>
+            <c:if test="${not empty listaTutores}">
+                <table class="tabla-grupos fs-6">
+                    <colgroup>
+                        <col class="col-nomina">
+                        <col class="col-nombre-t">
+                        <col class="col-correo-t">
+                        <col class="col-telefono">
+                        <col class="col-academia">
+                        <col class="col-acciones-t">
+                    </colgroup>
+                    <thead>
+                    <tr>
+                        <th>Nomina</th>
+                        <th>Nombre</th>
+                        <th>Correo</th>
+                        <th>Teléfono</th>
+                        <th>Academia</th>
+                        <th>Acciones</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaTutores">
+                    <c:forEach var="tutor" items="${listaTutores}">
+                        <tr class="${tutor.activo == 'N' ? 'fila-inactiva' : ''}"
+                            data-nombre="${fn:toLowerCase(tutor.nombres)} ${fn:toLowerCase(tutor.apellidos)}"
+                            data-activo="${tutor.activo == 'N' ? 'N' : 'S'}">
+                            <td>${tutor.nomina}</td>
+                            <td>
+                                    ${tutor.nombres} ${tutor.apellidos}
+                                <c:if test="${tutor.activo == 'N'}">
+                                    <span class="badge-inactivo">(Baja)</span>
+                                </c:if>
+                            </td>
+                            <td>${tutor.correoInstitucional}</td>
+                            <td>${tutor.telefono}</td>
+                            <td>${nombresAcademia[tutor.idAcademia]}</td>
+                            <td>
+                                <div class="d-flex justify-content-center gap-2">
+                                    <c:if test="${tutor.activo != 'N'}">
+                                        <a href="${pageContext.request.contextPath}/gestion-tutores?accion=prepararEdicion&nomina=${tutor.nomina}" class="btn-accion btn-editar">
+                                            <img src="${pageContext.request.contextPath}/assets/img/coordinador/editar.png" width="16" alt="Editar">
+                                        </a>
+                                        <button type="button" class="btn-accion btn-eliminar" onclick="prepararEliminacion('${tutor.nomina}')">
+                                            <img src="${pageContext.request.contextPath}/assets/img/coordinador/eliminar.png" width="16" alt="Eliminar">
+                                        </button>
+                                    </c:if>
+                                    <c:if test="${tutor.activo == 'N'}">
+                                        <button type="button" class="btn-accion btn-reactivar" onclick="prepararReactivacion('${tutor.nomina}')">
+                                            <img src="${pageContext.request.contextPath}/assets/img/coordinador/reactivar.png" width="16" alt="Reactivar">
+                                        </button>
+                                    </c:if>
+                                </div>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                    <tr id="filaSinResultados" style="display: none;">
+                        <td colspan="6" class="text-center">No se encontraron tutores con los filtros seleccionados.</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </c:if>
         </div>
 
     </div>
 
 </div>
 
-<form id="formEliminarTutor" action="<%= ctx %>/gestion-tutores" method="POST" style="display:none;">
+<form id="formEliminarTutor" action="${pageContext.request.contextPath}/gestion-tutores" method="POST" style="display:none;">
     <input type="hidden" name="accion" value="eliminar">
     <input type="hidden" name="nomina" id="inputEliminarNomina">
 </form>
 
-<form id="formReactivarTutor" action="<%= ctx %>/gestion-tutores" method="POST" style="display:none;">
+<form id="formReactivarTutor" action="${pageContext.request.contextPath}/gestion-tutores" method="POST" style="display:none;">
     <input type="hidden" name="accion" value="reactivar">
     <input type="hidden" name="nomina" id="inputReactivarNomina">
 </form>
 
 <jsp:include page="../includes/alertas.jsp" />
 
-<script src="<%= ctx %>/assets/js/bootstrap.js"></script>
-<script src="<%= ctx %>/assets/js/alertas.js"></script>
-<script src="<%= ctx %>/assets/js/coordinador/tutor.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/coordinador/tutor.js"></script>
 </body>
 </html>

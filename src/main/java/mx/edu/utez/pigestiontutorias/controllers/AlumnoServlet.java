@@ -8,7 +8,12 @@ import jakarta.servlet.http.HttpServletResponse;
 import mx.edu.utez.pigestiontutorias.models.Alumno;
 import mx.edu.utez.pigestiontutorias.models.EventoAgenda;
 import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
-
+import mx.edu.utez.pigestiontutorias.models.Genero;
+import mx.edu.utez.pigestiontutorias.models.Carrera;
+import mx.edu.utez.pigestiontutorias.models.Cuatrimestre;
+import mx.edu.utez.pigestiontutorias.models.LetraGrupo;
+import java.util.HashMap;
+import java.util.Map;
 import java.io.IOException;
 import java.util.List;
 
@@ -28,9 +33,6 @@ public class AlumnoServlet extends HttpServlet {
         if ("agenda".equals(accion)) {
 
             String matricula = request.getParameter("matricula");
-            // El grupo real (carrera+cuatrimestre+letra) se re-consulta desde el alumno en BD
-            // en vez de confiar en parametros de request: evita que alguien arme la URL con
-            // un idLetraGrupo/idCarrera/idCuatrimestre que no le corresponda a esa matricula.
             Alumno alumnoConsultado = alumnoDAO.getById(matricula);
 
             List<EventoAgenda> listaEventos = (alumnoConsultado != null)
@@ -72,7 +74,43 @@ public class AlumnoServlet extends HttpServlet {
             return;
         }
 
+        // ==================== LISTADO GENERAL (con filtros) ====================
+        List<Genero> listaGeneros = alumnoDAO.getAllGeneros();
+        List<Carrera> listaCarreras = alumnoDAO.getAllCarreras();
+        List<Cuatrimestre> listaCuatrimestres = alumnoDAO.getAllCuatrimestres();
+        List<LetraGrupo> listaLetrasGrupo = alumnoDAO.getAllLetrasGrupo();
+
+        // Mapas de traduccion ID -> texto, usados por la tabla para mostrar
+        // nombre de genero/carrera/cuatrimestre/grupo sin volver a consultar la BD por fila.
+        Map<Integer, String> nombresGenero = new HashMap<>();
+        for (Genero genero : listaGeneros) {
+            nombresGenero.put(genero.getId(), genero.getNombre());
+        }
+
+        Map<Integer, String> nombresCarrera = new HashMap<>();
+        for (Carrera carrera : listaCarreras) {
+            nombresCarrera.put(carrera.getIdCarrera(), carrera.getNombre());
+        }
+
+        Map<Integer, Integer> numerosCuatrimestre = new HashMap<>();
+        for (Cuatrimestre cuatrimestre : listaCuatrimestres) {
+            numerosCuatrimestre.put(cuatrimestre.getIdCuatrimestre(), cuatrimestre.getNumero());
+        }
+
+        Map<Integer, String> nombresLetra = new HashMap<>();
+        for (LetraGrupo letraGrupo : listaLetrasGrupo) {
+            nombresLetra.put(letraGrupo.getIdLetra(), letraGrupo.getLetra());
+        }
+
         request.setAttribute("listaAlumnos", alumnoDAO.getAll());
+        request.setAttribute("listaCarreras", listaCarreras);
+        request.setAttribute("listaCuatrimestres", listaCuatrimestres);
+        request.setAttribute("listaLetrasGrupo", listaLetrasGrupo);
+        request.setAttribute("nombresGenero", nombresGenero);
+        request.setAttribute("nombresCarrera", nombresCarrera);
+        request.setAttribute("numerosCuatrimestre", numerosCuatrimestre);
+        request.setAttribute("nombresLetra", nombresLetra);
+
         request.getRequestDispatcher("/coordinador/gestion-grupos.jsp").forward(request, response);
     }
 

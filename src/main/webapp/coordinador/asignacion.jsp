@@ -10,9 +10,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestión de Tutorías - Asignación de Tutores</title>
     <link href="${pageContext.request.contextPath}/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/global.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/coordinador/asignacion.css" rel="stylesheet">
 </head>
 <body>
@@ -162,40 +162,7 @@
 <!-- 3. Script de alertas compartido: expone mostrarConfirmacion() para el borrado -->
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 
-<!-- 3. SCRIPT DE CONTROL DE ALERTAS -->
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        const exito = urlParams.get('exito');
-        const error = urlParams.get('error');
-
-        if (exito === 'true') {
-            mostrarAlerta('exito', '¡Asignación Exitosa!', 'El tutor ha sido asignado correctamente al grupo.');
-        } else if (exito === 'eliminado') {
-            mostrarAlerta('exito', '¡Asignación Eliminada!', 'El tutor ya no está asignado a ese grupo y cuatrimestre.');
-        } else if (error === 'grupo_asignado') {
-            mostrarAlerta('error', 'Grupo ya asignado', 'Este grupo ya tiene un tutor asignado en ese cuatrimestre.');
-        } else if (error === 'true') {
-            mostrarAlerta('error', 'Error en la Asignación', 'Esta asignación ya existe en la base de datos.');
-        }
-
-        if (exito || error) {
-            window.history.replaceState(null, null, window.location.pathname);
-        }
-    });
-
-    function prepararEliminacionAsignacion(idAsignacion) {
-        mostrarConfirmacion(
-            'critica',
-            '¿Eliminar asignación?',
-            'El tutor dejará de estar asignado a este grupo y cuatrimestre.',
-            'Eliminar',
-            function () {
-                document.getElementById('inputEliminarAsignacion').value = idAsignacion;
-                document.getElementById('formEliminarAsignacion').submit();
-            }
-        );
-    }
-</script>
+<!-- 4. Script dedicado a esta vista -->
+<script src="${pageContext.request.contextPath}/assets/js/coordinador/asignacion.js"></script>
 </body>
 </html>
