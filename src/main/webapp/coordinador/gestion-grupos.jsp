@@ -74,13 +74,11 @@
             </div>
         </div>
 
-        <!-- NUEVO: checkbox de inactivos + boton Buscar en la misma fila -->
-        <div class="row g-3 mb-3 align-items-center">
+        <div class="row g-3 mb-3">
             <div class="col-md-6 d-flex align-items-center gap-2">
                 <input type="checkbox" id="mostrarInactivos" class="form-check-input">
                 <label class="form-check-label fs-6" for="mostrarInactivos">Mostrar alumnos dados de baja</label>
             </div>
-
         </div>
 
         <!-- ==================== FUENTE DE DATOS OCULTA ====================

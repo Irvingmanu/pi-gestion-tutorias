@@ -40,10 +40,10 @@ function prepararReactivacion(matricula) {
 }
 
 // ==================== AGRUPACION DE LA TABLA POR CARRERA + CUATRIMESTRE + GRUPO ====================
-// El JSP sigue renderizando UNA sola tabla (oculta, #tablaOriginalAlumnos) con todos los alumnos.
-// Aqui la leemos una sola vez, y cada vez que cambia un filtro (o se da clic en "Buscar"),
-// agrupamos las filas que coinciden y pintamos una tabla independiente (con scroll) por cada
-// combinacion de Carrera + Cuatrimestre + Grupo, sin volver a pedir nada al servidor.
+// El JSP renderiza UNA sola tabla oculta (#tablaOriginalAlumnos) con todos los alumnos.
+// Aqui la leemos una sola vez, y cada vez que cambia un filtro agrupamos las filas que
+// coinciden y pintamos una tabla independiente (con scroll) por cada combinacion de
+// Carrera + Cuatrimestre + Grupo, sin volver a pedir nada al servidor.
 
 let filasAlumnosOriginales = [];
 
@@ -63,7 +63,7 @@ function inicializarAgrupacionAlumnos() {
     renderizarGruposAlumnos(filasAlumnosOriginales);
 }
 
-// Filtrado en tiempo real / al dar clic en "Buscar": ningun filtro es obligatorio
+// Filtrado en tiempo real: ningun filtro es obligatorio
 function filtrarAlumnos() {
     let inputBuscar = document.getElementById('buscarAlumno');
     if (!inputBuscar) return;
@@ -132,7 +132,7 @@ function renderizarGruposAlumnos(filas) {
     });
 }
 
-// Construye el bloque visual de un solo grupo: titulo + tabla con scroll
+// Construye el bloque visual de un solo grupo: titulo (texto negro, sin fondo) + tabla con scroll
 function construirTablaGrupo(grupoInfo) {
     let bloque = document.createElement('div');
     bloque.className = 'mb-4';
@@ -173,9 +173,23 @@ function construirTablaGrupo(grupoInfo) {
     return bloque;
 }
 
+document.addEventListener('DOMContentLoaded', function () {
+    let buscarAlumno = document.getElementById('buscarAlumno');
+    let carrera = document.getElementById('carrera');
+    let grupo = document.getElementById('grupo');
+    let cuatrimestre = document.getElementById('cuatrimestre');
+    let mostrarInactivos = document.getElementById('mostrarInactivos');
 
+    inicializarAgrupacionAlumnos();
 
-// Toasts/alertas de exito y error via parametros en la URL (?exito=, ?error=) — sin cambios
+    if (buscarAlumno) buscarAlumno.addEventListener('input', filtrarAlumnos);
+    if (carrera) carrera.addEventListener('change', filtrarAlumnos);
+    if (grupo) grupo.addEventListener('change', filtrarAlumnos);
+    if (cuatrimestre) cuatrimestre.addEventListener('change', filtrarAlumnos);
+    if (mostrarInactivos) mostrarInactivos.addEventListener('change', filtrarAlumnos);
+});
+
+// Toasts/alertas de exito y error via parametros en la URL (?exito=, ?error=)
 document.addEventListener('DOMContentLoaded', function () {
     const parametros = new URLSearchParams(window.location.search);
     const exito = parametros.get('exito');
