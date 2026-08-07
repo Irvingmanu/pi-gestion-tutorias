@@ -11,6 +11,7 @@ function cargarReporte(opciones) {
     };
 
     const params = new URLSearchParams();
+    params.append('accion', 'datos');
     (opciones.filtros || []).forEach(function (idCampo) {
         const campo = document.getElementById(idCampo);
         if (campo && campo.value) {

@@ -217,7 +217,7 @@
 </div>
 
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/coordinador/reportes.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/tutor/reportes.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 <script>
     const CONTEXT_PATH = "${pageContext.request.contextPath}";

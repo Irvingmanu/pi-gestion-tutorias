@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
+import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.ReportesDao;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
 
@@ -30,9 +31,29 @@ public class ReportesServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("usuario") == null) {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            if ("datos".equals(request.getParameter("accion")) || "csv".equalsIgnoreCase(request.getParameter("formato"))) {
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+            } else {
+                response.sendRedirect(request.getContextPath() + "/login.jsp");
+            }
             return;
         }
+
+        String formato = request.getParameter("formato");
+        String accion = request.getParameter("accion");
+
+        // 1. MOSTRAR LA VISTA JSP (Por Defecto)
+        if (accion == null && formato == null) {
+            AlumnoDAO alumnoDAO = new AlumnoDAO();
+            request.setAttribute("listaCarreras", alumnoDAO.getAllCarreras());
+            request.setAttribute("listaCuatrimestres", alumnoDAO.getAllCuatrimestres());
+            request.setAttribute("listaLetrasGrupo", alumnoDAO.getAllLetrasGrupo());
+
+            request.setAttribute("paginaActiva", "reportes");
+            request.getRequestDispatcher("/tutor/reportes.jsp").forward(request, response);
+            return; // Detenemos la ejecución aquí para que no intente generar el JSON
+        }
+
 
         Integer idUsuario = (Integer) session.getAttribute("idUsuario");
         Integer idTutorFiltro;
@@ -63,7 +84,7 @@ public class ReportesServlet extends HttpServlet {
         ReportesDao.ReporteResumen reporte = reportesDao.generarReporte(
                 idTutorFiltro, idCarrera, idCuatrimestre, idLetraGrupo, null, desde, hasta);
 
-        String formato = request.getParameter("formato");
+
         if ("csv".equalsIgnoreCase(formato)) {
             String nombreCarrera = request.getParameter("nombreCarrera");
             String nombreCuatrimestre = request.getParameter("nombreCuatrimestre");
