@@ -48,6 +48,7 @@ public class SesionGrupalServlet extends HttpServlet {
                 : Collections.emptyList();
 
         request.setAttribute("asignaciones", asignaciones);
+        request.setAttribute("paginaActiva", "grupal");
         request.getRequestDispatcher("/tutor/registro-grupal.jsp").forward(request, response);
     }
 

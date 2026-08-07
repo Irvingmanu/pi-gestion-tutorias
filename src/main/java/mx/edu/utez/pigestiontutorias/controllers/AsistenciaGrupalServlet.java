@@ -29,13 +29,16 @@ public class AsistenciaGrupalServlet extends HttpServlet {
         request.setAttribute("listaCarreras", carreraDao.getAll());
         request.setAttribute("listaCuatrimestres", cuatrimestreDao.getAll());
 
+        // Variable requerida para el menú de navegación activo
+        request.setAttribute("paginaActiva", "grupal");
+
         // 2. Capturar los filtros si el usuario ya los seleccionó
         String grupoParam = request.getParameter("idLetraGrupo");
         String carreraParam = request.getParameter("idCarrera");
         String cuatrimestreParam = request.getParameter("idCuatrimestre");
         String fechaParam = request.getParameter("fecha");
 
-// Validar que no sean nulos ni vacíos antes de parsear
+        // Validar que no sean nulos ni vacíos antes de parsear
         if (grupoParam != null && !grupoParam.trim().isEmpty() &&
                 carreraParam != null && !carreraParam.trim().isEmpty() &&
                 cuatrimestreParam != null && !cuatrimestreParam.trim().isEmpty()) {
@@ -80,7 +83,6 @@ public class AsistenciaGrupalServlet extends HttpServlet {
         }
 
         AsistenciaGrupalDao dao = new AsistenciaGrupalDao();
-
         dao.registrarAsistenciaGrupal(grupo, carrera, cuatrimestre, fecha, alumnosAsistentes, idTutor);
 
         String redirectUrl = request.getContextPath() + "/tutor/asistencia-grupal" +
@@ -88,7 +90,7 @@ public class AsistenciaGrupalServlet extends HttpServlet {
                 "&idCarrera=" + (carrera != null ? carrera : "") +
                 "&idCuatrimestre=" + (cuatrimestre != null ? cuatrimestre : "") +
                 "&fecha=" + (fecha != null ? fecha : "") +
-                "&exito=asistencia_guardada"; // <-- Parámetro agregado
+                "&exito=asistencia_guardada";
 
         response.sendRedirect(redirectUrl);
     }

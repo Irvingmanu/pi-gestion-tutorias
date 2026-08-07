@@ -11,6 +11,7 @@ import mx.edu.utez.pigestiontutorias.models.dao.*;
 
 import java.io.IOException;
 import java.sql.Date;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -65,6 +66,27 @@ public class SolicitudServlet extends HttpServlet {
             if (solicitud == null) {
                 response.sendRedirect(request.getContextPath() + "/solicitudes");
                 return;
+            }
+
+            request.setAttribute("paginaActiva", "solicitudes");
+
+            // 2. Determinar el color de la etiqueta (Badge) según el estatus
+            String badgeColor;
+            switch (solicitud.getEstatus() != null ? solicitud.getEstatus() : "") {
+                case "Confirmada": badgeColor = "success"; break;
+                case "Rechazada": badgeColor = "danger"; break;
+                case "Reprogramada": badgeColor = "info"; break;
+                default: badgeColor = "warning"; // Para "Pendiente"
+            }
+            request.setAttribute("badgeColor", badgeColor);
+
+            // 3. Formatear las fechas aquí en Java, para enviarlas limpias al JSP
+            SimpleDateFormat formatoFecha = new SimpleDateFormat("dd MMMM yyyy", new Locale("es", "MX"));
+            if (solicitud.getFechaPropuesta() != null) {
+                request.setAttribute("fechaPropuestaFormateada", formatoFecha.format(solicitud.getFechaPropuesta()));
+            }
+            if (solicitud.getNuevaFecha() != null) {
+                request.setAttribute("nuevaFechaFormateada", formatoFecha.format(solicitud.getNuevaFecha()));
             }
 
             // Solo si sigue pendiente tiene sentido ofrecer "Reprogramar": se arma
