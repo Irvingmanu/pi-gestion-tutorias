@@ -14,6 +14,27 @@
     <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/coordinador/asignacion.css" rel="stylesheet">
+
+    <style>
+        /* Ajuste para iconos de error en inputs personalizados */
+        .form-control-figma.is-invalid, .form-select.is-invalid {
+            border-color: #dc3545 !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(.375em + .1875rem) center;
+            background-size: calc(.75em + .375rem) calc(.75em + .375rem);
+        }
+
+        /* Estilo para degradar el botón cuando está deshabilitado */
+        .btn-figma:disabled {
+            background-color: #7ab899 !important;
+            color: #ffffff;
+            cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none;
+            border: none;
+        }
+    </style>
 </head>
 <body>
 
@@ -92,50 +113,55 @@
             <!-- ==================== TAB 2: NUEVA ASIGNACIÓN ==================== -->
             <div class="tab-pane fade" id="tab-nueva" role="tabpanel">
 
-                <form action="${pageContext.request.contextPath}/asignacion" method="POST" class="asignacion-form-wrap mt-3">
+                <!-- Formulario con validación -->
+                <form id="formGuardar" action="${pageContext.request.contextPath}/asignacion" method="POST" class="asignacion-form-wrap mt-3 needs-validation" novalidate>
 
                     <div class="mb-4">
-                        <label class="campo-label fs-6" for="tutor">Tutor</label>
+                        <label class="campo-label fs-6 fw-bold" for="tutor">Tutor</label>
                         <select id="tutor" name="id_tutor" class="form-select form-control-figma w-100 fs-6" required>
                             <option value="" selected disabled>Seleccione el tutor</option>
                             <c:forEach var="tutor" items="${listaTutores}">
                                 <option value="${tutor.idTutor}">${tutor.nombres} ${tutor.apellidos}</option>
                             </c:forEach>
                         </select>
+                        <div class="invalid-feedback">Por favor seleccione un tutor.</div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="campo-label fs-6" for="carrera">Carrera</label>
+                        <label class="campo-label fs-6 fw-bold" for="carrera">Carrera</label>
                         <select id="carrera" name="id_carrera" class="form-select form-control-figma w-100 fs-6" required>
                             <option value="" selected disabled>Seleccione la carrera</option>
                             <c:forEach var="carrera" items="${carreras}">
                                 <option value="${carrera.idCarrera}">${carrera.nombre}</option>
                             </c:forEach>
                         </select>
+                        <div class="invalid-feedback">Por favor seleccione una carrera.</div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="campo-label fs-6" for="cuatrimestre">Cuatrimestre</label>
+                        <label class="campo-label fs-6 fw-bold" for="cuatrimestre">Cuatrimestre</label>
                         <select id="cuatrimestre" name="id_cuatrimestre" class="form-select form-control-figma w-100 fs-6" required>
                             <option value="" selected disabled>Seleccione el cuatrimestre</option>
                             <c:forEach var="cuatrimestre" items="${listaCuatrimestres}">
                                 <option value="${cuatrimestre.idCuatrimestre}">${cuatrimestre.numero}°</option>
                             </c:forEach>
                         </select>
+                        <div class="invalid-feedback">Por favor seleccione un cuatrimestre.</div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="campo-label fs-6" for="grupo">Grupo</label>
+                        <label class="campo-label fs-6 fw-bold" for="grupo">Grupo</label>
                         <select id="grupo" name="id_letra_grupo" class="form-select form-control-figma w-100 fs-6" required>
                             <option value="" selected disabled>Seleccione el Grupo</option>
                             <c:forEach var="letraGrupo" items="${listaLetras}">
                                 <option value="${letraGrupo.idLetra}">${letraGrupo.letra}</option>
                             </c:forEach>
                         </select>
+                        <div class="invalid-feedback">Por favor seleccione un grupo.</div>
                     </div>
 
                     <div class="text-center mt-4">
-                        <button type="submit" class="btn-figma fw-medium fs-5 px-4 py-2">Agregar</button>
+                        <button type="submit" id="btnGuardar" class="btn-figma fw-medium fs-5 px-4 py-2" disabled>Agregar</button>
                     </div>
 
                 </form>
@@ -153,16 +179,42 @@
     <input type="hidden" name="id_asignacion" id="inputEliminarAsignacion">
 </form>
 
-<!-- 1. PRIMERO cargamos el script base de Bootstrap para que inicialice objetos como Toast y Modal -->
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
-
-<!-- 2. DESPUÉS incluimos el HTML de los modales y toasts -->
 <jsp:include page="../includes/alertas.jsp" />
-
-<!-- 3. Script de alertas compartido: expone mostrarConfirmacion() para el borrado -->
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
-
-<!-- 4. Script dedicado a esta vista -->
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/asignacion.js"></script>
+
+<!-- Script para validar el formulario en tiempo real -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('formGuardar');
+        const btnGuardar = document.getElementById('btnGuardar');
+        const selects = form.querySelectorAll('select[required]');
+
+        function verificarFormulario() {
+            let esValido = true;
+            selects.forEach(select => {
+                if (!select.value || select.value === "") {
+                    esValido = false;
+                }
+            });
+            btnGuardar.disabled = !esValido;
+        }
+
+        selects.forEach(select => {
+            select.addEventListener('change', function () {
+                if (this.checkValidity()) {
+                    this.classList.remove('is-invalid');
+                } else {
+                    this.classList.add('is-invalid');
+                }
+                verificarFormulario();
+            });
+        });
+
+        // Verificación inicial
+        verificarFormulario();
+    });
+</script>
 </body>
 </html>

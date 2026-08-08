@@ -24,6 +24,27 @@
     <link href="${pageContext.request.contextPath}/assets/css/global.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/alertas.css" rel="stylesheet">
+
+    <style>
+        /* Ajuste para iconos de error en inputs personalizados */
+        .form-control-figma.is-invalid, .form-select.is-invalid {
+            border-color: #dc3545 !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(.375em + .1875rem) center;
+            background-size: calc(.75em + .375rem) calc(.75em + .375rem);
+        }
+
+        /* Estilo para degradar el botón cuando está deshabilitado */
+        .btn-figma:disabled {
+            background-color: #7ab899 !important;
+            color: #ffffff;
+            cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none;
+            border: none;
+        }
+    </style>
 </head>
 <body data-mensaje-error="${mensajeError}">
 
@@ -44,8 +65,8 @@
         <c:choose>
             <c:when test="${not esEdicion}">
                 <!-- ==================== MODO NUEVA AREA: un solo form ==================== -->
-                <form class="form-wrap-figma mt-3" style="max-width: 900px;" action="${pageContext.request.contextPath}/areas-apoyo"
-                      method="post" onsubmit="return confirmarGuardarArea(event)">
+                <form id="formNuevaArea" class="form-wrap-figma mt-3 needs-validation" style="max-width: 900px;" action="${pageContext.request.contextPath}/areas-apoyo"
+                      method="post" onsubmit="return confirmarGuardarArea(event)" novalidate>
 
                     <input type="hidden" name="accion" value="guardarArea">
 
@@ -59,6 +80,7 @@
                                 <input type="text" id="nombreArea" name="nombreArea" class="form-control form-control-figma w-100 fs-6"
                                        value="${area.nombre}" placeholder="Escribe nombre"
                                        pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s./]+$" title="Solo se permiten letras, espacios, puntos y diagonales" required>
+                                <div class="invalid-feedback">Solo se permiten letras, espacios, puntos y diagonales.</div>
                             </div>
 
                             <div class="mb-4">
@@ -66,6 +88,7 @@
                                 <input type="text" id="encargado" name="encargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${area.encargado}" placeholder="Escribe nombre del encargado"
                                        pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s./]+$" title="Solo se permiten letras, espacios, puntos y diagonales" required>
+                                <div class="invalid-feedback">Solo se permiten letras, espacios, puntos y diagonales.</div>
                             </div>
 
                             <div class="mb-4">
@@ -73,6 +96,7 @@
                                 <input type="email" id="correo" name="correo" class="form-control form-control-figma w-100 fs-6"
                                        value="${area.correoContacto}" placeholder="Escribe el correo del encargado"
                                        pattern="^[a-zA-Z0-9._-]+@utez\.edu\.mx$" title="El correo debe terminar en @utez.edu.mx" required>
+                                <div class="invalid-feedback">El correo debe tener un formato válido y terminar en @utez.edu.mx.</div>
                             </div>
 
                         </div>
@@ -83,12 +107,15 @@
                             <label class="form-label fs-6 fw-bold">Motivos de Canalización</label>
 
                             <div id="motivosContainer">
-                                <div class="d-flex gap-2 mb-3 motivo-row">
-                                    <input type="text" name="motivos[]" class="form-control form-control-figma w-100 fs-6"
-                                           placeholder="Escribe el motivo de atención"
-                                           pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s./]+$" title="Solo se permiten letras, espacios, puntos y diagonales" required>
-                                    <button type="button" class="btn-figma btn-figma-sm flex-shrink-0"
-                                            onclick="agregarMotivo()">+</button>
+                                <div class="d-flex flex-column gap-2 mb-3 motivo-row">
+                                    <div class="d-flex gap-2">
+                                        <input type="text" name="motivos[]" class="form-control form-control-figma w-100 fs-6"
+                                               placeholder="Escribe el motivo de atención"
+                                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s./]+$" title="Solo se permiten letras, espacios, puntos y diagonales" required>
+                                        <button type="button" class="btn-figma btn-figma-sm flex-shrink-0"
+                                                onclick="agregarMotivo()">+</button>
+                                    </div>
+                                    <div class="invalid-feedback" style="display: none;">El formato del motivo es inválido.</div>
                                 </div>
                             </div>
 
@@ -100,7 +127,7 @@
                         <button type="button" id="btnCancelarFormularioArea" class="btn-cancelar-figma fw-medium fs-5 px-4 py-2"
                                 data-url-cancelar="${pageContext.request.contextPath}/coordinador/areas-apoyo.jsp"
                                 onclick="confirmarCancelacionArea()">Cancelar</button>
-                        <button type="submit" class="btn-figma fw-medium fs-5 px-4 py-2">Guardar</button>
+                        <button type="submit" id="btnGuardarArea" class="btn-figma fw-medium fs-5 px-4 py-2" disabled>Guardar</button>
                     </div>
 
                 </form>
@@ -112,8 +139,8 @@
 
                     <!-- Columna izquierda: form del AREA (maestro), solo actualiza sus datos -->
                     <div class="col-md-6">
-                        <form id="formEditarArea" class="form-wrap-figma" action="${pageContext.request.contextPath}/areas-apoyo"
-                              method="post" onsubmit="return confirmarGuardarArea(event)">
+                        <form id="formEditarArea" class="form-wrap-figma needs-validation" action="${pageContext.request.contextPath}/areas-apoyo"
+                              method="post" onsubmit="return confirmarGuardarArea(event)" novalidate>
 
                             <input type="hidden" name="accion" value="guardarArea">
                             <input type="hidden" name="idArea" value="${areaEdit.idArea}">
@@ -123,6 +150,7 @@
                                 <input type="text" id="nombreArea" name="nombreArea" class="form-control form-control-figma w-100 fs-6"
                                        value="${areaEdit.nombre}" placeholder="Escribe nombre"
                                        pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s./]+$" title="Solo se permiten letras, espacios, puntos y diagonales" required>
+                                <div class="invalid-feedback">Solo se permiten letras, espacios, puntos y diagonales.</div>
                             </div>
 
                             <div class="mb-4">
@@ -130,6 +158,7 @@
                                 <input type="text" id="encargado" name="encargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${areaEdit.encargado}" placeholder="Escribe nombre del encargado"
                                        pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s./]+$" title="Solo se permiten letras, espacios, puntos y diagonales" required>
+                                <div class="invalid-feedback">Solo se permiten letras, espacios, puntos y diagonales.</div>
                             </div>
 
                             <div class="mb-4">
@@ -137,6 +166,7 @@
                                 <input type="email" id="correo" name="correo" class="form-control form-control-figma w-100 fs-6"
                                        value="${areaEdit.correoContacto}" placeholder="Escribe el correo del encargado"
                                        pattern="^[a-zA-Z0-9._-]+@utez\.edu\.mx$" title="El correo debe terminar en @utez.edu.mx" required>
+                                <div class="invalid-feedback">El correo debe tener un formato válido y terminar en @utez.edu.mx.</div>
                             </div>
 
                         </form>
@@ -148,13 +178,15 @@
                         <label class="form-label fs-6 fw-bold">Motivos de Canalización</label>
 
                         <!-- Alta: form independiente que agrega un solo motivo a esta area -->
-                        <form class="d-flex gap-2 mb-3" action="${pageContext.request.contextPath}/areas-apoyo" method="post">
+                        <form id="formAgregarMotivo" class="d-flex gap-2 mb-3 needs-validation" action="${pageContext.request.contextPath}/areas-apoyo" method="post" novalidate>
                             <input type="hidden" name="accion" value="agregarMotivo">
                             <input type="hidden" name="idArea" value="${areaEdit.idArea}">
-                            <input type="text" name="nuevoMotivo" class="form-control form-control-figma w-100 fs-6"
-                                   placeholder="Escribe el motivo de atención"
-                                   pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s./]+$" title="Solo se permiten letras, espacios, puntos y diagonales" required>
-                            <button type="submit" class="btn-figma btn-figma-sm flex-shrink-0">+</button>
+                            <div class="w-100 position-relative">
+                                <input type="text" name="nuevoMotivo" class="form-control form-control-figma w-100 fs-6"
+                                       placeholder="Escribe el motivo de atención"
+                                       pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s./]+$" title="Solo se permiten letras, espacios, puntos y diagonales" required>
+                            </div>
+                            <button type="submit" id="btnAgregarMotivo" class="btn-figma btn-figma-sm flex-shrink-0" disabled>+</button>
                         </form>
 
                         <!-- Baja: tabla con boton por fila que dispara prepararEliminacionMotivo() -->
@@ -166,16 +198,18 @@
                                         <td>
                                             <span id="lbl-motivo-${motivo.idMotivo}"><c:out value="${motivo.nombreMotivo}"/></span>
 
-                                            <form id="form-edit-${motivo.idMotivo}" class="d-none d-flex gap-2"
-                                                  action="${pageContext.request.contextPath}/areas-apoyo" method="post">
+                                            <form id="form-edit-${motivo.idMotivo}" class="d-none d-flex gap-2 needs-validation"
+                                                  action="${pageContext.request.contextPath}/areas-apoyo" method="post" novalidate>
                                                 <input type="hidden" name="accion" value="editarMotivo">
                                                 <input type="hidden" name="idArea" value="${areaEdit.idArea}">
                                                 <input type="hidden" name="idMotivo" value="${motivo.idMotivo}">
-                                                <input type="text" name="nombreMotivo" value="${motivo.nombreMotivo}"
-                                                       class="form-control form-control-figma w-100 fs-6"
-                                                       pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s./]+$"
-                                                       title="Solo se permiten letras, espacios, puntos y diagonales" required>
-                                                <button type="submit" class="btn-figma btn-figma-sm flex-shrink-0" title="Guardar motivo">
+                                                <div class="w-100 position-relative">
+                                                    <input type="text" name="nombreMotivo" value="${motivo.nombreMotivo}"
+                                                           class="form-control form-control-figma w-100 fs-6"
+                                                           pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s./]+$"
+                                                           title="Solo se permiten letras, espacios, puntos y diagonales" required>
+                                                </div>
+                                                <button type="submit" class="btn-figma btn-figma-sm flex-shrink-0" title="Guardar motivo" disabled>
                                                     <img src="${pageContext.request.contextPath}/assets/img/coordinador/check.png" width="16" alt="Guardar">
                                                 </button>
                                             </form>
@@ -212,7 +246,7 @@
                     <button type="button" id="btnCancelarFormularioArea" class="btn-cancelar-figma fw-medium fs-5 px-4 py-2"
                             data-url-cancelar="${pageContext.request.contextPath}/coordinador/areas-apoyo.jsp"
                             onclick="confirmarCancelacionArea()">Cancelar</button>
-                    <button type="submit" form="formEditarArea" class="btn-figma fw-medium fs-5 px-4 py-2">Guardar</button>
+                    <button type="submit" form="formEditarArea" id="btnGuardarEdicion" class="btn-figma fw-medium fs-5 px-4 py-2" disabled>Guardar</button>
                 </div>
 
                 <!-- Form oculto compartido: elimina un motivo tras confirmar en prepararEliminacionMotivo() -->
@@ -234,6 +268,59 @@
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/motivos.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/areas.js"></script>
+
+<!-- Script para validar los formularios en tiempo real (Soporta elementos dinámicos) -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const forms = document.querySelectorAll('.needs-validation');
+
+        forms.forEach(form => {
+            // Busca el botón de submit dentro del form, o si está fuera usando el atributo form="id"
+            let btnGuardar = form.querySelector('button[type="submit"]');
+            if (!btnGuardar && form.id) {
+                btnGuardar = document.querySelector(`button[type="submit"][form="${form.id}"]`);
+            }
+
+            function verificarFormulario() {
+                if (btnGuardar) {
+                    btnGuardar.disabled = !form.checkValidity();
+                }
+            }
+
+            // Usamos delegación de eventos (focusout, input) a nivel formulario
+            // para que detecte inputs dinámicos recién agregados.
+            form.addEventListener('input', function (e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                    if (e.target.checkValidity()) {
+                        e.target.classList.remove('is-invalid');
+                        // Lógica extra si los motivos dinámicos usan un div de invalid-feedback que no es sibling directo
+                        let feedback = e.target.closest('.motivo-row')?.querySelector('.invalid-feedback');
+                        if(feedback) feedback.style.display = 'none';
+                    } else {
+                        e.target.classList.add('is-invalid');
+                        let feedback = e.target.closest('.motivo-row')?.querySelector('.invalid-feedback');
+                        if(feedback) feedback.style.display = 'block';
+                    }
+                    verificarFormulario();
+                }
+            });
+
+            form.addEventListener('focusout', function (e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                    if (!e.target.checkValidity()) {
+                        e.target.classList.add('is-invalid');
+                        let feedback = e.target.closest('.motivo-row')?.querySelector('.invalid-feedback');
+                        if(feedback) feedback.style.display = 'block';
+                    }
+                    verificarFormulario();
+                }
+            });
+
+            // Verificación inicial para modo edición
+            verificarFormulario();
+        });
+    });
+</script>
 
 </body>
 </html>
