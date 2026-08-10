@@ -235,6 +235,9 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'reactivacion_fallida':
                 mostrarAlerta('error', 'Error', 'No se pudo reactivar al tutor.');
                 break;
+            case 'tutor_periodo_activo':
+                mostrarAlerta('error', 'No se puede eliminar', 'Este tutor tiene un grupo asignado dentro de un periodo escolar activo. Debes esperar a que el periodo finalice o reasignar el grupo antes de eliminarlo.');
+                break;
         }
 
         window.history.replaceState(null, null, window.location.pathname);

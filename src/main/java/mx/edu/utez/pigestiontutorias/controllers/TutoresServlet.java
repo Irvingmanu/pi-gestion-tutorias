@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import mx.edu.utez.pigestiontutorias.models.Academia;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
+import mx.edu.utez.pigestiontutorias.models.dao.AsignacionTutorDao;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
 
 import java.io.IOException;
@@ -22,6 +23,7 @@ public class TutoresServlet extends HttpServlet {
     private static final String REGEX_CORREO = "^[a-zA-Z0-9._-]+@utez\\.edu\\.mx$";
 
     private final TutorDao tutorDAO = new TutorDao();
+    private final AsignacionTutorDao asignacionTutorDAO = new AsignacionTutorDao();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -219,8 +221,19 @@ public class TutoresServlet extends HttpServlet {
         if (nominaStr != null && !nominaStr.trim().isEmpty()) {
             try {
                 int nomina = Integer.parseInt(nominaStr.trim());
-                boolean eliminado = tutorDAO.delete(nomina);
-                parametro = eliminado ? "exito=eliminado" : "error=tutor_en_uso";
+
+                Tutor tutor = tutorDAO.getByNomina(nomina);
+                if (tutor != null) {
+                    // Blindaje: no se permite eliminar (dar de baja) a un tutor si tiene
+                    // al menos una asignación activa dentro de un periodo escolar activo.
+                    if (asignacionTutorDAO.existeAsignacionEnPeriodoActivo(tutor.getIdTutor())) {
+                        response.sendRedirect(request.getContextPath() + "/gestion-tutores?error=tutor_periodo_activo");
+                        return;
+                    }
+
+                    boolean eliminado = tutorDAO.delete(nomina);
+                    parametro = eliminado ? "exito=eliminado" : "error=tutor_en_uso";
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 parametro = "error=tutor_en_uso";

@@ -269,4 +269,30 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
 
         return false;
     }
+
+    // Blindaje: un tutor NO puede eliminarse (dar de baja) si tiene al menos
+    // una asignación activa dentro de un periodo escolar que también está activo.
+    public boolean existeAsignacionEnPeriodoActivo(int idTutor) {
+        String sql = "SELECT COUNT(*) FROM ASIGNACION_TUTOR a " +
+                "JOIN ADMIN.PERIODO_ESCOLAR per ON per.ID_PERIODO = a.ID_PERIODO " +
+                "WHERE a.ID_TUTOR = ? AND a.ACTIVO = 'S' AND per.ACTIVO = 'S'";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, idTutor);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al validar asignación en periodo activo: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return false;
+    }
 }
