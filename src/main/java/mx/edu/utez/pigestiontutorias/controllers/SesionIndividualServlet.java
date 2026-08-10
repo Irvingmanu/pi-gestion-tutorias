@@ -32,6 +32,7 @@ public class SesionIndividualServlet extends HttpServlet {
     private final MotivoDAO motivoDAO = new MotivoDAO();
     private final CanalizacionDao canalizacionDao = new CanalizacionDao();
     private final SesionIndividualDao sesionIndividualDao = new SesionIndividualDao();
+    private final PeriodoEscolarDao periodoEscolarDao= new PeriodoEscolarDao();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -128,6 +129,15 @@ public class SesionIndividualServlet extends HttpServlet {
             }
             if (fechaSesion.isAfter(LocalDate.now())) {
                 request.setAttribute("error", "No se pueden registrar tutorías con fecha futura.");
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
+                cargarListas(request, tutor);
+                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
+                return;
+            }
+
+            PeriodoEscolar periodoVigente = periodoEscolarDao.getPeriodoVigente();
+            if (periodoVigente != null && fechaSesion.isBefore(periodoVigente.getFechaInicio().toLocalDate())) {
+                request.setAttribute("error", "La fecha debe estar dentro del periodo escolar vigente.");
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
                 cargarListas(request, tutor);
                 request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
@@ -274,5 +284,6 @@ public class SesionIndividualServlet extends HttpServlet {
         request.setAttribute("sesionesProgramadas", sesionesProgramadas);
         request.setAttribute("areasConMotivos", areasConMotivos);
         request.setAttribute("nombresAlumnos", nombresAlumnos);
+        request.setAttribute("periodoVigente", periodoEscolarDao.getPeriodoVigente());
     }
 }

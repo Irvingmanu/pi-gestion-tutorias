@@ -8,6 +8,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
 
     private final CanalizacionDao canalizacionDao = new CanalizacionDao();

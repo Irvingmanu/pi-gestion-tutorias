@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -53,8 +54,10 @@
                             </div>
                             <div class="col-md-3">
                                 <label for="fecha" class="form-label fs-6 fw-bold">Fecha</label>
-                                <input type="date" id="fecha" name="fecha" class="form-control form-control-figma w-100 fs-6" required>
-                                <div class="invalid-feedback">La fecha es obligatoria y no puede ser futura.</div>
+                                <input type="date" id="fecha" name="fecha" class="form-control form-control-figma w-100 fs-6"
+                                       <c:if test="${not empty periodoVigente}">min="<fmt:formatDate value="${periodoVigente.fechaInicio}" pattern="yyyy-MM-dd"/>"</c:if>
+                                       required>
+                                <div class="invalid-feedback">Selecciona una fecha válida.</div>
                             </div>
                             <div class="col-md-3">
                                 <label for="hora" class="form-label fs-6 fw-bold">Hora</label>

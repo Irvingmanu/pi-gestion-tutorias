@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', function () {
         mostrarAlerta('error', 'Grupo ya asignado', 'Este grupo ya tiene un tutor asignado en ese cuatrimestre.');
     } else if (error === 'true') {
         mostrarAlerta('error', 'Error en la Asignación', 'Esta asignación ya existe en la base de datos.');
+    } else if (error === 'grupo_asignado') {
+    mostrarAlerta('error', 'Grupo ya asignado', 'Este grupo ya tiene un tutor asignado en ese cuatrimestre y periodo escolar.');
     }
 
     if (exito || error) {
