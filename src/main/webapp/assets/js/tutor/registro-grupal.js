@@ -4,7 +4,18 @@ document.addEventListener('DOMContentLoaded', function () {
     var selectGrupo = document.getElementById('grupoAsignado');
     var contenedorAsistencia = document.getElementById('contenedorAsistencia');
     var cuerpoTablaAsistencia = document.getElementById('cuerpoTablaAsistencia');
+    var inputHora = document.getElementById('hora');
+    var HORA_MIN = '07:00';
+    var HORA_MAX = '21:00';
+    if (inputFecha) {
+        var hoy = new Date();
+        var yyyy = hoy.getFullYear();
+        var mm = String(hoy.getMonth() + 1).padStart(2, '0');
+        var dd = String(hoy.getDate()).padStart(2, '0');
+        var hoyStr = yyyy + '-' + mm + '-' + dd;
 
+        inputFecha.setAttribute('max', hoyStr);
+    }
     function mostrarFilaMensaje(texto, claseTexto) {
         cuerpoTablaAsistencia.innerHTML = '';
         var fila = document.createElement('tr');
@@ -94,13 +105,25 @@ document.addEventListener('DOMContentLoaded', function () {
     var formRegistroGrupal = document.getElementById('formRegistroGrupal');
 
     // Verificamos que el form exista (en caso de que la vista entre al <c:when test="${empty asignaciones}">)
-    if(formRegistroGrupal) {
+    if (formRegistroGrupal) {
         formRegistroGrupal.addEventListener('submit', function (e) {
             e.preventDefault();
 
             if (!formRegistroGrupal.checkValidity()) {
                 formRegistroGrupal.reportValidity();
                 return;
+            }
+
+            // Validación de fecha: no se permiten fechas futuras
+            if (inputFecha && inputFecha.value) {
+                var fechaSeleccionada = new Date(inputFecha.value + 'T00:00:00');
+                var fechaHoy = new Date();
+                fechaHoy.setHours(0, 0, 0, 0);
+
+                if (fechaSeleccionada.getTime() > fechaHoy.getTime()) {
+                    mostrarAlerta('advertencia', 'Fecha inválida', 'No se pueden registrar tutorías con fecha futura.');
+                    return;
+                }
             }
 
             mostrarConfirmacion(
@@ -131,6 +154,18 @@ document.addEventListener('DOMContentLoaded', function () {
         mostrarAlerta('error', 'Error', 'No se encontró el perfil de tutor asociado a tu cuenta.');
     } else if (errorUrl === 'guardado_fallido') {
         mostrarAlerta('error', 'Error', 'Ocurrió un error al guardar el registro. Intenta de nuevo.');
+    } else if (errorUrl === 'fecha_futura') {
+    mostrarAlerta('advertencia', 'Fecha inválida', 'No se pueden registrar tutorías con fecha futura.');
+    } else if (errorUrl === 'horario_no_permitido') {
+        mostrarAlerta('advertencia', 'Horario no permitido', 'Las tutorías solo pueden agendarse entre las 7:00 AM y las 9:00 PM.');
+    }
+
+    // Validación de horario permitido (7:00 AM - 9:00 PM)
+    if (inputHora && inputHora.value) {
+        if (inputHora.value < HORA_MIN || inputHora.value > HORA_MAX) {
+            mostrarAlerta('advertencia', 'Horario no permitido', 'Las tutorías solo pueden agendarse entre las 7:00 AM y las 9:00 PM.');
+            return;
+        }
     }
 
     if (exito || errorUrl) {

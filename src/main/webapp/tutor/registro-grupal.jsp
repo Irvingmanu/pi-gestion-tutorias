@@ -55,7 +55,8 @@
                             </div>
                             <div class="col-md-3">
                                 <label for="hora" class="form-label fs-6 fw-bold">Hora</label>
-                                <input type="time" id="hora" name="hora" class="form-control form-control-figma w-100 fs-6" required>
+                                <input type="time" id="hora" name="hora" class="form-control form-control-figma w-100 fs-6"
+                                       min="07:00" max="21:00" required>
                             </div>
                         </div>
 

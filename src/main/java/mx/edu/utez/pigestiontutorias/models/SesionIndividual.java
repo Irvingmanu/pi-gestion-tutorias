@@ -13,6 +13,7 @@ public class SesionIndividual {
     private Integer idCanalizacion; // puede ser null
     private String estado;
     private String estatusAsistencia; // 'Presente' o 'Falta'
+    private String origen; // 'Programada' (via Solicitud) o 'Espontanea' (alta directa del tutor)
 
     public SesionIndividual() {}
 
@@ -45,4 +46,7 @@ public class SesionIndividual {
 
     public String getEstatusAsistencia() { return estatusAsistencia; }
     public void setEstatusAsistencia(String estatusAsistencia) { this.estatusAsistencia = estatusAsistencia; }
+
+    public String getOrigen() { return origen; }
+    public void setOrigen(String origen) { this.origen = origen; }
 }

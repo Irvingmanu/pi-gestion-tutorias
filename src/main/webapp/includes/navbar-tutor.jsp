@@ -40,9 +40,14 @@
             <img src="<%= ctx %>/assets/img/tutor/reportes.png" alt="Reportes">
             <span>Reportes</span>
         </a>
+        <a href="<%= ctx %>/historial-tutorias" class="nav-item-grupos<%= "historial".equals(paginaActiva) ? " active" : "" %>">
+            <img src="<%= ctx %>/assets/img/tutor/historial.png" alt="Historial">
+            <span>Historial</span>
+        </a>
         <a href="<%= ctx %>/tutor/perfil.jsp" class="nav-item-grupos mt-auto<%= "perfil".equals(paginaActiva) ? " active" : "" %>">
             <img src="<%= ctx %>/assets/img/tutor/perfil.png" alt="Perfil">
             <span>Perfil</span>
         </a>
+
     </div>
 </aside>

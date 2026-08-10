@@ -118,7 +118,8 @@
                             </div>
                             <div class="col-md-6">
                                 <label for="hora" class="form-label fs-6 fw-bold">Hora</label>
-                                <input type="time" id="hora" name="hora" class="form-control form-control-figma fs-6" value="${horaEnviada}" required>
+                                <input type="time" id="hora" name="hora" class="form-control form-control-figma fs-6" value="${horaEnviada}"
+                                       min="07:00" max="21:00" required>
                             </div>
                         </div>
 
