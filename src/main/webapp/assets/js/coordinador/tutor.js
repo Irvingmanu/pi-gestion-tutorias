@@ -20,28 +20,23 @@ function confirmarCancelacion() {
  * Prepara y confirma la eliminación del tutor.
  * @param {string|number} nomina
  */
-function eliminarHorario(boton) {
-    Swal.fire({
-        title: '¿Eliminar horario?',
-        text: '¿Estás seguro de que deseas quitar este horario de la lista?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#00897b', // Verde de tu tema
-        cancelButtonColor: '#dc3545',  // Rojo de eliminar
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Elimina la fila del horario
-            const elemento = boton.closest('.horario-item') || boton.parentElement;
-            elemento.remove();
-
-            // Si tienes una función para revalidar el formulario después de eliminar, la llamas aquí
-            if (typeof verificarFormulario === 'function') {
-                verificarFormulario();
+function prepararEliminacion(nomina) {
+    // Si la función de la alerta personalizada existe y funciona
+    if (typeof mostrarConfirmacion === 'function') {
+        mostrarConfirmacion(
+            'critica',
+            '¿Eliminar tutor?',
+            'El tutor se dará de baja y no podrá acceder al sistema, pero se conservará su historial.',
+            'Eliminar',
+            function () {
+                ejecutarSubmitEliminar(nomina);
             }
+        );
+    } else {
+        if (confirm('¿Estás seguro de que deseas eliminar este tutor?')) {
+            ejecutarSubmitEliminar(nomina);
         }
-    });
+    }
 }
 
 function ejecutarSubmitEliminar(nomina) {

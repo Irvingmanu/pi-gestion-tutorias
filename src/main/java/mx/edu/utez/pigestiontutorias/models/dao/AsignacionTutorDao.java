@@ -16,7 +16,7 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
     @Override
     public boolean create(AsignacionTutor entidad) {
         boolean resultado = false;
-        String sql = "INSERT INTO ASIGNACION_TUTOR (ID_TUTOR, ID_CARRERA, ID_LETRA_GRUPO, ID_CUATRIMESTRE, ACTIVO) VALUES (?, ?, ?, ?, ?)";
+        String sql = "INSERT INTO ASIGNACION_TUTOR (ID_TUTOR, ID_CARRERA, ID_LETRA_GRUPO, ID_CUATRIMESTRE, ID_PERIODO, ACTIVO) VALUES (?, ?, ?, ?, ?, ?)";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -25,7 +25,8 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
             ps.setInt(2, entidad.getIdCarrera());
             ps.setInt(3, entidad.getIdLetraGrupo());
             ps.setInt(4, entidad.getIdCuatrimestre());
-            ps.setString(5, "S"); // Cambiado a 'S' según la restricción de Oracle
+            ps.setInt(5, entidad.getIdPeriodo());
+            ps.setString(6, "S");
 
             resultado = ps.executeUpdate() > 0;
 
@@ -40,17 +41,18 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
     }
 
     // Lista de asignaciones activas para el panel de "Asignación de Tutores",
-    // con los datos ya legibles del tutor, carrera, grupo y cuatrimestre (via JOIN).
+    // con los datos ya legibles del tutor, carrera, grupo, cuatrimestre y periodo (via JOIN).
     @Override
     public List<AsignacionTutor> getAll() {
         List<AsignacionTutor> lista = new ArrayList<>();
-        String sql = "SELECT a.ID_ASIGNACION, a.ID_TUTOR, a.ID_CARRERA, a.ID_LETRA_GRUPO, a.ID_CUATRIMESTRE, a.ACTIVO, " +
-                "t.NOMBRES, t.APELLIDOS, car.NOMBRE AS NOMBRE_CARRERA, lg.LETRA, c.NUMERO " +
+        String sql = "SELECT a.ID_ASIGNACION, a.ID_TUTOR, a.ID_CARRERA, a.ID_LETRA_GRUPO, a.ID_CUATRIMESTRE, a.ID_PERIODO, a.ACTIVO, " +
+                "t.NOMBRES, t.APELLIDOS, car.NOMBRE AS NOMBRE_CARRERA, lg.LETRA, c.NUMERO, per.NOMBRE AS NOMBRE_PERIODO " +
                 "FROM ASIGNACION_TUTOR a " +
                 "JOIN ADMIN.TUTOR t ON t.ID_TUTOR = a.ID_TUTOR " +
                 "JOIN ADMIN.CARRERA car ON car.ID_CARRERA = a.ID_CARRERA " +
                 "JOIN ADMIN.LETRA_GRUPO lg ON lg.ID_LETRA = a.ID_LETRA_GRUPO " +
                 "JOIN ADMIN.CUATRIMESTRE c ON c.ID_CUATRIMESTRE = a.ID_CUATRIMESTRE " +
+                "LEFT JOIN ADMIN.PERIODO_ESCOLAR per ON per.ID_PERIODO = a.ID_PERIODO " +
                 "WHERE a.ACTIVO = 'S' " +
                 "ORDER BY a.ID_ASIGNACION DESC";
 
@@ -65,11 +67,13 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
                 asignacion.setIdCarrera(rs.getInt("ID_CARRERA"));
                 asignacion.setIdLetraGrupo(rs.getInt("ID_LETRA_GRUPO"));
                 asignacion.setIdCuatrimestre(rs.getInt("ID_CUATRIMESTRE"));
+                asignacion.setIdPeriodo(rs.getInt("ID_PERIODO"));
                 asignacion.setNombresTutor(rs.getString("NOMBRES"));
                 asignacion.setApellidosTutor(rs.getString("APELLIDOS"));
                 asignacion.setNombreCarrera(rs.getString("NOMBRE_CARRERA"));
                 asignacion.setLetraGrupo(rs.getString("LETRA"));
                 asignacion.setNumeroCuatrimestre(rs.getInt("NUMERO"));
+                asignacion.setNombrePeriodo(rs.getString("NOMBRE_PERIODO"));
                 lista.add(asignacion);
             }
 
@@ -110,14 +114,12 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         }
     }
 
-    // Regla de negocio: un grupo real (Carrera+Cuatrimestre+Letra) solo puede tener
-    // un tutor activo a la vez. Se consulta antes del INSERT para no depender de
-    // una restricción UNIQUE en la base de datos. Incluye ID_CARRERA porque una
-    // misma letra+cuatrimestre puede repetirse en carreras distintas (son grupos
-    // reales distintos, ej. "DSM - 1° A" vs "TI - 1° A").
-    public boolean existeAsignacionActiva(int idLetraGrupo, int idCarrera, int idCuatrimestre) {
+    // Regla de negocio: un grupo real (Carrera+Cuatrimestre+Letra) DENTRO DE UN MISMO
+    // PERIODO solo puede tener un tutor activo a la vez. Al incluir ID_PERIODO, el mismo
+    // tutor SI puede volver a ser asignado al mismo grupo en un periodo/año distinto.
+    public boolean existeAsignacionActiva(int idLetraGrupo, int idCarrera, int idCuatrimestre, int idPeriodo) {
         String sql = "SELECT COUNT(*) FROM ASIGNACION_TUTOR " +
-                "WHERE ID_LETRA_GRUPO = ? AND ID_CARRERA = ? AND ID_CUATRIMESTRE = ? AND ACTIVO = 'S'";
+                "WHERE ID_LETRA_GRUPO = ? AND ID_CARRERA = ? AND ID_CUATRIMESTRE = ? AND ID_PERIODO = ? AND ACTIVO = 'S'";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -125,6 +127,7 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
             ps.setInt(1, idLetraGrupo);
             ps.setInt(2, idCarrera);
             ps.setInt(3, idCuatrimestre);
+            ps.setInt(4, idPeriodo);
 
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
@@ -237,10 +240,8 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return false;
     }
 
-    // Blindaje de Tutoria Espontanea: el campo de matricula queda libre por UX, pero aqui se
-    // verifica que el alumno realmente pertenezca a alguno de los grupos (Carrera+Cuatrimestre+
-    // Letra) asignados al tutor, cruzando ALUMNO -> ASIGNACION_TUTOR, antes de dejarlo registrar
-    // una sesion individual con esa matricula.
+    // Blindaje de Tutoria Espontanea: se verifica que el alumno realmente pertenezca
+    // a alguno de los grupos (Carrera+Cuatrimestre+Letra) asignados al tutor.
     public boolean alumnoPerteneceATutor(int idTutor, String matricula) {
         String sql = "SELECT COUNT(*) FROM ALUMNO al " +
                 "JOIN ASIGNACION_TUTOR a ON a.ID_CARRERA = al.ID_CARRERA " +

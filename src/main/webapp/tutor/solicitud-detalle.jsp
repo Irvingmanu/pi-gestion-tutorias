@@ -104,12 +104,6 @@
                                     <button type="button" class="btn-figma fw-medium px-4 py-2" id="btnAceptar">Aceptar</button>
                                 </div>
 
-                                <c:if test="${param.error == 'fecha_invalida'}">
-                                    <div class="alert alert-danger mt-3" role="alert">
-                                        La fecha u hora propuesta ya no está disponible. Debes reprogramar con al menos 2 días de anticipación y elegir un horario libre del tutor.
-                                    </div>
-                                </c:if>
-
                                 <div class="d-none mt-4" id="panelReprogramar">
                                     <form id="formReprogramar" method="post" action="${pageContext.request.contextPath}/solicitudes">
                                         <input type="hidden" name="accion" value="reprogramar">
@@ -168,6 +162,15 @@
 <jsp:include page="/includes/alertas.jsp" />
 
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+
+<c:if test="${param.error == 'fecha_invalida'}">
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            mostrarAlerta('error', 'Fecha inválida', 'La fecha u hora propuesta ya no está disponible. Debes reprogramar con al menos 2 días de anticipación y elegir un horario libre del tutor.');
+        });
+    </script>
+</c:if>
 
 <c:if test="${not empty solicitud and solicitud.estatus == 'Pendiente'}">
     <script>

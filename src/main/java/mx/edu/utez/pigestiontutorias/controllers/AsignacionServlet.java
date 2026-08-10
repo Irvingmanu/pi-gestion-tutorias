@@ -31,11 +31,16 @@ public class AsignacionServlet extends HttpServlet {
         AsignacionTutorDao asignacionTutorDao = new AsignacionTutorDao();
         List<AsignacionTutor> listaAsignaciones = asignacionTutorDao.getAll();
 
+        // Solo periodos del año ACTUAL (dinamico, sirve igual el proximo año).
+        PeriodoEscolarDao periodoDao = new PeriodoEscolarDao();
+        List<PeriodoEscolar> listaPeriodos = periodoDao.getDelAnioActual();
+
         request.setAttribute("carreras", listaCarreras);
         request.setAttribute("listaTutores", listaTutores);
         request.setAttribute("listaCuatrimestres", listaCuatrimestres);
         request.setAttribute("listaLetras", listaLetras);
         request.setAttribute("listaAsignaciones", listaAsignaciones);
+        request.setAttribute("listaPeriodos", listaPeriodos);
 
         request.getRequestDispatcher("/coordinador/asignacion.jsp").forward(request, response);
     }
@@ -59,13 +64,14 @@ public class AsignacionServlet extends HttpServlet {
         int idCarrera = Integer.parseInt(request.getParameter("id_carrera"));
         int idLetraGrupo = Integer.parseInt(request.getParameter("id_letra_grupo"));
         int idCuatrimestre = Integer.parseInt(request.getParameter("id_cuatrimestre"));
+        int idPeriodo = Integer.parseInt(request.getParameter("id_periodo"));
 
-        if (dao.existeAsignacionActiva(idLetraGrupo, idCarrera, idCuatrimestre)) {
+        if (dao.existeAsignacionActiva(idLetraGrupo, idCarrera, idCuatrimestre, idPeriodo)) {
             response.sendRedirect(request.getContextPath() + "/asignacion?error=grupo_asignado");
             return;
         }
 
-        AsignacionTutor nuevaAsignacion = new AsignacionTutor(idTutor, idCarrera, idLetraGrupo, idCuatrimestre);
+        AsignacionTutor nuevaAsignacion = new AsignacionTutor(idTutor, idCarrera, idLetraGrupo, idCuatrimestre, idPeriodo);
         boolean guardado = dao.create(nuevaAsignacion);
 
         if (guardado) {

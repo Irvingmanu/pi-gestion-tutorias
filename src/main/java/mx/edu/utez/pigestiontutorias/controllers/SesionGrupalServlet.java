@@ -10,10 +10,7 @@ import mx.edu.utez.pigestiontutorias.models.Alumno;
 import mx.edu.utez.pigestiontutorias.models.AsignacionDTO;
 import mx.edu.utez.pigestiontutorias.models.SesionGrupal;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
-import mx.edu.utez.pigestiontutorias.models.dao.AsignacionTutorDao;
-import mx.edu.utez.pigestiontutorias.models.dao.AsistenciaGrupalDao;
-import mx.edu.utez.pigestiontutorias.models.dao.SesionGrupalDao;
-import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
+import mx.edu.utez.pigestiontutorias.models.dao.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -28,6 +25,7 @@ public class SesionGrupalServlet extends HttpServlet {
     private final AsignacionTutorDao asignacionTutorDao = new AsignacionTutorDao();
     private final AsistenciaGrupalDao asistenciaGrupalDao = new AsistenciaGrupalDao();
     private final SesionGrupalDao sesionGrupalDao = new SesionGrupalDao();
+    private final PeriodoEscolarDao periodoDao = new PeriodoEscolarDao();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -49,6 +47,7 @@ public class SesionGrupalServlet extends HttpServlet {
 
         request.setAttribute("asignaciones", asignaciones);
         request.setAttribute("paginaActiva", "grupal");
+        request.setAttribute("periodoVigente", periodoDao.getPeriodoVigente());
         request.getRequestDispatcher("/tutor/registro-grupal.jsp").forward(request, response);
     }
 
@@ -155,12 +154,16 @@ public class SesionGrupalServlet extends HttpServlet {
             return;
         }
 
-        // Blindaje de servidor: la fecha no puede ser futura, sin importar lo que
-        // mande el formulario (el <input type="date"> se puede manipular).
         java.time.LocalDate fechaSesion = fecha.toLocalDate();
         java.time.LocalDate hoy = java.time.LocalDate.now();
         if (fechaSesion.isAfter(hoy)) {
             response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=fecha_futura");
+            return;
+        }
+
+        mx.edu.utez.pigestiontutorias.models.PeriodoEscolar periodoVigente = periodoDao.getPeriodoVigente();
+        if (periodoVigente != null && fechaSesion.isBefore(periodoVigente.getFechaInicio().toLocalDate())) {
+            response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=fecha_fuera_periodo");
             return;
         }
         // Blindaje de servidor: la hora debe estar dentro del horario académico permitido (7:00 - 21:00)

@@ -35,6 +35,10 @@
             <img src="${pageContext.request.contextPath}/assets/img/coordinador/areas.png" alt="Áreas">
             <span>Áreas</span>
         </a>
+        <a href="${pageContext.request.contextPath}/gestion-periodos" class="nav-item-grupos${paginaActiva == 'periodos' ? ' active' : ''}">
+            <img src="${pageContext.request.contextPath}/assets/img/coordinador/periodoEscolar.png" alt="Periodos Escolares">
+            <span>Periodos Escolares</span>
+        </a>
         <a href="${pageContext.request.contextPath}/perfil" class="nav-item-grupos mt-auto${paginaActiva == 'perfil' ? ' active' : ''}">
             <img src="${pageContext.request.contextPath}/assets/img/coordinador/perfil.png" alt="Perfil">
             <span>Perfil</span>

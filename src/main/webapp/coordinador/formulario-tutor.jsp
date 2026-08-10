@@ -15,6 +15,12 @@
     boolean esEdicion = tutorEdit != null || "editar".equals(accionParam) || "prepararEdicion".equals(accionParam);
     String tituloBanner = esEdicion ? "Editar Tutor" : "Nuevo Tutor";
 
+    // Si ya trae un correo cargado (edicion, o volvio por un error de validacion
+    // despues de que el propio usuario lo escribio), no lo pisamos con el autocompletado.
+    boolean correoYaCapturado = tutorFormulario != null
+            && tutorFormulario.getCorreoInstitucional() != null
+            && !tutorFormulario.getCorreoInstitucional().isEmpty();
+
     String codigoError = (String) request.getAttribute("error");
     String mensajeError = null;
     if ("nomina_duplicada".equals(codigoError)) {
@@ -122,7 +128,8 @@
                         <label for="correo" class="form-label fs-6 fw-bold">Correo</label>
                         <input type="email" id="correo" name="correo" class="form-control form-control-figma w-100 fs-6"
                                value="<%= tutorFormulario != null && tutorFormulario.getCorreoInstitucional() != null ? tutorFormulario.getCorreoInstitucional() : "" %>"
-                               placeholder="Escribe el correo" pattern="^[a-zA-Z0-9._-]+@utez\.edu\.mx$"
+                               placeholder="Se autocompleta con nombre y apellido" pattern="^[a-zA-Z0-9._-]+@utez\.edu\.mx$"
+                               data-editado-manualmente="<%= correoYaCapturado ? "true" : "false" %>"
                                oninput="this.value = this.value.replace(/[^a-zA-Z0-9.\-_@]/g, '')" required>
                         <div class="invalid-feedback">Debe ser un correo válido terminado en @utez.edu.mx.</div>
                     </div>
@@ -246,6 +253,44 @@
         }
     }
 
+    /**
+     * Autocompleta el correo institucional con primer nombre + primer apellido + @utez.edu.mx.
+     * No pisa el correo si ya venia cargado (edicion) o si el coordinador lo edita a mano.
+     */
+    function inicializarAutocompletarCorreo() {
+        const inputNombres = document.getElementById('nombres');
+        const inputApellidos = document.getElementById('apellidos');
+        const inputCorreo = document.getElementById('correo');
+        if (!inputNombres || !inputApellidos || !inputCorreo) return;
+
+        function limpiar(texto) {
+            return texto
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quita acentos
+                .replace(/[^a-zA-Z\s]/g, '')
+                .trim();
+        }
+
+        function actualizarCorreo() {
+            if (inputCorreo.dataset.editadoManualmente === 'true') return;
+
+            const primerNombre = limpiar(inputNombres.value).split(/\s+/)[0] || '';
+            const primerApellido = limpiar(inputApellidos.value).split(/\s+/)[0] || '';
+
+            inputCorreo.value = (primerNombre && primerApellido)
+                ? (primerNombre + primerApellido).toLowerCase() + '@utez.edu.mx'
+                : '';
+
+            inputCorreo.dispatchEvent(new Event('input'));
+        }
+
+        inputNombres.addEventListener('input', actualizarCorreo);
+        inputApellidos.addEventListener('input', actualizarCorreo);
+
+        inputCorreo.addEventListener('input', function () {
+            inputCorreo.dataset.editadoManualmente = 'true';
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('formGuardar');
         const btnGuardar = document.getElementById('btnGuardar');
@@ -281,6 +326,7 @@
             });
         });
 
+        inicializarAutocompletarCorreo();
         verificarFormulario();
     });
 </script>
