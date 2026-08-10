@@ -201,8 +201,7 @@
                         </div>
                     </div>
 
-                    <div id="contenedorHorarios" class="d-flex flex-column gap-2 mt-2 mb-4">
-                        <% if (tutorFormulario != null && tutorFormulario.getHorariosDispo() != null) {
+                    <div id="contenedorHorarios" class="d-flex flex-column gap-2 mt-2 mb-4 p-2 rounded border bg-white shadow-sm" style="height: 180px !important; max-height: 180px !important; overflow-y: auto !important; overflow-x: hidden;">                        <% if (tutorFormulario != null && tutorFormulario.getHorariosDispo() != null) {
                             for (String horario : tutorFormulario.getHorariosDispo()) { %>
                         <div class="d-flex align-items-center gap-2 mb-2 horario-item">
                             <input type="text" class="form-control form-control-figma fs-6" value="<%= horario %>" readonly>
@@ -244,6 +243,7 @@
 <% } %>
 
 <script>
+
     function validarLimitesHora(input) {
         const minHora = '08:00';
         const maxHora = '20:00';
