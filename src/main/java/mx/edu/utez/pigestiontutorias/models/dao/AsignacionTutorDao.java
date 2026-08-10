@@ -170,10 +170,10 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return null;
     }
 
-    // Grupos reales (Carrera + Cuatrimestre + Letra) que tiene asignados un tutor.
-    // Alimenta el <select> de registro-grupal.jsp: un tutor solo debe poder
-    // registrar tutoria/asistencia de los grupos que aparecen aqui.
-    public List<AsignacionDTO> obtenerAsignacionesPorTutor(int idTutor) {
+    // Grupos reales (Carrera + Cuatrimestre + Letra) que tiene asignados un tutor,
+    // filtrados por el periodo vigente para no repetir el mismo grupo si el tutor
+    // estuvo asignado a él en periodos anteriores.
+    public List<AsignacionDTO> obtenerAsignacionesPorTutor(int idTutor, int idPeriodoVigente) {
         List<AsignacionDTO> lista = new ArrayList<>();
         String sql = "SELECT a.ID_CARRERA, c.NOMBRE AS NOMBRE_CARRERA, " +
                 "a.ID_CUATRIMESTRE, cu.NUMERO AS NUMERO_CUATRIMESTRE, " +
@@ -182,13 +182,14 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
                 "JOIN ADMIN.CARRERA c ON c.ID_CARRERA = a.ID_CARRERA " +
                 "JOIN ADMIN.CUATRIMESTRE cu ON cu.ID_CUATRIMESTRE = a.ID_CUATRIMESTRE " +
                 "JOIN ADMIN.LETRA_GRUPO lg ON lg.ID_LETRA = a.ID_LETRA_GRUPO " +
-                "WHERE a.ID_TUTOR = ? AND a.ACTIVO = 'S' " +
+                "WHERE a.ID_TUTOR = ? AND a.ID_PERIODO = ? AND a.ACTIVO = 'S' " +
                 "ORDER BY c.NOMBRE, cu.NUMERO, lg.LETRA";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, idTutor);
+            ps.setInt(2, idPeriodoVigente);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {

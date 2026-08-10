@@ -41,13 +41,15 @@ public class SesionGrupalServlet extends HttpServlet {
         }
 
         Tutor tutor = tutorDao.findByIdUsuario((Integer) session.getAttribute("idUsuario"));
-        List<AsignacionDTO> asignaciones = (tutor != null)
-                ? asignacionTutorDao.obtenerAsignacionesPorTutor(tutor.getIdTutor())
+        mx.edu.utez.pigestiontutorias.models.PeriodoEscolar periodoVigente = periodoDao.getPeriodoVigente();
+
+        List<AsignacionDTO> asignaciones = (tutor != null && periodoVigente != null)
+                ? asignacionTutorDao.obtenerAsignacionesPorTutor(tutor.getIdTutor(), periodoVigente.getIdPeriodo())
                 : Collections.emptyList();
 
         request.setAttribute("asignaciones", asignaciones);
         request.setAttribute("paginaActiva", "grupal");
-        request.setAttribute("periodoVigente", periodoDao.getPeriodoVigente());
+        request.setAttribute("periodoVigente", periodoVigente);
         request.getRequestDispatcher("/tutor/registro-grupal.jsp").forward(request, response);
     }
 

@@ -1,6 +1,35 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="paginaActiva" value="individual" scope="request" />
+<%
+    String codigoError = (String) request.getAttribute("error");
+    String mensajeError = null;
+    if ("campos_incompletos".equals(codigoError)) {
+        mensajeError = "Completa todos los campos obligatorios.";
+    } else if ("asistencia_no_indicada".equals(codigoError)) {
+        mensajeError = "Indica si el alumno asistió o faltó a la sesión.";
+    } else if ("fecha_invalida".equals(codigoError)) {
+        mensajeError = "La fecha capturada no es válida.";
+    } else if ("fecha_futura".equals(codigoError)) {
+        mensajeError = "No se pueden registrar tutorías con fecha futura.";
+    } else if ("fecha_fuera_periodo".equals(codigoError)) {
+        mensajeError = "La fecha debe estar dentro del periodo escolar vigente.";
+    } else if ("hora_invalida".equals(codigoError)) {
+        mensajeError = "La hora capturada no es válida.";
+    } else if ("horario_no_permitido".equals(codigoError)) {
+        mensajeError = "Las tutorías solo pueden agendarse entre las 7:00 AM y las 9:00 PM.";
+    } else if ("matricula_invalida".equals(codigoError)) {
+        mensajeError = "La matrícula debe tener exactamente 10 caracteres.";
+    } else if ("matricula_no_existe".equals(codigoError)) {
+        mensajeError = "El alumno no está registrado en el sistema. Verifica la matrícula.";
+    } else if ("alumno_no_asignado".equals(codigoError)) {
+        mensajeError = "El alumno con esta matrícula existe, pero no está asignado a tus grupos.";
+    } else if ("guardado_fallido".equals(codigoError)) {
+        mensajeError = "Ocurrió un error al guardar el registro. Intenta de nuevo.";
+    } else if ("tutor_no_encontrado".equals(codigoError)) {
+        mensajeError = "No se encontró el perfil de tutor asociado a tu cuenta.";
+    }
+%>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -97,7 +126,8 @@
             <div class="tab-pane fade ${tabActiva == 'espontanea' ? 'show active' : ''}" id="tab-espontanea" role="tabpanel">
 
                 <div class="form-wrap-figma" style="max-width: 920px;">
-                    <form id="formTutoriaEspontanea" action="${pageContext.request.contextPath}/tutoria-individual" method="post">
+                    <!-- novalidate: quitamos los mensajes nativos del navegador, igual que en coordinador/grupal -->
+                    <form id="formTutoriaEspontanea" class="needs-validation" action="${pageContext.request.contextPath}/tutoria-individual" method="post" novalidate>
 
                         <div class="row g-3 mb-4">
                             <div class="col-12">
@@ -106,8 +136,8 @@
                                        placeholder="Escribe la matrícula del alumno" value="${matriculaEnviada}"
                                        style="text-transform: uppercase;"
                                        maxlength="10" minlength="10" pattern="^[a-zA-Z0-9]{10}$"
-                                       title="La matrícula debe tener exactamente 10 caracteres, solo letras y números."
                                        oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()" required>
+                                <div class="invalid-feedback">La matrícula debe tener exactamente 10 caracteres.</div>
                             </div>
                         </div>
 
@@ -115,11 +145,13 @@
                             <div class="col-md-6">
                                 <label for="fecha" class="form-label fs-6 fw-bold">Fecha</label>
                                 <input type="date" id="fecha" name="fecha" class="form-control form-control-figma fs-6" value="${fechaEnviada}" required>
+                                <div class="invalid-feedback">Selecciona una fecha válida.</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="hora" class="form-label fs-6 fw-bold">Hora</label>
                                 <input type="time" id="hora" name="hora" class="form-control form-control-figma fs-6" value="${horaEnviada}"
                                        min="07:00" max="21:00" required>
+                                <div class="invalid-feedback">El horario debe ser de 7:00 am a 9:00 pm.</div>
                             </div>
                         </div>
 
@@ -128,11 +160,13 @@
                                 <label for="temasTratados" class="form-label fs-6 fw-bold">Temas Tratados</label>
                                 <textarea id="temasTratados" name="temasTratados" class="form-control form-control-figma fs-6"
                                           rows="3" placeholder="Describe los temas tratados en la sesión" required>${temasEnviados}</textarea>
+                                <div class="invalid-feedback">Este campo es obligatorio.</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="acuerdos" class="form-label fs-6 fw-bold">Acuerdos</label>
                                 <textarea id="acuerdos" name="acuerdos" class="form-control form-control-figma fs-6"
                                           rows="3" placeholder="Describe los acuerdos alcanzados" required>${acuerdosEnviados}</textarea>
+                                <div class="invalid-feedback">Este campo es obligatorio.</div>
                             </div>
                         </div>
 
@@ -153,7 +187,8 @@
                         </div>
 
                         <div class="d-flex justify-content-end mt-4">
-                            <button type="submit" class="btn-figma fw-medium fs-5 px-4 py-2">Guardar</button>
+                            <!-- Botón deshabilitado hasta que el formulario sea válido, igual que en coordinador/grupal -->
+                            <button type="submit" id="btnGuardarEspontanea" class="btn-figma fw-medium fs-5 px-4 py-2" disabled>Guardar</button>
                         </div>
 
                     </form>
@@ -195,11 +230,13 @@
                         <label for="modalTemasTratados" class="form-label fs-6 fw-bold">Temas Tratados</label>
                         <textarea id="modalTemasTratados" name="temasTratados" class="form-control form-control-figma w-100 fs-6"
                                   rows="3" placeholder="Describe los temas tratados en la sesión" required></textarea>
+                        <div class="invalid-feedback">Este campo es obligatorio.</div>
                     </div>
                     <div class="mb-3">
                         <label for="modalAcuerdos" class="form-label fs-6 fw-bold">Acuerdos</label>
                         <textarea id="modalAcuerdos" name="acuerdos" class="form-control form-control-figma w-100 fs-6"
                                   rows="3" placeholder="Describe los acuerdos alcanzados" required></textarea>
+                        <div class="invalid-feedback">Este campo es obligatorio.</div>
                     </div>
 
                     <p class="fs-6 fw-bold text-center my-3">Vínculo Directo</p>
@@ -233,13 +270,13 @@
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 
-<c:if test="${not empty error}">
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            mostrarAlerta('error', 'Error', '${error}');
-        });
-    </script>
-</c:if>
+<% if (mensajeError != null) { %>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        mostrarAlerta('error', 'Error', '<%= mensajeError %>');
+    });
+</script>
+<% } %>
 
 <script src="${pageContext.request.contextPath}/assets/js/tutor/tutoria-individual.js"></script>
 </body>

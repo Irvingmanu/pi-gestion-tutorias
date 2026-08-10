@@ -44,7 +44,7 @@ public class SesionIndividualServlet extends HttpServlet {
 
         Tutor tutor = tutorDao.findByIdUsuario((Integer) session.getAttribute("idUsuario"));
         if (tutor == null) {
-            request.setAttribute("error", "No se encontró el perfil de tutor asociado a tu cuenta.");
+            request.setAttribute("error", "tutor_no_encontrado");
             request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
             return;
         }
@@ -63,7 +63,7 @@ public class SesionIndividualServlet extends HttpServlet {
 
         Tutor tutor = tutorDao.findByIdUsuario((Integer) session.getAttribute("idUsuario"));
         if (tutor == null) {
-            request.setAttribute("error", "No se encontró el perfil de tutor asociado a tu cuenta.");
+            request.setAttribute("error", "tutor_no_encontrado");
             request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
             return;
         }
@@ -81,7 +81,7 @@ public class SesionIndividualServlet extends HttpServlet {
         String baseUrl = UrlUtils.baseUrl(request);
 
         if (temasTratados == null || temasTratados.isBlank() || acuerdos == null || acuerdos.isBlank()) {
-            request.setAttribute("error", "Completa todos los campos obligatorios.");
+            request.setAttribute("error", "campos_incompletos");
             if (!esCompletado) {
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
             }
@@ -94,7 +94,7 @@ public class SesionIndividualServlet extends HttpServlet {
         // aparte porque las sesiones nuevas (alta directa) no lo tienen en el formulario.
         if (esCompletado && (estatusAsistencia == null
                 || !(estatusAsistencia.equals("Presente") || estatusAsistencia.equals("Falta")))) {
-            request.setAttribute("error", "Indica si el alumno asistió o faltó a la sesión.");
+            request.setAttribute("error", "asistencia_no_indicada");
             cargarListas(request, tutor);
             request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
             return;
@@ -108,7 +108,7 @@ public class SesionIndividualServlet extends HttpServlet {
         } else {
             if (matricula == null || matricula.isBlank() || fechaStr == null || fechaStr.isBlank()
                     || hora == null || hora.isBlank()) {
-                request.setAttribute("error", "Completa todos los campos obligatorios.");
+                request.setAttribute("error", "campos_incompletos");
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
                 cargarListas(request, tutor);
                 request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
@@ -121,14 +121,14 @@ public class SesionIndividualServlet extends HttpServlet {
             try {
                 fechaSesion = LocalDate.parse(fechaStr.trim());
             } catch (DateTimeParseException e) {
-                request.setAttribute("error", "La fecha capturada no es válida.");
+                request.setAttribute("error", "fecha_invalida");
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
                 cargarListas(request, tutor);
                 request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
                 return;
             }
             if (fechaSesion.isAfter(LocalDate.now())) {
-                request.setAttribute("error", "No se pueden registrar tutorías con fecha futura.");
+                request.setAttribute("error", "fecha_futura");
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
                 cargarListas(request, tutor);
                 request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
@@ -137,7 +137,7 @@ public class SesionIndividualServlet extends HttpServlet {
 
             PeriodoEscolar periodoVigente = periodoEscolarDao.getPeriodoVigente();
             if (periodoVigente != null && fechaSesion.isBefore(periodoVigente.getFechaInicio().toLocalDate())) {
-                request.setAttribute("error", "La fecha debe estar dentro del periodo escolar vigente.");
+                request.setAttribute("error", "fecha_fuera_periodo");
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
                 cargarListas(request, tutor);
                 request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
@@ -149,14 +149,14 @@ public class SesionIndividualServlet extends HttpServlet {
             try {
                 horaSesion = LocalTime.parse(hora.trim());
             } catch (DateTimeParseException e) {
-                request.setAttribute("error", "La hora capturada no es válida.");
+                request.setAttribute("error", "hora_invalida");
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
                 cargarListas(request, tutor);
                 request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
                 return;
             }
             if (horaSesion.isBefore(HORA_MIN) || horaSesion.isAfter(HORA_MAX)) {
-                request.setAttribute("error", "Las tutorías solo pueden agendarse entre las 7:00 AM y las 9:00 PM.");
+                request.setAttribute("error", "horario_no_permitido");
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
                 cargarListas(request, tutor);
                 request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
@@ -170,7 +170,7 @@ public class SesionIndividualServlet extends HttpServlet {
             // Antes esto era un sendRedirect que perdia todo lo escrito en el formulario;
             // ahora se reenvia (forward) a la misma pantalla con los datos ya capturados.
             if (matricula.length() != 10) {
-                request.setAttribute("error", "La matrícula debe tener exactamente 10 caracteres.");
+                request.setAttribute("error", "matricula_invalida");
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
                 cargarListas(request, tutor);
                 request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
@@ -178,7 +178,7 @@ public class SesionIndividualServlet extends HttpServlet {
             }
 
             if (alumnoDAO.getById(matricula) == null) {
-                request.setAttribute("error", "El alumno no está registrado en el sistema. Verifica la matrícula.");
+                request.setAttribute("error", "matricula_no_existe");
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
                 cargarListas(request, tutor);
                 request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
@@ -186,7 +186,7 @@ public class SesionIndividualServlet extends HttpServlet {
             }
 
             if (!asignacionTutorDao.alumnoPerteneceATutor(tutor.getIdTutor(), matricula)) {
-                request.setAttribute("error", "El alumno con esta matrícula existe, pero no está asignado a tus grupos.");
+                request.setAttribute("error", "alumno_no_asignado");
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
                 cargarListas(request, tutor);
                 request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
@@ -213,7 +213,7 @@ public class SesionIndividualServlet extends HttpServlet {
             String exito = esCompletado ? "completada" : "tutoria_guardada";
             response.sendRedirect(request.getContextPath() + "/tutoria-individual?exito=" + exito);
         } else {
-            request.setAttribute("error", "Ocurrió un error al guardar el registro. Intenta de nuevo.");
+            request.setAttribute("error", "guardado_fallido");
             if (!esCompletado) {
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
             }
