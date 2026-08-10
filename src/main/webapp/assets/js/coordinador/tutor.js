@@ -20,28 +20,23 @@ function confirmarCancelacion() {
  * Prepara y confirma la eliminación del tutor.
  * @param {string|number} nomina
  */
-function eliminarHorario(boton) {
-    Swal.fire({
-        title: '¿Eliminar horario?',
-        text: '¿Estás seguro de que deseas quitar este horario de la lista?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#00897b', // Verde de tu tema
-        cancelButtonColor: '#dc3545',  // Rojo de eliminar
-        confirmButtonText: 'Sí, eliminar',
-        cancelButtonText: 'Cancelar'
-    }).then((result) => {
-        if (result.isConfirmed) {
-            // Elimina la fila del horario
-            const elemento = boton.closest('.horario-item') || boton.parentElement;
-            elemento.remove();
-
-            // Si tienes una función para revalidar el formulario después de eliminar, la llamas aquí
-            if (typeof verificarFormulario === 'function') {
-                verificarFormulario();
+function prepararEliminacion(nomina) {
+    // Si la función de la alerta personalizada existe y funciona
+    if (typeof mostrarConfirmacion === 'function') {
+        mostrarConfirmacion(
+            'critica',
+            '¿Eliminar tutor?',
+            'El tutor se dará de baja y no podrá acceder al sistema, pero se conservará su historial.',
+            'Eliminar',
+            function () {
+                ejecutarSubmitEliminar(nomina);
             }
+        );
+    } else {
+        if (confirm('¿Estás seguro de que deseas eliminar este tutor?')) {
+            ejecutarSubmitEliminar(nomina);
         }
-    });
+    }
 }
 
 function ejecutarSubmitEliminar(nomina) {
@@ -127,17 +122,33 @@ function agregarHorario() {
 
     contenedor.appendChild(itemDiv);
     selectDia.value = '';
+
+    if (typeof window.actualizarEstadoGuardar === 'function') {
+        window.actualizarEstadoGuardar();
+    }
 }
 
 /**
- * Elimina el renglón de horario seleccionado.
+ * Confirma y elimina el renglón de horario seleccionado.
  * @param {HTMLElement} btn
  */
 function eliminarHorario(btn) {
-    const item = btn.closest('.horario-item');
-    if (item) {
-        item.remove();
-    }
+    mostrarConfirmacion(
+        'advertencia',
+        '¿Eliminar horario?',
+        '¿Estás seguro de que deseas quitar este horario de la lista?',
+        'Sí, eliminar',
+        function () {
+            const item = btn.closest('.horario-item');
+            if (item) {
+                item.remove();
+            }
+
+            if (typeof window.actualizarEstadoGuardar === 'function') {
+                window.actualizarEstadoGuardar();
+            }
+        }
+    );
 }
 
 /**
@@ -228,56 +239,4 @@ document.addEventListener('DOMContentLoaded', function () {
 
         window.history.replaceState(null, null, window.location.pathname);
     }
-    // Limita el <input type="time"> del horario de atencion a 08:00-20:00 en tiempo real
-    function validarLimitesHora(input) {
-        const minHora = '08:00';
-        const maxHora = '20:00';
-        if (input.value) {
-            if (input.value < minHora) {
-                input.value = minHora;
-            } else if (input.value > maxHora) {
-                input.value = maxHora;
-            }
-        }
-    }
-
-// Validacion en vivo del formulario de tutor: marca is-invalid en cada
-// campo requerido y solo habilita "Guardar" cuando todo el formulario es valido.
-    document.addEventListener('DOMContentLoaded', function () {
-        const form = document.getElementById('formGuardar');
-        if (!form) return;
-
-        const btnGuardar = document.getElementById('btnGuardar');
-        const inputsRequeridos = form.querySelectorAll('input[required], select[required]');
-
-        function verificarFormulario() {
-            let esValido = true;
-            inputsRequeridos.forEach(function (input) {
-                if (!input.checkValidity()) {
-                    esValido = false;
-                }
-            });
-            btnGuardar.disabled = !esValido;
-        }
-
-        inputsRequeridos.forEach(function (input) {
-            input.addEventListener('input', function () {
-                if (this.checkValidity()) {
-                    this.classList.remove('is-invalid');
-                } else {
-                    this.classList.add('is-invalid');
-                }
-                verificarFormulario();
-            });
-
-            input.addEventListener('blur', function () {
-                if (!this.checkValidity()) {
-                    this.classList.add('is-invalid');
-                }
-                verificarFormulario();
-            });
-        });
-
-        verificarFormulario();
-    });
 });

@@ -47,7 +47,8 @@ function prepararReactivacion(matricula) {
 
 let filasAlumnosOriginales = [];
 
-// Toma las filas de la tabla oculta del JSP y pinta el primer grupo (sin filtros aplicados)
+// Toma las filas de la tabla oculta del JSP y pinta el primer grupo, respetando
+// el filtro de "Mostrar alumnos dados de baja" (desmarcado por defecto).
 function inicializarAgrupacionAlumnos() {
     let tbodyOriginal = document.getElementById('tablaAlumnosOriginal');
     let contenedorGrupos = document.getElementById('contenedorGruposAlumnos');
@@ -60,7 +61,7 @@ function inicializarAgrupacionAlumnos() {
     }
 
     filasAlumnosOriginales = Array.from(tbodyOriginal.querySelectorAll('tr'));
-    renderizarGruposAlumnos(filasAlumnosOriginales);
+    filtrarAlumnos();
 }
 
 // Filtrado en tiempo real: ningun filtro es obligatorio
@@ -140,6 +141,15 @@ function construirTablaGrupo(grupoInfo) {
     let titulo = document.createElement('div');
     titulo.className = 'titulo-grupo-tabla h6 mb-2';
     titulo.textContent = grupoInfo.carrera + ' - ' + grupoInfo.cuatri + '° ' + grupoInfo.grupo;
+
+    let claveGrupo = grupoInfo.carrera + '|' + grupoInfo.cuatri + '|' + grupoInfo.grupo;
+    let nombreTutor = (window.tutoresPorGrupo || {})[claveGrupo];
+
+    let tutorSpan = document.createElement('span');
+    tutorSpan.className = 'tutor-grupo-tabla';
+    tutorSpan.textContent = nombreTutor ? ' — Tutor: ' + nombreTutor : ' — Sin tutor asignado';
+    titulo.appendChild(tutorSpan);
+
     bloque.appendChild(titulo);
 
     let scrollWrap = document.createElement('div');

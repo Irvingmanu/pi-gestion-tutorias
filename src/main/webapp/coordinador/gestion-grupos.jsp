@@ -175,6 +175,11 @@
 
 <jsp:include page="../includes/alertas.jsp" />
 
+<script>
+    // Tutor asignado por grupo (Carrera|Cuatrimestre|Letra), usado en alumnos.js para
+    // mostrarlo junto al titulo de cada tabla agrupada.
+    window.tutoresPorGrupo = ${empty tutoresPorGrupoJson ? '{}' : tutoresPorGrupoJson};
+</script>
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/alumnos.js"></script>

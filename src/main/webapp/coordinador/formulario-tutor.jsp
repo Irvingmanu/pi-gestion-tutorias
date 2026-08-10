@@ -25,6 +25,10 @@
         mensajeError = "Este número de teléfono ya está registrado en el sistema.";
     } else if ("formato_invalido".equals(codigoError)) {
         mensajeError = "Verifica los datos. El formato de uno o más campos es incorrecto.";
+    } else if ("correo_invalido".equals(codigoError)) {
+        mensajeError = "El correo debe ser un correo institucional válido terminado en @utez.edu.mx.";
+    } else if ("horario_requerido".equals(codigoError)) {
+        mensajeError = "Debes agregar al menos un horario de atención antes de guardar.";
     } else if ("registro_fallido".equals(codigoError)) {
         mensajeError = "No se pudo guardar el tutor. Intenta de nuevo.";
     }
@@ -166,7 +170,7 @@
                     <div class="mb-4">
                         <label for="selectDia" class="form-label fs-6 fw-bold">Días</label>
                         <select id="selectDia" class="form-select form-control-figma w-100 fs-6">
-                            <option value="" selected>Seleccione los días disponibles</option>
+                            <option value="" selected>Día</option>
                             <option value="Lunes">Lunes</option>
                             <option value="Martes">Martes</option>
                             <option value="Miércoles">Miércoles</option>
@@ -181,12 +185,12 @@
                             <div class="row g-2 flex-grow-1 align-items-center">
                                 <div class="col-6">
                                     <input type="time" id="horarioDesde" class="form-control form-control-figma fs-6"
-                                           value="08:00" min="08:00" max="20:00" style="cursor: pointer;"
+                                           value="07:00" min="07:00" max="21:00" style="cursor: pointer;"
                                            onclick="this.showPicker()" onchange="validarLimitesHora(this)">
                                 </div>
                                 <div class="col-6">
                                     <input type="time" id="horarioHasta" class="form-control form-control-figma fs-6"
-                                           value="10:00" min="08:00" max="20:00" style="cursor: pointer;"
+                                           value="09:00" min="07:00" max="21:00" style="cursor: pointer;"
                                            onclick="this.showPicker()" onchange="validarLimitesHora(this)">
                                 </div>
                             </div>
@@ -194,7 +198,9 @@
                         </div>
                     </div>
 
-                    <div id="contenedorHorarios" class="d-flex flex-column gap-2 mt-2 mb-4 p-2 rounded border bg-white shadow-sm" style="height: 180px !important; max-height: 180px !important; overflow-y: auto !important; overflow-x: hidden;">                        <% if (tutorFormulario != null && tutorFormulario.getHorariosDispo() != null) {
+                    <div id="contenedorHorarios" class="d-flex flex-column gap-2 mt-2 mb-4 p-2 rounded-figma border bg-white shadow-sm"
+                         style="height: 180px !important; max-height: 180px !important; overflow-y: auto !important; overflow-x: hidden;">
+                        <% if (tutorFormulario != null && tutorFormulario.getHorariosDispo() != null) {
                             for (String horario : tutorFormulario.getHorariosDispo()) { %>
                         <div class="d-flex align-items-center gap-2 mb-2 horario-item">
                             <input type="text" class="form-control form-control-figma fs-6" value="<%= horario %>" readonly>
@@ -236,20 +242,37 @@
 <% } %>
 
 <script>
-
     function validarLimitesHora(input) {
-        const minHora = '08:00';
-        const maxHora = '20:00';
+        const minHora = '07:00';
+        const maxHora = '21:00';
         if (input.value) {
             if (input.value < minHora) { input.value = minHora; }
             else if (input.value > maxHora) { input.value = maxHora; }
+        }
+
+        // "Hasta" nunca puede quedar antes (ni igual) que "Desde": se revisa aqui sin importar
+        // cual de los dos inputs disparo el cambio, para que tambien se corrija si el usuario
+        // edita "Hasta" directamente a una hora anterior a la ya elegida en "Desde".
+        const inputDesde = document.getElementById('horarioDesde');
+        const inputHasta = document.getElementById('horarioHasta');
+        if (inputDesde && inputHasta && inputDesde.value) {
+            inputHasta.min = inputDesde.value;
+            if (inputHasta.value && inputHasta.value <= inputDesde.value) {
+                inputHasta.value = inputDesde.value;
+            }
         }
     }
 
     document.addEventListener('DOMContentLoaded', function () {
         const form = document.getElementById('formGuardar');
         const btnGuardar = document.getElementById('btnGuardar');
+        const contenedorHorarios = document.getElementById('contenedorHorarios');
+        const inputCorreo = document.getElementById('correo');
         const inputsRequeridos = form.querySelectorAll('input[required], select[required]');
+
+        function tieneHorarios() {
+            return contenedorHorarios.querySelectorAll('input[name="horariosDispo"]').length > 0;
+        }
 
         function verificarFormulario() {
             let esValido = true;
@@ -259,7 +282,12 @@
                 }
             });
 
+            if (!tieneHorarios()) {
+                esValido = false;
+            }
+
             btnGuardar.disabled = !esValido;
+            return esValido;
         }
 
         inputsRequeridos.forEach(input => {
@@ -280,6 +308,31 @@
                 verificarFormulario();
             });
         });
+
+        // Al enviar el formulario, avisar con las alertas ya definidas el motivo exacto
+        // por el que no se puede guardar (en vez de solo dejar el boton deshabilitado).
+        form.addEventListener('submit', function (evento) {
+            if (inputCorreo && !inputCorreo.checkValidity()) {
+                evento.preventDefault();
+                inputCorreo.classList.add('is-invalid');
+                mostrarAlerta('error', 'Correo inválido', 'El correo debe ser un correo institucional válido terminado en @utez.edu.mx.');
+                return;
+            }
+
+            if (!tieneHorarios()) {
+                evento.preventDefault();
+                mostrarAlerta('error', 'Horario requerido', 'Debes agregar al menos un horario de atención antes de guardar.');
+                return;
+            }
+
+            if (!form.checkValidity()) {
+                evento.preventDefault();
+                mostrarAlerta('error', 'Formulario incompleto', 'Verifica que todos los campos estén completos y correctos.');
+            }
+        });
+
+        // Expuesta para que tutor.js pueda re-evaluar el boton al agregar/quitar horarios.
+        window.actualizarEstadoGuardar = verificarFormulario;
 
         verificarFormulario();
     });

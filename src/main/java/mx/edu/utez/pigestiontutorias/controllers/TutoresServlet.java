@@ -19,6 +19,7 @@ import java.util.Map;
 public class TutoresServlet extends HttpServlet {
 
     private static final String REGEX_NOMINA = "^[0-9]{4}$";
+    private static final String REGEX_CORREO = "^[a-zA-Z0-9._-]+@utez\\.edu\\.mx$";
 
     private final TutorDao tutorDAO = new TutorDao();
 
@@ -145,6 +146,29 @@ public class TutoresServlet extends HttpServlet {
 
         if (!nominaValida) {
             request.setAttribute("error", "formato_invalido");
+            request.setAttribute("tutor", tutor);
+            request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
+            request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);
+            return;
+        }
+
+        // Blindaje de servidor: el <input> de correo valida el formato con "pattern" en el
+        // HTML, pero eso es solo UX. Se revalida aqui por si el formulario se manipula o se
+        // envia sin pasar por la validacion del navegador.
+        String correo = tutor.getCorreoInstitucional();
+        boolean correoValido = correo != null && correo.trim().matches(REGEX_CORREO);
+        if (!correoValido) {
+            request.setAttribute("error", "correo_invalido");
+            request.setAttribute("tutor", tutor);
+            request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
+            request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);
+            return;
+        }
+
+        // Blindaje de servidor: al menos un horario de atencion es obligatorio, ya que
+        // el boton de Guardar solo lo exige en el cliente via JS.
+        if (tutor.getHorariosDispo() == null || tutor.getHorariosDispo().isEmpty()) {
+            request.setAttribute("error", "horario_requerido");
             request.setAttribute("tutor", tutor);
             request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
             request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);

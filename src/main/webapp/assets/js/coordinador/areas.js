@@ -19,6 +19,14 @@ function confirmarGuardarArea(evento) {
     evento.preventDefault();
     let formulario = evento.target;
 
+    // Solo aplica a "Nueva Área": ahi los motivos son hidden inputs agregados por JS,
+    // asi que el navegador no los puede exigir por si solo via required.
+    let contenedorMotivos = document.getElementById('motivosContainer');
+    if (contenedorMotivos && contenedorMotivos.querySelectorAll('input[name="motivos[]"]').length === 0) {
+        mostrarAlerta('error', 'Motivo requerido', 'Agrega al menos un motivo de canalización antes de guardar.');
+        return false;
+    }
+
     mostrarConfirmacion(
         'advertencia',
         '¿Guardar área?',
@@ -79,6 +87,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
             case 'area_en_uso':
                 mostrarAlerta('error', 'No se puede eliminar', 'Esta área no puede ser eliminada porque ya tiene información o alumnos vinculados en el sistema.');
+                break;
+            case 'motivo_en_uso':
+                mostrarAlerta('error', 'No se puede eliminar', 'Este motivo no puede eliminarse porque ya hay alumnos canalizados con él.');
                 break;
         }
 

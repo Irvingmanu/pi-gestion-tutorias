@@ -39,7 +39,7 @@
 
                         <c:forEach items="${listaIndividuales}" var="individual">
                             <div class="d-flex align-items-center gap-4 p-4 bg-white rounded-figma shadow-sm border">
-                                <img src="${pageContext.request.contextPath}/assets/img/alumno/ListChecks.png" alt="Acuerdo Individual" style="width: 40px;">
+                                <img src="${pageContext.request.contextPath}/assets/img/alumno/acuerdos.png" alt="Acuerdo Individual" style="width: 40px;">
                                 <div>
                                     <div class="fw-bold fs-6">Acuerdo Individual</div>
                                     <div class="text-muted">${individual.fecha}</div>
@@ -50,7 +50,7 @@
 
                         <c:forEach items="${listaGrupales}" var="grupal">
                             <div class="d-flex align-items-center gap-4 p-4 bg-white rounded-figma shadow-sm border">
-                                <img src="${pageContext.request.contextPath}/assets/img/alumno/ListChecks.png" alt="Acuerdo Grupal" style="width: 40px;">
+                                <img src="${pageContext.request.contextPath}/assets/img/alumno/acuerdos.png" alt="Acuerdo Grupal" style="width: 40px;">
                                 <div>
                                     <div class="fw-bold fs-6">Acuerdo Grupal</div>
                                     <div class="text-muted">${grupal.fecha}</div>

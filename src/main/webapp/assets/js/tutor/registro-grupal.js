@@ -113,11 +113,15 @@ document.addEventListener('DOMContentLoaded', function () {
     // marca is-invalid en cada campo requerido y solo habilita "Guardar" cuando
     // todo el formulario es válido.
     // ==========================================================================
-    if (formRegistroGrupal) {
-        var btnGuardarGrupal = document.getElementById('btnGuardarGrupal');
-        var inputsRequeridos = formRegistroGrupal.querySelectorAll('input[required], select[required], textarea[required]');
+    var inputsRequeridos;
+    var btnGuardarGrupal;
+    var verificarFormularioGrupal = function () {};
 
-        function verificarFormularioGrupal() {
+    if (formRegistroGrupal) {
+        btnGuardarGrupal = document.getElementById('btnGuardarGrupal');
+        inputsRequeridos = formRegistroGrupal.querySelectorAll('input[required], select[required], textarea[required]');
+
+        verificarFormularioGrupal = function () {
             var esValido = true;
             inputsRequeridos.forEach(function (input) {
                 if (!input.checkValidity()) {
@@ -127,7 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (btnGuardarGrupal) {
                 btnGuardarGrupal.disabled = !esValido;
             }
-        }
+        };
 
         inputsRequeridos.forEach(function (input) {
             input.addEventListener('input', function () {
@@ -187,7 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
-            // Validación de horario permitido (7:00 AM - 9:00 PM)
+            // Validación de horario permitido (7:00 am - 9:00 pm)
             if (inputHora && inputHora.value) {
                 if (inputHora.value < HORA_MIN || inputHora.value > HORA_MAX) {
                     inputHora.classList.add('is-invalid');

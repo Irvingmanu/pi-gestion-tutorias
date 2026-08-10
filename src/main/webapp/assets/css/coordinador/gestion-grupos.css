@@ -21,6 +21,10 @@
     padding: 6px 4px;
     border-bottom: 2px solid #dee2e6;
 }
+.tutor-grupo-tabla {
+    color: #6c757d;
+    font-weight: 400;
+}
 
 /* Buscar Alumno — nodo 1061:10118. Alto ya no fijo: lo define el padding,
    igual que un .form-control estandar de Bootstrap */
