@@ -35,7 +35,8 @@
             </c:when>
             <c:otherwise>
                 <div class="form-wrap-figma" style="max-width: 900px;">
-                    <form id="formRegistroGrupal" action="${pageContext.request.contextPath}/tutoria-grupal" method="post">
+                    <!-- novalidate: quitamos los mensajes nativos del navegador, igual que en coordinador -->
+                    <form id="formRegistroGrupal" class="needs-validation" action="${pageContext.request.contextPath}/tutoria-grupal" method="post" novalidate>
 
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
@@ -48,15 +49,18 @@
                                         <option value="${asignacion.valorOption}">${asignacion.etiqueta}</option>
                                     </c:forEach>
                                 </select>
+                                <div class="invalid-feedback">Selecciona un grupo.</div>
                             </div>
                             <div class="col-md-3">
                                 <label for="fecha" class="form-label fs-6 fw-bold">Fecha</label>
                                 <input type="date" id="fecha" name="fecha" class="form-control form-control-figma w-100 fs-6" required>
+                                <div class="invalid-feedback">La fecha es obligatoria y no puede ser futura.</div>
                             </div>
                             <div class="col-md-3">
                                 <label for="hora" class="form-label fs-6 fw-bold">Hora</label>
                                 <input type="time" id="hora" name="hora" class="form-control form-control-figma w-100 fs-6"
                                        min="07:00" max="21:00" required>
+                                <div class="invalid-feedback">El horario debe ser de 7:00 am a 9:00 pm.</div>
                             </div>
                         </div>
 
@@ -65,6 +69,7 @@
                                 <label for="acuerdos" class="form-label fs-6 fw-bold">Acuerdos</label>
                                 <textarea id="acuerdos" name="acuerdos" class="form-control form-control-figma w-100 fs-6"
                                           rows="3" placeholder="Describe los acuerdos alcanzados" required></textarea>
+                                <div class="invalid-feedback">Este campo es obligatorio.</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="asesoriasGrupales" class="form-label fs-6 fw-bold">Asesorías grupales (Opcional)</label>
@@ -78,6 +83,7 @@
                                 <label for="temasTratados" class="form-label fs-6 fw-bold">Temas Tratados</label>
                                 <textarea id="temasTratados" name="temas" class="form-control form-control-figma w-100 fs-6"
                                           rows="3" placeholder="Describe los temas tratados en la sesión" required></textarea>
+                                <div class="invalid-feedback">Este campo es obligatorio.</div>
                             </div>
                         </div>
 
@@ -99,7 +105,8 @@
                         </div>
 
                         <div class="d-flex justify-content-end mt-4">
-                            <button type="submit" class="btn-figma fw-medium fs-5 px-4 py-2">Guardar</button>
+                            <!-- Botón deshabilitado hasta que el formulario sea válido, igual que en coordinador -->
+                            <button type="submit" id="btnGuardarGrupal" class="btn-figma fw-medium fs-5 px-4 py-2" disabled>Guardar</button>
                         </div>
 
                     </form>

@@ -223,4 +223,56 @@ document.addEventListener('DOMContentLoaded', function () {
 
         window.history.replaceState(null, null, window.location.pathname);
     }
+    // Limita el <input type="time"> del horario de atencion a 08:00-20:00 en tiempo real
+    function validarLimitesHora(input) {
+        const minHora = '08:00';
+        const maxHora = '20:00';
+        if (input.value) {
+            if (input.value < minHora) {
+                input.value = minHora;
+            } else if (input.value > maxHora) {
+                input.value = maxHora;
+            }
+        }
+    }
+
+// Validacion en vivo del formulario de tutor: marca is-invalid en cada
+// campo requerido y solo habilita "Guardar" cuando todo el formulario es valido.
+    document.addEventListener('DOMContentLoaded', function () {
+        const form = document.getElementById('formGuardar');
+        if (!form) return;
+
+        const btnGuardar = document.getElementById('btnGuardar');
+        const inputsRequeridos = form.querySelectorAll('input[required], select[required]');
+
+        function verificarFormulario() {
+            let esValido = true;
+            inputsRequeridos.forEach(function (input) {
+                if (!input.checkValidity()) {
+                    esValido = false;
+                }
+            });
+            btnGuardar.disabled = !esValido;
+        }
+
+        inputsRequeridos.forEach(function (input) {
+            input.addEventListener('input', function () {
+                if (this.checkValidity()) {
+                    this.classList.remove('is-invalid');
+                } else {
+                    this.classList.add('is-invalid');
+                }
+                verificarFormulario();
+            });
+
+            input.addEventListener('blur', function () {
+                if (!this.checkValidity()) {
+                    this.classList.add('is-invalid');
+                }
+                verificarFormulario();
+            });
+        });
+
+        verificarFormulario();
+    });
 });
