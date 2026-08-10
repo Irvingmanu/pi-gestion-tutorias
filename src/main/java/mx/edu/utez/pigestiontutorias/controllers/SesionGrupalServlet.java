@@ -155,6 +155,29 @@ public class SesionGrupalServlet extends HttpServlet {
             return;
         }
 
+        // Blindaje de servidor: la fecha no puede ser futura, sin importar lo que
+        // mande el formulario (el <input type="date"> se puede manipular).
+        java.time.LocalDate fechaSesion = fecha.toLocalDate();
+        java.time.LocalDate hoy = java.time.LocalDate.now();
+        if (fechaSesion.isAfter(hoy)) {
+            response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=fecha_futura");
+            return;
+        }
+        // Blindaje de servidor: la hora debe estar dentro del horario académico permitido (7:00 - 21:00)
+        java.time.LocalTime horaSesion;
+        try {
+            horaSesion = java.time.LocalTime.parse(hora.trim());
+        } catch (java.time.format.DateTimeParseException e) {
+            response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=datos_invalidos");
+            return;
+        }
+        java.time.LocalTime horaMin = java.time.LocalTime.of(7, 0);
+        java.time.LocalTime horaMax = java.time.LocalTime.of(21, 0);
+        if (horaSesion.isBefore(horaMin) || horaSesion.isAfter(horaMax)) {
+            response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=horario_no_permitido");
+            return;
+        }
+
         // Blindaje de servidor: el grupo enviado debe ser uno de los que el tutor
         // realmente tiene asignados, sin confiar en que el <select> del formulario
         // no fue manipulado.

@@ -125,7 +125,7 @@
 
                     <div class="d-flex justify-content-center gap-3 mt-4">
                         <button type="button" id="btnCancelarFormularioArea" class="btn-cancelar-figma fw-medium fs-5 px-4 py-2"
-                                data-url-cancelar="${pageContext.request.contextPath}/coordinador/areas-apoyo.jsp"
+                                data-url-cancelar="${pageContext.request.contextPath}/areas-apoyo"
                                 onclick="confirmarCancelacionArea()">Cancelar</button>
                         <button type="submit" id="btnGuardarArea" class="btn-figma fw-medium fs-5 px-4 py-2" disabled>Guardar</button>
                     </div>
@@ -244,7 +244,7 @@
                 <!-- Botones del AREA: fuera del contenedor de 900px, centrados en toda la pantalla -->
                 <div class="d-flex justify-content-center gap-3 w-100 mt-5">
                     <button type="button" id="btnCancelarFormularioArea" class="btn-cancelar-figma fw-medium fs-5 px-4 py-2"
-                            data-url-cancelar="${pageContext.request.contextPath}/coordinador/areas-apoyo.jsp"
+                            data-url-cancelar="${pageContext.request.contextPath}/areas-apoyo"
                             onclick="confirmarCancelacionArea()">Cancelar</button>
                     <button type="submit" form="formEditarArea" id="btnGuardarEdicion" class="btn-figma fw-medium fs-5 px-4 py-2" disabled>Guardar</button>
                 </div>

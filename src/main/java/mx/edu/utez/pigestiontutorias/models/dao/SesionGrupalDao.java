@@ -122,22 +122,65 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    SesionGrupal s = new SesionGrupal();
-                    s.setIdSesionGrupal(rs.getInt("ID_SESION_GRUPAL"));
-                    s.setIdCarrera(rs.getInt("ID_CARRERA"));
-                    s.setIdLetraGrupo(rs.getInt("ID_LETRA_GRUPO"));
-                    s.setIdCuatrimestre(rs.getInt("ID_CUATRIMESTRE"));
-                    s.setIdTutor(rs.getInt("ID_TUTOR"));
-                    s.setFecha(rs.getDate("FECHA"));
-                    s.setTemasTratados(rs.getString("TEMAS_TRATADOS"));
-                    s.setAcuerdos(rs.getString("ACUERDOS"));
-                    s.setEstado(rs.getString("ESTADO"));
-                    lista.add(s);
+                    lista.add(mapearSesion(rs));
                 }
             }
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return lista;
+    }
+
+    // Historial: sesiones grupales YA REALIZADAS (Tomada) del tutor, filtrables por
+    // rango de fechas (cualquiera de los dos limites puede venir null/blank).
+    public List<SesionGrupal> getHistorialByTutor(int idTutor, String fechaInicio, String fechaFin) {
+        List<SesionGrupal> lista = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT * FROM SESION_GRUPAL WHERE ID_TUTOR = ? AND ESTADO = 'Tomada'");
+
+        if (fechaInicio != null && !fechaInicio.isBlank()) {
+            sql.append(" AND FECHA >= ?");
+        }
+        if (fechaFin != null && !fechaFin.isBlank()) {
+            sql.append(" AND FECHA <= ?");
+        }
+        sql.append(" ORDER BY FECHA DESC, HORA DESC");
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+
+            int idx = 1;
+            ps.setInt(idx++, idTutor);
+            if (fechaInicio != null && !fechaInicio.isBlank()) {
+                ps.setDate(idx++, Date.valueOf(fechaInicio));
+            }
+            if (fechaFin != null && !fechaFin.isBlank()) {
+                ps.setDate(idx++, Date.valueOf(fechaFin));
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapearSesion(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return lista;
+    }
+
+    private SesionGrupal mapearSesion(ResultSet rs) throws SQLException {
+        SesionGrupal s = new SesionGrupal();
+        s.setIdSesionGrupal(rs.getInt("ID_SESION_GRUPAL"));
+        s.setIdCarrera(rs.getInt("ID_CARRERA"));
+        s.setIdLetraGrupo(rs.getInt("ID_LETRA_GRUPO"));
+        s.setIdCuatrimestre(rs.getInt("ID_CUATRIMESTRE"));
+        s.setIdTutor(rs.getInt("ID_TUTOR"));
+        s.setFecha(rs.getDate("FECHA"));
+        s.setHora(rs.getString("HORA"));
+        s.setTemasTratados(rs.getString("TEMAS_TRATADOS"));
+        s.setAcuerdos(rs.getString("ACUERDOS"));
+        s.setEstado(rs.getString("ESTADO"));
+        return s;
     }
 }

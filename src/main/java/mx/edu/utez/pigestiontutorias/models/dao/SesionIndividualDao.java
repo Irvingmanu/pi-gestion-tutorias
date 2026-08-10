@@ -15,8 +15,8 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
     @Override
     public boolean create(SesionIndividual s) {
         String sql = "INSERT INTO SESION_INDIVIDUAL " +
-                "(ID_TUTOR, MATRICULA, FECHA, HORA, TEMAS_TRATADOS, ACUERDOS, ID_CANALIZACION, ESTADO, ESTATUS_ASISTENCIA) " +
-                "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "(ID_TUTOR, MATRICULA, FECHA, HORA, TEMAS_TRATADOS, ACUERDOS, ID_CANALIZACION, ESTADO, ESTATUS_ASISTENCIA, ORIGEN) " +
+                "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -36,6 +36,7 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
 
             ps.setString(8, s.getEstado() != null ? s.getEstado() : "Registrada");
             ps.setString(9, s.getEstatusAsistencia() != null ? s.getEstatusAsistencia() : "Presente");
+            ps.setString(10, s.getOrigen() != null ? s.getOrigen() : "Espontanea");
 
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -94,6 +95,51 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setInt(1, idTutor);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapearSesion(rs));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return lista;
+    }
+
+    // Historial: sesiones individuales YA REALIZADAS (Tomada) del tutor, filtrables por
+    // origen ('Programada' o 'Espontanea') y por rango de fechas. Cualquiera de los
+    // filtros puede venir null/blank, en cuyo caso no se aplica esa condicion.
+    public List<SesionIndividual> getHistorialByTutor(int idTutor, String origen, String fechaInicio, String fechaFin) {
+        List<SesionIndividual> lista = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT * FROM SESION_INDIVIDUAL WHERE ID_TUTOR = ? AND ESTADO = 'Tomada'");
+
+        if (origen != null && !origen.isBlank()) {
+            sql.append(" AND ORIGEN = ?");
+        }
+        if (fechaInicio != null && !fechaInicio.isBlank()) {
+            sql.append(" AND FECHA >= ?");
+        }
+        if (fechaFin != null && !fechaFin.isBlank()) {
+            sql.append(" AND FECHA <= ?");
+        }
+        sql.append(" ORDER BY FECHA DESC, HORA DESC");
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+
+            int idx = 1;
+            ps.setInt(idx++, idTutor);
+            if (origen != null && !origen.isBlank()) {
+                ps.setString(idx++, origen);
+            }
+            if (fechaInicio != null && !fechaInicio.isBlank()) {
+                ps.setDate(idx++, Date.valueOf(fechaInicio));
+            }
+            if (fechaFin != null && !fechaFin.isBlank()) {
+                ps.setDate(idx++, Date.valueOf(fechaFin));
+            }
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -225,6 +271,7 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         int idCanalizacion = rs.getInt("ID_CANALIZACION");
         s.setIdCanalizacion(rs.wasNull() ? null : idCanalizacion);
         s.setEstado(rs.getString("ESTADO"));
+        s.setOrigen(rs.getString("ORIGEN"));
         return s;
     }
 }

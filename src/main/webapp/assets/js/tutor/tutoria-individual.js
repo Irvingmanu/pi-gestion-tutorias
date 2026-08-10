@@ -9,6 +9,21 @@ document.addEventListener('DOMContentLoaded', function () {
     var TEXTO_FALTA_TEMAS = 'El alumno no se presentó a la sesión.';
     var TEXTO_FALTA_ACUERDOS = 'N/A - El alumno no se presentó a la sesión.';
 
+    var formTutoriaEspontanea = document.getElementById('formTutoriaEspontanea');
+    var inputFechaEspontanea = document.getElementById('fecha');
+    var inputHoraEspontanea = document.getElementById('hora');
+    var HORA_MIN = '07:00';
+    var HORA_MAX = '21:00';
+
+    // Restringe el datepicker para que no se puedan elegir fechas futuras
+    if (inputFechaEspontanea) {
+        var hoy = new Date();
+        var yyyy = hoy.getFullYear();
+        var mm = String(hoy.getMonth() + 1).padStart(2, '0');
+        var dd = String(hoy.getDate()).padStart(2, '0');
+        inputFechaEspontanea.setAttribute('max', yyyy + '-' + mm + '-' + dd);
+    }
+
     // Si el alumno falto no tiene caso obligar al tutor a redactar temas/acuerdos,
     // ni permitirle registrar una canalizacion basada en una sesion que no ocurrio.
     // Textareas van con readonly (no disabled) para que su valor SI viaje en el POST;
@@ -94,13 +109,31 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     });
 
-    var formTutoriaEspontanea = document.getElementById('formTutoriaEspontanea');
     formTutoriaEspontanea.addEventListener('submit', function (e) {
         e.preventDefault();
 
         if (!formTutoriaEspontanea.checkValidity()) {
             formTutoriaEspontanea.reportValidity();
             return;
+        }
+
+        // Validación de fecha: no se permiten fechas futuras
+        if (inputFechaEspontanea && inputFechaEspontanea.value) {
+            var fechaSeleccionada = new Date(inputFechaEspontanea.value + 'T00:00:00');
+            var fechaHoy = new Date();
+            fechaHoy.setHours(0, 0, 0, 0);
+            if (fechaSeleccionada.getTime() > fechaHoy.getTime()) {
+                mostrarAlerta('advertencia', 'Fecha inválida', 'No se pueden registrar tutorías con fecha futura.');
+                return;
+            }
+        }
+
+        // Validación de horario permitido (7:00 AM - 9:00 PM)
+        if (inputHoraEspontanea && inputHoraEspontanea.value) {
+            if (inputHoraEspontanea.value < HORA_MIN || inputHoraEspontanea.value > HORA_MAX) {
+                mostrarAlerta('advertencia', 'Horario no permitido', 'Las tutorías solo pueden agendarse entre las 7:00 AM y las 9:00 PM.');
+                return;
+            }
         }
 
         mostrarConfirmacion(
@@ -126,7 +159,9 @@ document.addEventListener('DOMContentLoaded', function () {
         mostrarAlerta('advertencia', 'Formato incorrecto', 'La matrícula debe tener exactamente 10 caracteres.');
     } else if (errorUrl === 'matricula_no_existe') {
         mostrarAlerta('error', 'Matrícula no encontrada', 'El alumno no está registrado en el sistema. Verifica el dato.');
-    }
+    } else if (exito === 'tutoria_guardada') {
+    mostrarToast('exito', 'Guardado', 'Tutoría espontánea registrada correctamente. Puedes consultarla en la pestaña "Historial".');
+}
 
     if (exito || errorUrl) {
         window.history.replaceState(null, null, window.location.pathname);

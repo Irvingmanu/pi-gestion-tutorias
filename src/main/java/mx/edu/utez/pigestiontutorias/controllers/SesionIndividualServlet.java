@@ -12,12 +12,18 @@ import mx.edu.utez.pigestiontutorias.utils.UrlUtils;
 
 import java.io.IOException;
 import java.sql.Date;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 @WebServlet(name = "SesionIndividualServlet", value = "/tutoria-individual")
 public class SesionIndividualServlet extends HttpServlet {
+
+    private static final LocalTime HORA_MIN = LocalTime.of(7, 0);
+    private static final LocalTime HORA_MAX = LocalTime.of(21, 0);
 
     private final TutorDao tutorDao = new TutorDao();
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();
@@ -108,6 +114,45 @@ public class SesionIndividualServlet extends HttpServlet {
                 return;
             }
 
+            // Blindaje de servidor: la fecha no puede ser futura, sin importar lo que
+            // mande el formulario (el <input type="date"> se puede manipular).
+            LocalDate fechaSesion;
+            try {
+                fechaSesion = LocalDate.parse(fechaStr.trim());
+            } catch (DateTimeParseException e) {
+                request.setAttribute("error", "La fecha capturada no es válida.");
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
+                cargarListas(request, tutor);
+                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
+                return;
+            }
+            if (fechaSesion.isAfter(LocalDate.now())) {
+                request.setAttribute("error", "No se pueden registrar tutorías con fecha futura.");
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
+                cargarListas(request, tutor);
+                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
+                return;
+            }
+
+            // Blindaje de servidor: la hora debe estar dentro del horario académico permitido (7:00 - 21:00)
+            LocalTime horaSesion;
+            try {
+                horaSesion = LocalTime.parse(hora.trim());
+            } catch (DateTimeParseException e) {
+                request.setAttribute("error", "La hora capturada no es válida.");
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
+                cargarListas(request, tutor);
+                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
+                return;
+            }
+            if (horaSesion.isBefore(HORA_MIN) || horaSesion.isAfter(HORA_MAX)) {
+                request.setAttribute("error", "Las tutorías solo pueden agendarse entre las 7:00 AM y las 9:00 PM.");
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
+                cargarListas(request, tutor);
+                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
+                return;
+            }
+
             matricula = matricula.trim().toUpperCase();
 
             // Blindaje contra ORA-02291: SESION_INDIVIDUAL.MATRICULA es FK a ALUMNO.MATRICULA,
@@ -171,7 +216,7 @@ public class SesionIndividualServlet extends HttpServlet {
     // que es la que se ve por defecto) y reenvia al JSP lo que el tutor ya habia
     // escrito, para que un error de validacion no lo obligue a recapturar todo.
     private void marcarTabEspontanea(HttpServletRequest request, String matricula, String fecha, String hora,
-                                      String temas, String acuerdos) {
+                                     String temas, String acuerdos) {
         request.setAttribute("tabActiva", "espontanea");
         request.setAttribute("matriculaEnviada", matricula);
         request.setAttribute("fechaEnviada", fecha);
