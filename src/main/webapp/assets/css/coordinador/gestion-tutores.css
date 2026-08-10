@@ -63,3 +63,37 @@
     color: #ffffff;
     background-color: #B33F41;
 }
+/* ========================================================
+   CAJITA CONTENEDORA DE HORARIOS CON SCROLL
+   ======================================================== */
+#contenedorHorarios {
+    height: 180px !important;       /* Altura fija de la cajita */
+    max-height: 180px !important;   /* No dejará que sobrepase este tamaño */
+    overflow-y: auto !important;    /* Fuerza el scroll vertical cuando sobrepasa la cajita */
+    overflow-x: hidden;
+
+    /* Estilos visuales de la "cajita" */
+    background-color: #f8f9fa;      /* Fondo gris claro */
+    border: 1px solid #ced4da;      /* Borde delimitador */
+    border-radius: 10px;            /* Bordes redondeados */
+    padding: 10px;                  /* Margen interno para que no pegue a las orillas */
+}
+
+/* Diseño de la barra de scroll dentro de la cajita */
+#contenedorHorarios::-webkit-scrollbar {
+    width: 6px;
+}
+
+#contenedorHorarios::-webkit-scrollbar-track {
+    background: #e9ecef;
+    border-radius: 4px;
+}
+
+#contenedorHorarios::-webkit-scrollbar-thumb {
+    background: #00897b;           /* Color verde UTEZ */
+    border-radius: 4px;
+}
+
+#contenedorHorarios::-webkit-scrollbar-thumb:hover {
+    background: #00695c;
+}
