@@ -16,6 +16,17 @@
     <link href="${pageContext.request.contextPath}/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/coordinador/asignacion.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/alertas.css" rel="stylesheet">
+
+    <style>
+        .btn-figma:disabled {
+            background-color: #7ab899 !important;
+            color: #ffffff;
+            cursor: not-allowed;
+            opacity: 0.6;
+            box-shadow: none;
+            border: none;
+        }
+    </style>
 </head>
 <body>
 
@@ -125,12 +136,14 @@
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <label class="campo-label fs-6 fw-bold" for="fechaInicio">Fecha de inicio</label>
-                            <input type="date" id="fechaInicio" name="fechaInicio" class="form-control form-control-figma w-100 fs-6" required>
+                            <input type="date" id="fechaInicio" name="fechaInicio" class="form-control form-control-figma w-100 fs-6"
+                                   style="cursor: pointer;" onclick="this.showPicker()" required>
                             <div class="invalid-feedback">Selecciona la fecha de inicio.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="campo-label fs-6 fw-bold" for="fechaFin">Fecha de fin</label>
-                            <input type="date" id="fechaFin" name="fechaFin" class="form-control form-control-figma w-100 fs-6" required>
+                            <input type="date" id="fechaFin" name="fechaFin" class="form-control form-control-figma w-100 fs-6"
+                                   style="cursor: pointer;" onclick="this.showPicker()" required>
                             <div class="invalid-feedback">La fecha de fin debe ser posterior a la de inicio.</div>
                         </div>
                     </div>
