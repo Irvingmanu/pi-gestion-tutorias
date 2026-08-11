@@ -499,7 +499,7 @@ public class AlumnoDAO implements Dao<Alumno, String> {
                         "JOIN CUATRIMESTRE c ON sg.ID_CUATRIMESTRE = c.ID_CUATRIMESTRE " +
                         "LEFT JOIN ASISTENCIA a ON a.ID_SESION_GRUPAL = sg.ID_SESION_GRUPAL AND TRIM(a.MATRICULA) = TRIM(?) " +
                         "WHERE sg.ID_LETRA_GRUPO = ? AND sg.ID_CARRERA = ? AND sg.ID_CUATRIMESTRE = ? " +
-                        "ORDER BY FECHA ASC";
+                        "ORDER BY FECHA DESC";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(query)) {
