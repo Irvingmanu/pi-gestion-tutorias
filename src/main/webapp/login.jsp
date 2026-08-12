@@ -36,7 +36,7 @@
             </div>
         </c:if>
 
-        <form action="login" method="POST" id="loginForm" novalidate>
+        <form action="login" method="POST" id="loginForm" novalidate autocomplete="off">
 
             <div class="mb-4">
                 <label for="opcionAsignacion" class="auth-label">Opción de asignación</label>
@@ -58,7 +58,7 @@
                 <div class="auth-field">
                     <img src="assets/img/login/usuario.png" alt="" class="auth-icon-left">
                     <input type="text" class="form-control auth-input" id="usuario" name="usuario"
-                           value="${param.usuario}" placeholder="Usuario" required>
+                           value="${param.usuario}" placeholder="Usuario" required autocomplete="off">
                     <div class="invalid-feedback">
                         Ingresa tu matrícula o nómina.
                     </div>
@@ -70,7 +70,7 @@
                 <div class="auth-field auth-field--password">
                     <img src="assets/img/login/candado.png" alt="" class="auth-icon-left">
                     <input type="password" class="form-control auth-input" id="password" name="password"
-                           placeholder="Contraseña" required>
+                           placeholder="Contraseña" required autocomplete="new-password">
                     <button type="button" class="auth-toggle-password" id="togglePassword" aria-label="Mostrar contraseña">
                         <img src="assets/img/login/ojoOcultar.png" alt="" class="auth-field-icon" id="toggleIcon">
                     </button>
@@ -106,6 +106,24 @@
             }
             form.classList.add('was-validated');
         }, false);
+    })();
+</script>
+<script>
+    // Si el usuario llega a esta página usando los botones atrás/adelante,
+    // forzar una recarga limpia para que no queden datos prellenados.
+    (function () {
+        var navType = "";
+        var navEntries = performance.getEntriesByType("navigation");
+
+        if (navEntries.length > 0) {
+            navType = navEntries[0].type;
+        } else if (performance.navigation) {
+            navType = (performance.navigation.type === 2) ? "back_forward" : "";
+        }
+
+        if (navType === "back_forward") {
+            window.location.reload();
+        }
     })();
 </script>
 </body>

@@ -50,3 +50,20 @@
         </a>
     </div>
 </aside>
+
+<script>
+    (function () {
+        var navType = "";
+        var navEntries = performance.getEntriesByType("navigation");
+
+        if (navEntries.length > 0) {
+            navType = navEntries[0].type;
+        } else if (performance.navigation) {
+            navType = (performance.navigation.type === 2) ? "back_forward" : "";
+        }
+
+        if (navType === "back_forward") {
+            window.location.replace("<%= ctx %>/logout");
+        }
+    })();
+</script>
