@@ -1,3 +1,7 @@
+/**
+ * Muestra una alerta de confirmación antes de salir de un formulario sin guardar.
+ * Redirige a la URL especificada en el atributo 'data-url-cancelar' del botón.
+ */
 function confirmarCancelacion() {
     let boton = document.getElementById('btnCancelarFormulario');
     let urlDestino = boton ? boton.dataset.urlCancelar : '/';
@@ -69,6 +73,7 @@ function filtrarAlumnos() {
     let inputBuscar = document.getElementById('buscarAlumno');
     if (!inputBuscar) return;
 
+    // Obtención de valores actuales de los filtros
     let textoBuscar = inputBuscar.value.trim().toLowerCase();
     let carreraSeleccionada = document.getElementById('carrera').value;
     let grupoSeleccionado = document.getElementById('grupo').value;
@@ -76,13 +81,16 @@ function filtrarAlumnos() {
     let mostrarInactivos = document.getElementById('mostrarInactivos');
     let incluirInactivos = mostrarInactivos ? mostrarInactivos.checked : false;
 
+    // Filtrado del array original
     let filasFiltradas = filasAlumnosOriginales.filter(function (fila) {
+        // Se leen los atributos data-* inyectados en cada <tr> por el JSP
         let nombre = fila.dataset.nombre || '';
         let carrera = fila.dataset.carrera || '';
         let cuatri = fila.dataset.cuatri || '';
         let grupo = fila.dataset.grupo || '';
-        let activo = fila.dataset.activo !== 'N';
+        let activo = fila.dataset.activo !== 'N';// Considera activo cualquier valor distinto de 'N'
 
+        // Condiciones de coincidencia
         let coincideNombre = nombre.includes(textoBuscar);
         let coincideCarrera = carreraSeleccionada === '' || carrera === carreraSeleccionada;
         let coincideGrupo = grupoSeleccionado === '' || grupo === grupoSeleccionado;
@@ -100,13 +108,14 @@ function renderizarGruposAlumnos(filas) {
     let contenedor = document.getElementById('contenedorGruposAlumnos');
     if (!contenedor) return;
 
-    contenedor.innerHTML = '';
+    contenedor.innerHTML = '';// Limpiar el contenedor principal// Limpiar el contenedor principal
 
     if (filas.length === 0) {
         contenedor.innerHTML = '<div class="alert alert-info text-center">No se encontraron alumnos con los filtros seleccionados.</div>';
         return;
     }
 
+    // Mapa para agrupar usando la llave "Carrera|Cuatrimestre|Grupo"
     let grupos = new Map();
     filas.forEach(function (fila) {
         let clave = fila.dataset.carrera + '|' + fila.dataset.cuatri + '|' + fila.dataset.grupo;
@@ -138,10 +147,12 @@ function construirTablaGrupo(grupoInfo) {
     let bloque = document.createElement('div');
     bloque.className = 'mb-4';
 
+    // Construcción del título del grupo
     let titulo = document.createElement('div');
     titulo.className = 'titulo-grupo-tabla h6 mb-2';
     titulo.textContent = grupoInfo.carrera + ' - ' + grupoInfo.cuatri + '° ' + grupoInfo.grupo;
 
+    // Asignación de tutor basada en la variable global inyectada
     let claveGrupo = grupoInfo.carrera + '|' + grupoInfo.cuatri + '|' + grupoInfo.grupo;
     let nombreTutor = (window.tutoresPorGrupo || {})[claveGrupo];
 
@@ -152,6 +163,7 @@ function construirTablaGrupo(grupoInfo) {
 
     bloque.appendChild(titulo);
 
+    // Contenedor responsivo con scroll para la tabla
     let scrollWrap = document.createElement('div');
     scrollWrap.className = 'table-responsive';
     scrollWrap.style.maxHeight = '320px';
@@ -173,6 +185,7 @@ function construirTablaGrupo(grupoInfo) {
         '</thead>';
 
     let tbody = document.createElement('tbody');
+    // Clonar los nodos para evitar moverlos del array en memoria original
     grupoInfo.filas.forEach(function (fila) {
         tbody.appendChild(fila.cloneNode(true));
     });
@@ -182,7 +195,7 @@ function construirTablaGrupo(grupoInfo) {
     bloque.appendChild(scrollWrap);
     return bloque;
 }
-
+// Inicializar la tabla agrupada y asignar eventos a los filtros
 document.addEventListener('DOMContentLoaded', function () {
     let buscarAlumno = document.getElementById('buscarAlumno');
     let carrera = document.getElementById('carrera');
@@ -192,6 +205,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     inicializarAgrupacionAlumnos();
 
+    // Attach listeners a los controles de filtro
     if (buscarAlumno) buscarAlumno.addEventListener('input', filtrarAlumnos);
     if (carrera) carrera.addEventListener('change', filtrarAlumnos);
     if (grupo) grupo.addEventListener('change', filtrarAlumnos);
@@ -204,6 +218,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const parametros = new URLSearchParams(window.location.search);
     const exito = parametros.get('exito');
 
+    // Procesamiento de mensajes de éxito
     if (exito) {
         switch (exito) {
             case 'guardado':
@@ -220,11 +235,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
         }
 
+        // Limpiar la URL para evitar que la notificación se repita al recargar
         window.history.replaceState(null, null, window.location.pathname);
     }
 
     const error = parametros.get('error');
 
+    // Procesamiento de mensajes de error
     if (error) {
         switch (error) {
             case 'matricula_duplicada':
@@ -244,6 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
         }
 
+        // Limpiar la URL para evitar que el error se repita al recargar
         window.history.replaceState(null, null, window.location.pathname);
     }
 });
