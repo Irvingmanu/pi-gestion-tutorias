@@ -11,10 +11,12 @@ import mx.edu.utez.pigestiontutorias.models.dao.*;
 import mx.edu.utez.pigestiontutorias.utils.UrlUtils;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeParseException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,16 +35,28 @@ public class SesionIndividualServlet extends HttpServlet {
     private final CanalizacionDao canalizacionDao = new CanalizacionDao();
     private final SesionIndividualDao sesionIndividualDao = new SesionIndividualDao();
     private final PeriodoEscolarDao periodoEscolarDao= new PeriodoEscolarDao();
+    // Reutilizado solo por su consulta "alumnos activos de un grupo" (misma que usa
+    // SesionGrupalServlet); no tiene relacion con sesiones grupales en si.
+    private final AsistenciaGrupalDao asistenciaGrupalDao = new AsistenciaGrupalDao();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        if ("validarMatricula".equals(request.getParameter("accion"))) {
+            validarMatricula(request, response);
+            return;
+        }
+        if ("obtenerAlumnosPorGrupo".equals(request.getParameter("accion"))) {
+            obtenerAlumnosPorGrupo(request, response);
+            return;
+        }
+
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("usuario") == null) {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
 
-        Tutor tutor = tutorDao.findByIdUsuario((Integer) session.getAttribute("idUsuario"));
+        Tutor tutor = tutorDao.getById((Integer) session.getAttribute("idUsuario"));
         if (tutor == null) {
             request.setAttribute("error", "tutor_no_encontrado");
             request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
@@ -53,6 +67,111 @@ public class SesionIndividualServlet extends HttpServlet {
         request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
     }
 
+    // AJAX consumido desde tutoria-individual.jsp mientras el tutor escribe la matricula:
+    // en vez de que se entere hasta el submit final (despues de llenar fecha/hora/temas/
+    // acuerdos) de que el alumno no existe o no es suyo, aqui se valida al vuelo.
+    private void validarMatricula(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("usuario") == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"valido\":false,\"mensaje\":\"Tu sesión expiró, recarga la página.\"}");
+            return;
+        }
+
+        Tutor tutor = tutorDao.getById((Integer) session.getAttribute("idUsuario"));
+        if (tutor == null) {
+            response.getWriter().write("{\"valido\":false,\"mensaje\":\"No se encontró tu perfil de tutor.\"}");
+            return;
+        }
+
+        String matricula = request.getParameter("matricula");
+        matricula = matricula != null ? matricula.trim().toUpperCase() : "";
+
+        String json;
+        if (matricula.length() != 10) {
+            json = "{\"valido\":false,\"mensaje\":\"La matrícula debe tener exactamente 10 caracteres.\"}";
+        } else {
+            Alumno alumno = alumnoDAO.getById(matricula);
+            if (alumno == null) {
+                json = "{\"valido\":false,\"mensaje\":\"El alumno no está registrado en el sistema.\"}";
+            } else if (!"S".equals(alumno.getEstado())) {
+                json = "{\"valido\":false,\"mensaje\":\"El alumno está dado de baja.\"}";
+            } else if (!asignacionTutorDao.alumnoPerteneceATutor(tutor.getNumeroEmpleado(), matricula)) {
+                json = "{\"valido\":false,\"mensaje\":\"El alumno existe, pero no está asignado a tus grupos.\"}";
+            } else {
+                json = "{\"valido\":true,\"mensaje\":\"" + escaparJson(alumno.getNombres() + " " + alumno.getApellidos()) + "\"}";
+            }
+        }
+
+        try (PrintWriter writer = response.getWriter()) {
+            writer.write(json);
+        }
+    }
+
+    // AJAX consumido desde tutoria-individual.jsp al elegir un grupo en el <select>: llena
+    // el <datalist> del buscador de alumnos con los alumnos activos de ese grupo, para que
+    // el tutor busque por nombre en vez de teclear la matricula a mano.
+    private void obtenerAlumnosPorGrupo(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("usuario") == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("[]");
+            return;
+        }
+
+        Tutor tutor = tutorDao.getById((Integer) session.getAttribute("idUsuario"));
+        if (tutor == null) {
+            response.getWriter().write("[]");
+            return;
+        }
+
+        int idGrupo;
+        try {
+            idGrupo = Integer.parseInt(request.getParameter("idGrupo").trim());
+        } catch (Exception e) {
+            response.getWriter().write("[]");
+            return;
+        }
+
+        // Blindaje de servidor: el grupo debe ser realmente uno de los asignados a este
+        // tutor, sin confiar en que el <select> del formulario no fue manipulado.
+        if (!asignacionTutorDao.existeAsignacionParaTutor(tutor.getNumeroEmpleado(), idGrupo)) {
+            response.getWriter().write("[]");
+            return;
+        }
+
+        List<Alumno> alumnos = asistenciaGrupalDao.getAlumnosPorGrupo(idGrupo);
+
+        StringBuilder json = new StringBuilder("[");
+        for (int i = 0; i < alumnos.size(); i++) {
+            Alumno a = alumnos.get(i);
+            if (i > 0) {
+                json.append(",");
+            }
+            json.append("{")
+                    .append("\"matricula\":\"").append(escaparJson(a.getMatricula())).append("\",")
+                    .append("\"nombres\":\"").append(escaparJson(a.getNombres())).append("\",")
+                    .append("\"apellidos\":\"").append(escaparJson(a.getApellidos())).append("\"")
+                    .append("}");
+        }
+        json.append("]");
+
+        try (PrintWriter writer = response.getWriter()) {
+            writer.write(json.toString());
+        }
+    }
+
+    private String escaparJson(String valor) {
+        if (valor == null) {
+            return "";
+        }
+        return valor.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
@@ -61,7 +180,7 @@ public class SesionIndividualServlet extends HttpServlet {
             return;
         }
 
-        Tutor tutor = tutorDao.findByIdUsuario((Integer) session.getAttribute("idUsuario"));
+        Tutor tutor = tutorDao.getById((Integer) session.getAttribute("idUsuario"));
         if (tutor == null) {
             request.setAttribute("error", "tutor_no_encontrado");
             request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
@@ -109,6 +228,40 @@ public class SesionIndividualServlet extends HttpServlet {
             if (matricula == null || matricula.isBlank() || fechaStr == null || fechaStr.isBlank()
                     || hora == null || hora.isBlank()) {
                 request.setAttribute("error", "campos_incompletos");
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
+                cargarListas(request, tutor);
+                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
+                return;
+            }
+
+            // Blindaje de servidor: la identidad del alumno se valida primero (antes de
+            // fecha/hora), igual que ya se valida en vivo via AJAX en el frontend. Asi el
+            // tutor nunca llena el resto del formulario para enterarse hasta el final de
+            // que la matricula no existe o no es de sus grupos.
+            matricula = matricula.trim().toUpperCase();
+
+            // Blindaje contra ORA-02291: SESION_INDIVIDUAL.MATRICULA es FK a ALUMNO.MATRICULA,
+            // asi que una matricula mal formada o inexistente revienta el INSERT en el DAO.
+            // Antes esto era un sendRedirect que perdia todo lo escrito en el formulario;
+            // ahora se reenvia (forward) a la misma pantalla con los datos ya capturados.
+            if (matricula.length() != 10) {
+                request.setAttribute("error", "matricula_invalida");
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
+                cargarListas(request, tutor);
+                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
+                return;
+            }
+
+            if (alumnoDAO.getById(matricula) == null) {
+                request.setAttribute("error", "matricula_no_existe");
+                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
+                cargarListas(request, tutor);
+                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
+                return;
+            }
+
+            if (!asignacionTutorDao.alumnoPerteneceATutor(tutor.getNumeroEmpleado(), matricula)) {
+                request.setAttribute("error", "alumno_no_asignado");
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
                 cargarListas(request, tutor);
                 request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
@@ -163,47 +316,17 @@ public class SesionIndividualServlet extends HttpServlet {
                 return;
             }
 
-            matricula = matricula.trim().toUpperCase();
-
-            // Blindaje contra ORA-02291: SESION_INDIVIDUAL.MATRICULA es FK a ALUMNO.MATRICULA,
-            // asi que una matricula mal formada o inexistente revienta el INSERT en el DAO.
-            // Antes esto era un sendRedirect que perdia todo lo escrito en el formulario;
-            // ahora se reenvia (forward) a la misma pantalla con los datos ya capturados.
-            if (matricula.length() != 10) {
-                request.setAttribute("error", "matricula_invalida");
-                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
-                cargarListas(request, tutor);
-                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
-                return;
-            }
-
-            if (alumnoDAO.getById(matricula) == null) {
-                request.setAttribute("error", "matricula_no_existe");
-                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
-                cargarListas(request, tutor);
-                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
-                return;
-            }
-
-            if (!asignacionTutorDao.alumnoPerteneceATutor(tutor.getIdTutor(), matricula)) {
-                request.setAttribute("error", "alumno_no_asignado");
-                marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
-                cargarListas(request, tutor);
-                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
-                return;
-            }
-
             Integer idCanalizacionPrincipal = registrarCanalizaciones(idMotivos, matricula, baseUrl);
 
             SesionIndividual sesion = new SesionIndividual();
-            sesion.setIdTutor(tutor.getIdTutor());
+            sesion.setIdTutor(tutor.getNumeroEmpleado());
             sesion.setMatricula(matricula);
             sesion.setFecha(Date.valueOf(fechaStr));
             sesion.setHora(hora);
             sesion.setTemasTratados(temasTratados);
             sesion.setAcuerdos(acuerdos);
             sesion.setIdCanalizacion(idCanalizacionPrincipal);
-            sesion.setEstado("Tomada");
+            sesion.setEstado("Completado");
             sesion.setEstatusAsistencia("Presente");
 
             guardado = sesionIndividualDao.create(sesion);
@@ -270,8 +393,9 @@ public class SesionIndividualServlet extends HttpServlet {
     }
 
     private void cargarListas(HttpServletRequest request, Tutor tutor) {
-        List<SesionIndividual> sesionesProgramadas = sesionIndividualDao.getSesionesProgramadasByTutor(tutor.getIdTutor());
+        List<SesionIndividual> sesionesProgramadas = sesionIndividualDao.getSesionesProgramadasByTutor(tutor.getNumeroEmpleado());
         List<Area> areasConMotivos = areaDAO.getAllConMotivos();
+        PeriodoEscolar periodoVigente = periodoEscolarDao.getPeriodoVigente();
 
         Map<String, String> nombresAlumnos = new HashMap<>();
         for (SesionIndividual s : sesionesProgramadas) {
@@ -281,9 +405,14 @@ public class SesionIndividualServlet extends HttpServlet {
             }
         }
 
+        List<Grupo> gruposAsignados = periodoVigente != null
+                ? asignacionTutorDao.obtenerGruposPorTutor(tutor.getNumeroEmpleado(), periodoVigente.getIdPeriodo())
+                : Collections.emptyList();
+
         request.setAttribute("sesionesProgramadas", sesionesProgramadas);
         request.setAttribute("areasConMotivos", areasConMotivos);
         request.setAttribute("nombresAlumnos", nombresAlumnos);
-        request.setAttribute("periodoVigente", periodoEscolarDao.getPeriodoVigente());
+        request.setAttribute("periodoVigente", periodoVigente);
+        request.setAttribute("gruposAsignados", gruposAsignados);
     }
 }

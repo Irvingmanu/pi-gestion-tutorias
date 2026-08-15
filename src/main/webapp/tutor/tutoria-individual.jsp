@@ -41,6 +41,9 @@
     <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/alertas.css" rel="stylesheet">
+    <!-- Select2 (buscador del alumno en Tutoría Espontánea) -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/select2-bootstrap-5-theme@1.3.0/dist/select2-bootstrap-5-theme.min.css" rel="stylesheet">
 </head>
 <body>
 
@@ -130,14 +133,29 @@
                     <form id="formTutoriaEspontanea" class="needs-validation" action="${pageContext.request.contextPath}/tutoria-individual" method="post" novalidate>
 
                         <div class="row g-3 mb-4">
-                            <div class="col-12">
-                                <label for="matricula" class="form-label fs-6 fw-bold">Matrícula</label>
-                                <input type="text" id="matricula" name="matricula" class="form-control form-control-figma fs-6"
-                                       placeholder="Escribe la matrícula del alumno" value="${matriculaEnviada}"
-                                       style="text-transform: uppercase;"
-                                       maxlength="10" minlength="10" pattern="^[a-zA-Z0-9]{10}$"
-                                       oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()" required>
-                                <div class="invalid-feedback">La matrícula debe tener exactamente 10 caracteres.</div>
+                            <div class="col-md-6">
+                                <label for="grupoSelector" class="form-label fs-6 fw-bold">Grupo</label>
+                                <select id="grupoSelector" class="form-select form-control-figma fs-6" required>
+                                    <option value="">Selecciona un grupo</option>
+                                    <c:forEach var="grupo" items="${gruposAsignados}">
+                                        <option value="${grupo.idGrupo}">${grupo.nombreGrupo}</option>
+                                    </c:forEach>
+                                </select>
+                                <div class="invalid-feedback">Selecciona un grupo.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="alumnoBuscador" class="form-label fs-6 fw-bold">Alumno</label>
+                                <!-- Select2 sobre un <select required name="matricula">: al elegir una opcion,
+                                     el propio <select> manda la matricula en el POST, sin input hidden aparte. -->
+                                <select id="alumnoBuscador" name="matricula" class="form-select" disabled required>
+                                    <option value="">Selecciona un grupo primero</option>
+                                </select>
+                                <!-- El <select> real queda oculto (display:none) tras el widget de Select2,
+                                     pero sigue siendo hermano en el DOM de este div, asi que la regla nativa
+                                     de Bootstrap ".is-invalid ~ .invalid-feedback" lo detecta igual; ademas
+                                     el submit handler lo fuerza a mano por si acaso (ver tutoria-individual.js). -->
+                                <div class="invalid-feedback" id="alumnoBuscadorInvalido">Por favor, selecciona un alumno de la lista.</div>
+                                <div class="form-text" id="alumnoEstado"></div>
                             </div>
                         </div>
 
@@ -278,6 +296,10 @@
 </script>
 <% } %>
 
+<!-- Select2 (buscador del alumno en Tutoría Espontánea): jQuery debe cargar antes que Select2,
+     y ambos antes que tutoria-individual.js, que los usa. -->
+<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/tutor/tutoria-individual.js"></script>
 </body>
 </html>

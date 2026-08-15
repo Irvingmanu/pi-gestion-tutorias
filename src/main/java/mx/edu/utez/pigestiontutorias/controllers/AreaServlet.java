@@ -101,13 +101,17 @@ public class AreaServlet extends HttpServlet {
 
         Area area = new Area();
         area.setNombre(request.getParameter("nombreArea"));
-        area.setEncargado(request.getParameter("encargado"));
+        area.setNombresEncargado(request.getParameter("nombresEncargado"));
+        area.setApellidoPaternoEncargado(request.getParameter("apellidoPaternoEncargado"));
+        area.setApellidoMaternoEncargado(request.getParameter("apellidoMaternoEncargado"));
         area.setCorreoContacto(request.getParameter("correo"));
 
         String[] motivos = request.getParameterValues("motivos[]");
 
         boolean formatoValido = area.getNombre() != null && area.getNombre().trim().matches(REGEX_NOMBRE)
-                && area.getEncargado() != null && area.getEncargado().trim().matches(REGEX_NOMBRE)
+                && area.getNombresEncargado() != null && area.getNombresEncargado().trim().matches(REGEX_NOMBRE)
+                && area.getApellidoPaternoEncargado() != null && area.getApellidoPaternoEncargado().trim().matches(REGEX_NOMBRE)
+                && (area.getApellidoMaternoEncargado() == null || area.getApellidoMaternoEncargado().isBlank() || area.getApellidoMaternoEncargado().trim().matches(REGEX_NOMBRE))
                 && area.getCorreoContacto() != null && area.getCorreoContacto().trim().matches(REGEX_CORREO);
 
         // Al menos un motivo es obligatorio al crear un area (el <input> required estatico
@@ -209,7 +213,9 @@ public class AreaServlet extends HttpServlet {
         if (esEdicion) {
             Area areaEdit = areaDAO.getById(Integer.parseInt(idAreaParam));
             areaEdit.setNombre(areaSubmitted.getNombre());
-            areaEdit.setEncargado(areaSubmitted.getEncargado());
+            areaEdit.setNombresEncargado(areaSubmitted.getNombresEncargado());
+            areaEdit.setApellidoPaternoEncargado(areaSubmitted.getApellidoPaternoEncargado());
+            areaEdit.setApellidoMaternoEncargado(areaSubmitted.getApellidoMaternoEncargado());
             areaEdit.setCorreoContacto(areaSubmitted.getCorreoContacto());
             request.setAttribute("areaEdit", areaEdit);
         } else {

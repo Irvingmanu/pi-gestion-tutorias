@@ -35,7 +35,7 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
                 ps.setNull(7, Types.NUMERIC);
             }
 
-            ps.setString(8, s.getEstado() != null ? s.getEstado() : "Registrada");
+            ps.setString(8, s.getEstado() != null ? s.getEstado() : "Completado");
             ps.setString(9, s.getEstatusAsistencia() != null ? s.getEstatusAsistencia() : "Presente");
             ps.setString(10, s.getOrigen() != null ? s.getOrigen() : "Espontanea");
 
@@ -68,7 +68,7 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
 
     public List<SesionIndividual> getAcuerdosPorAlumno(String matricula) {
         List<SesionIndividual> lista = new ArrayList<>();
-        String sql = "SELECT * FROM SESION_INDIVIDUAL WHERE MATRICULA = ? AND ESTADO = 'Tomada' ORDER BY FECHA DESC";
+        String sql = "SELECT * FROM SESION_INDIVIDUAL WHERE MATRICULA = ? AND ESTADO = 'Completado' ORDER BY FECHA DESC";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -90,7 +90,7 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
     // capture temas/acuerdos (ver SolicitudServlet, accion=aceptar).
     public List<SesionIndividual> getSesionesProgramadasByTutor(int idTutor) {
         List<SesionIndividual> lista = new ArrayList<>();
-        String sql = "SELECT * FROM SESION_INDIVIDUAL WHERE ID_TUTOR = ? AND ESTADO = 'Programada' ORDER BY FECHA";
+        String sql = "SELECT * FROM SESION_INDIVIDUAL WHERE ID_TUTOR = ? AND ESTADO = 'Pendiente' ORDER BY FECHA";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -108,13 +108,13 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         return lista;
     }
 
-    // Historial: sesiones individuales YA REALIZADAS (Tomada) del tutor, filtrables por
+    // Historial: sesiones individuales YA REALIZADAS (Completado) del tutor, filtrables por
     // origen ('Programada' o 'Espontanea') y por rango de fechas. Cualquiera de los
     // filtros puede venir null/blank, en cuyo caso no se aplica esa condicion.
     public List<SesionIndividual> getHistorialByTutor(int idTutor, String origen, String fechaInicio, String fechaFin) {
         List<SesionIndividual> lista = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-                "SELECT * FROM SESION_INDIVIDUAL WHERE ID_TUTOR = ? AND ESTADO = 'Tomada'");
+                "SELECT * FROM SESION_INDIVIDUAL WHERE ID_TUTOR = ? AND ESTADO = 'Completado'");
 
         if (origen != null && !origen.isBlank()) {
             sql.append(" AND ORIGEN = ?");
@@ -153,7 +153,7 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         return lista;
     }
 
-    // Cierra una sesion programada: la marca 'Tomada', guarda temas/acuerdos y registra
+    // Cierra una sesion pendiente: la marca 'Completado', guarda temas/acuerdos y registra
     // en CANALIZACION cada motivo de vinculo directo seleccionado en el modal "Completar".
     // La primera canalizacion creada queda enlazada a la sesion via ID_CANALIZACION;
     // las demas quedan igual en CANALIZACION (por matricula/area) porque SESION_INDIVIDUAL
@@ -164,7 +164,7 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
     public boolean completarSesion(int idSesion, String temas, String acuerdos, String[] idMotivos, String estatusAsistencia, String baseUrl) {
         String sqlMatricula = "SELECT MATRICULA FROM SESION_INDIVIDUAL WHERE ID_SESION_INDIVIDUAL = ?";
         String sqlMotivoArea = "SELECT ID_AREA FROM MOTIVO_AREA WHERE ID_MOTIVO = ?";
-        String sqlUpdate = "UPDATE SESION_INDIVIDUAL SET ESTADO = 'Tomada', TEMAS_TRATADOS = ?, ACUERDOS = ?, ID_CANALIZACION = ?, ESTATUS_ASISTENCIA = ? " +
+        String sqlUpdate = "UPDATE SESION_INDIVIDUAL SET ESTADO = 'Completado', TEMAS_TRATADOS = ?, ACUERDOS = ?, ID_CANALIZACION = ?, ESTATUS_ASISTENCIA = ? " +
                 "WHERE ID_SESION_INDIVIDUAL = ?";
 
         List<Canalizacion> canalizacionesCreadas = new ArrayList<>();

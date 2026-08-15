@@ -47,8 +47,6 @@ public class ReportesServlet extends HttpServlet {
         if (accion == null && formato == null) {
             AlumnoDAO alumnoDAO = new AlumnoDAO();
             request.setAttribute("listaCarreras", alumnoDAO.getAllCarreras());
-            request.setAttribute("listaCuatrimestres", alumnoDAO.getAllCuatrimestres());
-            request.setAttribute("listaLetrasGrupo", alumnoDAO.getAllLetrasGrupo());
 
             request.setAttribute("paginaActiva", "reportes");
             request.getRequestDispatcher("/tutor/reportes.jsp").forward(request, response);
@@ -59,19 +57,19 @@ public class ReportesServlet extends HttpServlet {
         Integer idUsuario = (Integer) session.getAttribute("idUsuario");
         Integer idTutorFiltro;
 
-        Tutor tutorSesion = tutorDao.findByIdUsuario(idUsuario);
+        Tutor tutorSesion = idUsuario != null ? tutorDao.getById(idUsuario) : null;
         if (tutorSesion != null) {
             // El usuario es tutor: siempre se filtra por si mismo, sin importar
             // que venga un idTutor distinto en la URL (evita que un tutor vea datos de otro).
-            idTutorFiltro = tutorSesion.getIdTutor();
+            idTutorFiltro = tutorSesion.getNumeroEmpleado();
         } else {
             // El usuario es coordinador (u otro rol sin tutor asociado):
             // puede elegir un tutor especifico desde el select, o dejarlo vacio para ver todo.
             idTutorFiltro = parseIntOrNull(request.getParameter("idTutor"));
         }
 
-        Integer idCuatrimestre = parseIntOrNull(request.getParameter("idCuatrimestre"));
-        Integer idLetraGrupo = parseIntOrNull(request.getParameter("idLetraGrupo"));
+        Integer cuatrimestre = parseIntOrNull(request.getParameter("cuatrimestre"));
+        String letra = request.getParameter("letra");
         Integer idCarrera = parseIntOrNull(request.getParameter("idCarrera"));
 
         String desdeParam = request.getParameter("desde");
@@ -83,7 +81,7 @@ public class ReportesServlet extends HttpServlet {
         LocalDate hasta = parseFechaOrDefault(hastaParam, LocalDate.now());
 
         ReportesDao.ReporteResumen reporte = reportesDao.generarReporte(
-                idTutorFiltro, idCarrera, idCuatrimestre, idLetraGrupo, null, desde, hasta);
+                idTutorFiltro, idCarrera, cuatrimestre, letra, desde, hasta);
 
 
         if ("csv".equalsIgnoreCase(formato)) {

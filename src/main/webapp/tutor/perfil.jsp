@@ -41,7 +41,7 @@
             <p class="fw-bold fs-5 mt-4 mb-3">Información Personal</p>
             <ul class="ms-3">
                 <li class="mb-2"><strong>Nombre:</strong> ${tutor.nombres} ${tutor.apellidos}</li>
-                <li class="mb-2"><strong>Nómina:</strong> ${tutor.nomina}</li>
+                <li class="mb-2"><strong>Nómina:</strong> ${tutor.numeroEmpleado}</li>
                 <li class="mb-2"><strong>Email:</strong> ${tutor.correoInstitucional}</li>
                 <li class="mb-2"><strong>Teléfono:</strong> ${tutor.telefono}</li>
             </ul>

@@ -55,7 +55,7 @@ public class TutoriaServlet extends HttpServlet {
             throws ServletException, IOException {
 
         Integer idUsuario = (Integer) session.getAttribute("idUsuario");
-        Tutor tutor = tutorDao.findByIdUsuario(idUsuario);
+        Tutor tutor = tutorDao.getById(idUsuario);
 
         if (tutor == null) {
             request.setAttribute("error", "No se encontró el perfil de tutor asociado a tu cuenta.");
@@ -63,7 +63,7 @@ public class TutoriaServlet extends HttpServlet {
             return;
         }
 
-        int idTutor = tutor.getIdTutor();
+        int idTutor = tutor.getNumeroEmpleado();
 
         String matricula = request.getParameter("matricula");
         String fechaStr = request.getParameter("fecha");
@@ -105,7 +105,7 @@ public class TutoriaServlet extends HttpServlet {
         sesion.setTemasTratados(temasTratados);
         sesion.setAcuerdos(acuerdos);
         sesion.setIdCanalizacion(idCanalizacion);
-        sesion.setEstado("Tomada");
+        sesion.setEstado("Completado");
 
         boolean guardado = sesionIndividualDao.create(sesion);
 

@@ -84,10 +84,26 @@
                             </div>
 
                             <div class="mb-4">
-                                <label for="encargado" class="form-label fs-6 fw-bold">Encargado</label>
-                                <input type="text" id="encargado" name="encargado" class="form-control form-control-figma w-100 fs-6"
-                                       value="${area.encargado}" placeholder="Escribe nombre del encargado"
+                                <label for="nombresEncargado" class="form-label fs-6 fw-bold">Nombres del encargado</label>
+                                <input type="text" id="nombresEncargado" name="nombresEncargado" class="form-control form-control-figma w-100 fs-6"
+                                       value="${area.nombresEncargado}" placeholder="Escribe los nombres del encargado"
                                        pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="apellidoPaternoEncargado" class="form-label fs-6 fw-bold">Apellido paterno del encargado</label>
+                                <input type="text" id="apellidoPaternoEncargado" name="apellidoPaternoEncargado" class="form-control form-control-figma w-100 fs-6"
+                                       value="${area.apellidoPaternoEncargado}" placeholder="Escribe el apellido paterno del encargado"
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="apellidoMaternoEncargado" class="form-label fs-6 fw-bold">Apellido materno del encargado</label>
+                                <input type="text" id="apellidoMaternoEncargado" name="apellidoMaternoEncargado" class="form-control form-control-figma w-100 fs-6"
+                                       value="${area.apellidoMaternoEncargado}" placeholder="Escribe el apellido materno del encargado"
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]*$" title="Solo se permiten letras, números, espacios y . , ( ) / -">
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -154,10 +170,26 @@
                             </div>
 
                             <div class="mb-4">
-                                <label for="encargado" class="form-label fs-6 fw-bold">Encargado</label>
-                                <input type="text" id="encargado" name="encargado" class="form-control form-control-figma w-100 fs-6"
-                                       value="${areaEdit.encargado}" placeholder="Escribe nombre del encargado"
+                                <label for="nombresEncargado" class="form-label fs-6 fw-bold">Nombres del encargado</label>
+                                <input type="text" id="nombresEncargado" name="nombresEncargado" class="form-control form-control-figma w-100 fs-6"
+                                       value="${areaEdit.nombresEncargado}" placeholder="Escribe los nombres del encargado"
                                        pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="apellidoPaternoEncargado" class="form-label fs-6 fw-bold">Apellido paterno del encargado</label>
+                                <input type="text" id="apellidoPaternoEncargado" name="apellidoPaternoEncargado" class="form-control form-control-figma w-100 fs-6"
+                                       value="${areaEdit.apellidoPaternoEncargado}" placeholder="Escribe el apellido paterno del encargado"
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="apellidoMaternoEncargado" class="form-label fs-6 fw-bold">Apellido materno del encargado</label>
+                                <input type="text" id="apellidoMaternoEncargado" name="apellidoMaternoEncargado" class="form-control form-control-figma w-100 fs-6"
+                                       value="${areaEdit.apellidoMaternoEncargado}" placeholder="Escribe el apellido materno del encargado"
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]*$" title="Solo se permiten letras, números, espacios y . , ( ) / -">
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 

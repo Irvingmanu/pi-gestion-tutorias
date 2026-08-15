@@ -3,7 +3,10 @@ package mx.edu.utez.pigestiontutorias.models.dao;
 import mx.edu.utez.pigestiontutorias.models.PeriodoEscolar;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,14 +14,14 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
 
     @Override
     public boolean create(PeriodoEscolar p) {
-        String sql = "INSERT INTO PERIODO_ESCOLAR (NOMBRE, FECHA_INICIO, FECHA_FIN, ACTIVO) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO PERIODO_ESCOLAR (NOMBRE, FECHA_INICIO, FECHA_FIN, ESTADO) VALUES (?, ?, ?, ?)";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, p.getNombre());
             ps.setDate(2, p.getFechaInicio());
             ps.setDate(3, p.getFechaFin());
-            ps.setString(4, p.getActivo() != null ? p.getActivo() : "S");
+            ps.setString(4, p.getEstado() != null ? p.getEstado() : "S");
 
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -85,10 +88,10 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         }
     }
 
-    // Borrado logico, mismo patron que TUTOR/ALUMNO (ACTIVO = 'N')
+    // Borrado logico, mismo patron que TUTOR/ALUMNO (ESTADO = 'N')
     @Override
     public boolean delete(Integer id) {
-        String sql = "UPDATE PERIODO_ESCOLAR SET ACTIVO = 'N' WHERE ID_PERIODO = ?";
+        String sql = "UPDATE PERIODO_ESCOLAR SET ESTADO = 'N' WHERE ID_PERIODO = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -102,7 +105,7 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
     }
 
     public boolean reactivar(int id) {
-        String sql = "UPDATE PERIODO_ESCOLAR SET ACTIVO = 'S' WHERE ID_PERIODO = ?";
+        String sql = "UPDATE PERIODO_ESCOLAR SET ESTADO = 'S' WHERE ID_PERIODO = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -120,7 +123,7 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
     // <select> de "Nueva Asignación" en asignacion.jsp.
     public List<PeriodoEscolar> getDelAnioActual() {
         List<PeriodoEscolar> lista = new ArrayList<>();
-        String sql = "SELECT * FROM PERIODO_ESCOLAR WHERE ACTIVO = 'S' " +
+        String sql = "SELECT * FROM PERIODO_ESCOLAR WHERE ESTADO = 'S' " +
                 "AND EXTRACT(YEAR FROM FECHA_INICIO) = EXTRACT(YEAR FROM SYSDATE) " +
                 "ORDER BY FECHA_INICIO";
 
@@ -142,7 +145,7 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
     // el <input type="date"> al registrar tutorias (grupal/individual) sin
     // hardcodear un rango de dos semanas ni un año fijo.
     public PeriodoEscolar getPeriodoVigente() {
-        String sql = "SELECT * FROM PERIODO_ESCOLAR WHERE ACTIVO = 'S' " +
+        String sql = "SELECT * FROM PERIODO_ESCOLAR WHERE ESTADO = 'S' " +
                 "AND TRUNC(SYSDATE) BETWEEN FECHA_INICIO AND FECHA_FIN " +
                 "ORDER BY FECHA_INICIO DESC FETCH FIRST 1 ROW ONLY";
 
@@ -184,7 +187,7 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         p.setNombre(rs.getString("NOMBRE"));
         p.setFechaInicio(rs.getDate("FECHA_INICIO"));
         p.setFechaFin(rs.getDate("FECHA_FIN"));
-        p.setActivo(rs.getString("ACTIVO"));
+        p.setEstado(rs.getString("ESTADO"));
         return p;
     }
 }

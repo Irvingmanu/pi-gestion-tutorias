@@ -1,31 +1,8 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%@ page import="mx.edu.utez.pigestiontutorias.models.Alumno" %>
-<%
-    request.setAttribute("paginaActiva", "grupos");
-
-    Alumno alumnoEdit = (Alumno) request.getAttribute("alumnoEdit");
-    Alumno alumnoConError = (Alumno) request.getAttribute("alumno");
-    Alumno alumnoFormulario = alumnoEdit != null ? alumnoEdit : alumnoConError;
-    request.setAttribute("alumnoFormulario", alumnoFormulario);
-
-    boolean esEdicion = alumnoEdit != null || "editar".equals(request.getParameter("accion"));
-    request.setAttribute("esEdicion", esEdicion);
-    request.setAttribute("tituloBanner", esEdicion ? "Editar Alumno" : "Nuevo Alumno");
-
-    String codigoError = (String) request.getAttribute("error");
-    String mensajeError = null;
-    if ("matricula_duplicada".equals(codigoError)) {
-        mensajeError = "Esta matrícula ya está registrada en el sistema.";
-    } else if ("correo_duplicado".equals(codigoError)) {
-        mensajeError = "Este correo ya está registrado en el sistema.";
-    } else if ("telefono_duplicado".equals(codigoError)) {
-        mensajeError = "Este número de teléfono ya está registrado en el sistema.";
-    } else if ("formato_invalido".equals(codigoError)) {
-        mensajeError = "Verifica los datos. El formato de uno o más campos es incorrecto.";
-    }
-    request.setAttribute("mensajeError", mensajeError);
-%>
+<c:set var="paginaActiva" value="grupos" scope="request"/>
+<!-- alumnoFormulario, esEdicion, tituloBanner y mensajeError ya vienen calculados desde
+     AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los consume. -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -58,7 +35,7 @@
         }
     </style>
 </head>
-<body>
+<body data-mensaje-error="${mensajeError}">
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
@@ -93,10 +70,18 @@
                     </div>
 
                     <div class="mb-4">
-                        <label for="apellidos" class="form-label fs-6 fw-bold">Apellidos</label>
-                        <input type="text" id="apellidos" name="apellidos" class="form-control form-control-figma w-100 fs-6"
-                               value="${alumnoFormulario.apellidos}" placeholder="Escribe los apellidos"
+                        <label for="apellidoPaterno" class="form-label fs-6 fw-bold">Apellido paterno</label>
+                        <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control form-control-figma w-100 fs-6"
+                               value="${alumnoFormulario.apellidoPaterno}" placeholder="Escribe el apellido paterno"
                                pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" required>
+                        <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="apellidoMaterno" class="form-label fs-6 fw-bold">Apellido materno</label>
+                        <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control form-control-figma w-100 fs-6"
+                               value="${alumnoFormulario.apellidoMaterno}" placeholder="Escribe el apellido materno"
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$">
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
@@ -148,11 +133,31 @@
                     </div>
 
                     <div class="mb-4">
-                        <label for="carrera" class="form-label fs-6 fw-bold">Carrera</label>
-                        <select id="carrera" name="idCarrera" class="form-select form-control-figma w-100 fs-6" required>
+                        <label for="academiaFiltro" class="form-label fs-6 fw-bold">Academia</label>
+                        <!-- Filtro OPCIONAL: no lleva "name" (no viaja en el POST) ni "required".
+                             Solo oculta/muestra opciones de #carreraSelect por JS, en cliente. -->
+                        <select id="academiaFiltro" class="form-select form-control-figma w-100 fs-6">
+                            <option value="">Todas las academias</option>
+                            <c:forEach var="academia" items="${listaAcademias}">
+                                <option value="${academia.idAcademia}"
+                                        ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.idAcademia == academia.idAcademia ? 'selected' : ''}>
+                                        ${academia.nombre}
+                                </option>
+                            </c:forEach>
+                        </select>
+                        <div class="form-text">Filtro opcional para acortar la lista de Carrera.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="carreraSelect" class="form-label fs-6 fw-bold">Carrera</label>
+                        <!-- Habilitado desde el inicio, con TODAS las carreras del sistema ya
+                             renderizadas; el filtro de Academia (arriba) solo oculta opciones
+                             por JS via data-academia-id, nunca bloquea ni recarga este select. -->
+                        <select id="carreraSelect" name="idCarrera" class="form-select form-control-figma w-100 fs-6" required>
                             <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione la carrera</option>
                             <c:forEach var="carrera" items="${listaCarreras}">
-                                <option value="${carrera.idCarrera}" ${alumnoFormulario != null && alumnoFormulario.idCarrera == carrera.idCarrera ? 'selected' : ''}>
+                                <option value="${carrera.idCarrera}" data-nivel="${carrera.nivel}" data-academia-id="${carrera.idAcademia}"
+                                        ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.idCarrera == carrera.idCarrera ? 'selected' : ''}>
                                         ${carrera.nombre}
                                 </option>
                             </c:forEach>
@@ -162,26 +167,23 @@
 
                     <div class="mb-4">
                         <label for="cuatrimestre" class="form-label fs-6 fw-bold">Cuatrimestre</label>
-                        <select id="cuatrimestre" name="idCuatrimestre" class="form-select form-control-figma w-100 fs-6" required>
-                            <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione el cuatrimestre</option>
-                            <c:forEach var="cuatrimestre" items="${listaCuatrimestres}">
-                                <option value="${cuatrimestre.idCuatrimestre}" ${alumnoFormulario != null && alumnoFormulario.idCuatrimestre == cuatrimestre.idCuatrimestre ? 'selected' : ''}>
-                                        ${cuatrimestre.numero}°
-                                </option>
-                            </c:forEach>
+                        <select id="cuatrimestre" name="cuatrimestre" class="form-select form-control-figma w-100 fs-6" required disabled
+                                data-cuatrimestre-actual="${alumnoFormulario.grupo.cuatrimestre}">
+                            <option value="" selected>Seleccione primero la carrera</option>
                         </select>
                         <div class="invalid-feedback">Por favor seleccione un cuatrimestre.</div>
                     </div>
 
                     <div class="mb-4">
-                        <label for="letraGrupo" class="form-label fs-6 fw-bold">Grupo</label>
-                        <select id="letraGrupo" name="idLetraGrupo" class="form-select form-control-figma w-100 fs-6" required>
+                        <label for="letra" class="form-label fs-6 fw-bold">Grupo</label>
+                        <select id="letra" name="letra" class="form-select form-control-figma w-100 fs-6" required>
                             <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione el grupo</option>
-                            <c:forEach var="letraGrupo" items="${listaLetrasGrupo}">
-                                <option value="${letraGrupo.idLetra}" ${alumnoFormulario != null && alumnoFormulario.idLetraGrupo == letraGrupo.idLetra ? 'selected' : ''}>
-                                        ${letraGrupo.letra}
-                                </option>
-                            </c:forEach>
+                            <option value="A" ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.letra == 'A' ? 'selected' : ''}>A</option>
+                            <option value="B" ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.letra == 'B' ? 'selected' : ''}>B</option>
+                            <option value="C" ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.letra == 'C' ? 'selected' : ''}>C</option>
+                            <option value="D" ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.letra == 'D' ? 'selected' : ''}>D</option>
+                            <option value="E" ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.letra == 'E' ? 'selected' : ''}>E</option>
+                            <option value="F" ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.letra == 'F' ? 'selected' : ''}>F</option>
                         </select>
                         <div class="invalid-feedback">Por favor seleccione un grupo.</div>
                     </div>
@@ -207,62 +209,6 @@
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/alumnos.js"></script>
-
-<!-- Script para validar el formulario en tiempo real -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const form = document.getElementById('formGuardar');
-        const btnGuardar = document.getElementById('btnGuardar');
-        const inputsRequeridos = form.querySelectorAll('input[required], select[required]');
-
-        function verificarFormulario() {
-            let esValido = true;
-            inputsRequeridos.forEach(input => {
-                if (!input.checkValidity()) {
-                    esValido = false;
-                }
-            });
-            btnGuardar.disabled = !esValido;
-        }
-
-        inputsRequeridos.forEach(input => {
-            input.addEventListener('input', function () {
-                if (this.checkValidity()) {
-                    this.classList.remove('is-invalid');
-                } else {
-                    this.classList.add('is-invalid');
-                }
-                verificarFormulario();
-            });
-
-            input.addEventListener('change', function () {
-                if (this.checkValidity()) {
-                    this.classList.remove('is-invalid');
-                } else {
-                    this.classList.add('is-invalid');
-                }
-                verificarFormulario();
-            });
-
-            input.addEventListener('blur', function () {
-                if (!this.checkValidity()) {
-                    this.classList.add('is-invalid');
-                }
-                verificarFormulario();
-            });
-        });
-
-        // Verificación inicial por si estamos en modo edición
-        verificarFormulario();
-    });
-</script>
-
-<c:if test="${not empty mensajeError}">
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            mostrarAlerta('error', 'Error', '${mensajeError}');
-        });
-    </script>
-</c:if>
+<script src="${pageContext.request.contextPath}/assets/js/coordinador/formulario-alumno.js"></script>
 </body>
 </html>

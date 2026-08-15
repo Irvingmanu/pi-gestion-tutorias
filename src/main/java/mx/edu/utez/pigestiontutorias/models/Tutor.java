@@ -3,118 +3,58 @@ package mx.edu.utez.pigestiontutorias.models;
 import java.util.List;
 
 public class Tutor {
-    private int idTutor;
-    private int nomina;
+    private int numeroEmpleado;
     private String nombres;
-    private String apellidos;
+    private String apellidoPaterno;
+    private String apellidoMaterno;
     private String correoInstitucional;
     private String telefono;
     private int idAcademia;
-    private int idUsuario;
-    private String activo;
-    private List<String>horariosDispo;
+    private String pass;
+    private String estado;
+    private List<String> horariosDispo;
     private Academia academia;
 
     public Tutor() {
     }
 
-    public Tutor(int idTutor, int nomina, String nombres, String apellidos, String correoInstitucional, String telefono, int idAcademia, int idUsuario) {
-        this.idTutor = idTutor;
-        this.nomina = nomina;
-        this.nombres = nombres;
-        this.apellidos = apellidos;
-        this.correoInstitucional = correoInstitucional;
-        this.telefono = telefono;
-        this.idAcademia = idAcademia;
-        this.idUsuario = idUsuario;
-    }
+    public int getNumeroEmpleado() { return numeroEmpleado; }
+    public void setNumeroEmpleado(int numeroEmpleado) { this.numeroEmpleado = numeroEmpleado; }
 
-    // Getters y Setters
-    public int getIdTutor() {
-        return idTutor;
-    }
+    public String getNombres() { return nombres; }
+    public void setNombres(String nombres) { this.nombres = nombres; }
 
-    public void setIdTutor(int idTutor) {
-        this.idTutor = idTutor;
-    }
+    public String getApellidoPaterno() { return apellidoPaterno; }
+    public void setApellidoPaterno(String apellidoPaterno) { this.apellidoPaterno = apellidoPaterno; }
 
-    public int getNomina() {
-        return nomina;
-    }
+    public String getApellidoMaterno() { return apellidoMaterno; }
+    public void setApellidoMaterno(String apellidoMaterno) { this.apellidoMaterno = apellidoMaterno; }
 
-    public void setNomina(int nomina) {
-        this.nomina = nomina;
-    }
-
-    public String getNombres() {
-        return nombres;
-    }
-
-    public void setNombres(String nombres) {
-        this.nombres = nombres;
-    }
-
+    // Concatena APELLIDO_PATERNO + APELLIDO_MATERNO (columnas separadas en BD) para
+    // mostrarlos como un solo nombre completo en listados, historial y correos.
     public String getApellidos() {
-        return apellidos;
+        if (apellidoMaterno == null || apellidoMaterno.isBlank()) return apellidoPaterno;
+        return apellidoPaterno + " " + apellidoMaterno;
     }
 
-    public void setApellidos(String apellidos) {
-        this.apellidos = apellidos;
-    }
+    public String getCorreoInstitucional() { return correoInstitucional; }
+    public void setCorreoInstitucional(String correoInstitucional) { this.correoInstitucional = correoInstitucional; }
 
-    public String getCorreoInstitucional() {
-        return correoInstitucional;
-    }
+    public String getTelefono() { return telefono; }
+    public void setTelefono(String telefono) { this.telefono = telefono; }
 
-    public void setCorreoInstitucional(String correoInstitucional) {
-        this.correoInstitucional = correoInstitucional;
-    }
+    public int getIdAcademia() { return idAcademia; }
+    public void setIdAcademia(int idAcademia) { this.idAcademia = idAcademia; }
 
-    public String getTelefono() {
-        return telefono;
-    }
+    public String getPass() { return pass; }
+    public void setPass(String pass) { this.pass = pass; }
 
-    public void setTelefono(String telefono) {
-        this.telefono = telefono;
-    }
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
 
-    public int getIdAcademia() {
-        return idAcademia;
-    }
+    public List<String> getHorariosDispo() { return horariosDispo; }
+    public void setHorariosDispo(List<String> horariosDispo) { this.horariosDispo = horariosDispo; }
 
-    public void setIdAcademia(int idAcademia) {
-        this.idAcademia = idAcademia;
-    }
-
-    public int getIdUsuario() {
-        return idUsuario;
-    }
-
-    public void setIdUsuario(int idUsuario) {
-        this.idUsuario = idUsuario;
-    }
-
-    public String getActivo() {
-        return activo;
-    }
-
-    public void setActivo(String activo) {
-        this.activo = activo;
-    }
-
-    public List<String> getHorariosDispo() {
-        return horariosDispo;
-    }
-
-    public void setHorariosDispo(List<String> horariosDispo) {
-        this.horariosDispo = horariosDispo;
-    }
-
-    public Academia getAcademia() {
-        return academia;
-    }
-
-    public void setAcademia(Academia academia) {
-        this.academia = academia;
-    }
+    public Academia getAcademia() { return academia; }
+    public void setAcademia(Academia academia) { this.academia = academia; }
 }

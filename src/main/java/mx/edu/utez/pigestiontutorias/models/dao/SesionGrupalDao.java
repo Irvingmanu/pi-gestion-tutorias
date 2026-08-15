@@ -15,8 +15,8 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
     @Override
     public boolean create(SesionGrupal entidad) {
         String sqlSesion = "INSERT INTO SESION_GRUPAL " +
-                "(ID_CARRERA, ID_LETRA_GRUPO, ID_CUATRIMESTRE, ID_TUTOR, FECHA, HORA, TEMAS_TRATADOS, ACUERDOS, ASESORIAS_GRUPALES, ESTADO) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "(ID_GRUPO, ID_TUTOR, FECHA, HORA, TEMAS_TRATADOS, ACUERDOS, ASESORIAS_GRUPALES, ESTADO) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         String sqlAsistencia = "INSERT INTO ASISTENCIA (ID_SESION_GRUPAL, MATRICULA, ESTATUS_ASISTENCIA) VALUES (?, ?, ?)";
 
         Connection con = null;
@@ -26,22 +26,20 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
 
             int idSesionGrupal;
             try (PreparedStatement psSesion = con.prepareStatement(sqlSesion, new String[]{"ID_SESION_GRUPAL"})) {
-                psSesion.setInt(1, entidad.getIdCarrera());
-                psSesion.setInt(2, entidad.getIdLetraGrupo());
-                psSesion.setInt(3, entidad.getIdCuatrimestre());
-                psSesion.setInt(4, entidad.getIdTutor());
-                psSesion.setDate(5, entidad.getFecha());
-                psSesion.setString(6, entidad.getHora());
-                psSesion.setString(7, entidad.getTemasTratados());
-                psSesion.setString(8, entidad.getAcuerdos());
+                psSesion.setInt(1, entidad.getIdGrupo());
+                psSesion.setInt(2, entidad.getIdTutor());
+                psSesion.setDate(3, entidad.getFecha());
+                psSesion.setString(4, entidad.getHora());
+                psSesion.setString(5, entidad.getTemasTratados());
+                psSesion.setString(6, entidad.getAcuerdos());
 
                 if (entidad.getAsesoriasGrupales() != null) {
-                    psSesion.setString(9, entidad.getAsesoriasGrupales());
+                    psSesion.setString(7, entidad.getAsesoriasGrupales());
                 } else {
-                    psSesion.setNull(9, Types.CLOB);
+                    psSesion.setNull(7, Types.CLOB);
                 }
 
-                psSesion.setString(10, entidad.getEstado() != null ? entidad.getEstado() : "Tomada");
+                psSesion.setString(8, entidad.getEstado() != null ? entidad.getEstado() : "Completado");
 
                 if (psSesion.executeUpdate() == 0) {
                     con.rollback();
@@ -111,9 +109,8 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
     public List<SesionGrupal> getAcuerdosPorAlumno(String matricula) {
         List<SesionGrupal> lista = new ArrayList<>();
         String sql = "SELECT sg.* FROM SESION_GRUPAL sg " +
-                "INNER JOIN ALUMNO a ON sg.ID_CARRERA = a.ID_CARRERA " +
-                "AND sg.ID_CUATRIMESTRE = a.ID_CUATRIMESTRE AND sg.ID_LETRA_GRUPO = a.ID_LETRA_GRUPO " +
-                "WHERE a.MATRICULA = ? AND sg.ESTADO = 'Tomada' ORDER BY sg.FECHA DESC";
+                "INNER JOIN ALUMNO a ON sg.ID_GRUPO = a.ID_GRUPO " +
+                "WHERE a.MATRICULA = ? AND sg.ESTADO = 'Completado' ORDER BY sg.FECHA DESC";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -131,12 +128,12 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
         return lista;
     }
 
-    // Historial: sesiones grupales YA REALIZADAS (Tomada) del tutor, filtrables por
+    // Historial: sesiones grupales YA REALIZADAS (Completado) del tutor, filtrables por
     // rango de fechas (cualquiera de los dos limites puede venir null/blank).
     public List<SesionGrupal> getHistorialByTutor(int idTutor, String fechaInicio, String fechaFin) {
         List<SesionGrupal> lista = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
-                "SELECT * FROM SESION_GRUPAL WHERE ID_TUTOR = ? AND ESTADO = 'Tomada'");
+                "SELECT * FROM SESION_GRUPAL WHERE ID_TUTOR = ? AND ESTADO = 'Completado'");
 
         if (fechaInicio != null && !fechaInicio.isBlank()) {
             sql.append(" AND FECHA >= ?");
@@ -172,9 +169,7 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
     private SesionGrupal mapearSesion(ResultSet rs) throws SQLException {
         SesionGrupal s = new SesionGrupal();
         s.setIdSesionGrupal(rs.getInt("ID_SESION_GRUPAL"));
-        s.setIdCarrera(rs.getInt("ID_CARRERA"));
-        s.setIdLetraGrupo(rs.getInt("ID_LETRA_GRUPO"));
-        s.setIdCuatrimestre(rs.getInt("ID_CUATRIMESTRE"));
+        s.setIdGrupo(rs.getInt("ID_GRUPO"));
         s.setIdTutor(rs.getInt("ID_TUTOR"));
         s.setFecha(rs.getDate("FECHA"));
         s.setHora(rs.getString("HORA"));

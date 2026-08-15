@@ -7,7 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import mx.edu.utez.pigestiontutorias.models.Alumno;
-import mx.edu.utez.pigestiontutorias.models.AsignacionDTO;
+import mx.edu.utez.pigestiontutorias.models.Grupo;
 import mx.edu.utez.pigestiontutorias.models.SesionGrupal;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.models.dao.*;
@@ -40,22 +40,22 @@ public class SesionGrupalServlet extends HttpServlet {
             return;
         }
 
-        Tutor tutor = tutorDao.findByIdUsuario((Integer) session.getAttribute("idUsuario"));
+        Tutor tutor = tutorDao.getById((Integer) session.getAttribute("idUsuario"));
         mx.edu.utez.pigestiontutorias.models.PeriodoEscolar periodoVigente = periodoDao.getPeriodoVigente();
 
-        List<AsignacionDTO> asignaciones = (tutor != null && periodoVigente != null)
-                ? asignacionTutorDao.obtenerAsignacionesPorTutor(tutor.getIdTutor(), periodoVigente.getIdPeriodo())
+        List<Grupo> gruposAsignados = (tutor != null && periodoVigente != null)
+                ? asignacionTutorDao.obtenerGruposPorTutor(tutor.getNumeroEmpleado(), periodoVigente.getIdPeriodo())
                 : Collections.emptyList();
 
-        request.setAttribute("asignaciones", asignaciones);
+        request.setAttribute("gruposAsignados", gruposAsignados);
         request.setAttribute("paginaActiva", "grupal");
         request.setAttribute("periodoVigente", periodoVigente);
         request.getRequestDispatcher("/tutor/registro-grupal.jsp").forward(request, response);
     }
 
-    // AJAX consumido desde registro-grupal.jsp al elegir un grupo (Carrera+Cuatrimestre+Letra):
-    // arma el JSON a mano con los alumnos activos de ese grupo real para pintar la tabla
-    // de asistencia sin recargar la pagina.
+    // AJAX consumido desde registro-grupal.jsp al elegir un grupo: arma el JSON a mano con
+    // los alumnos activos de ese grupo (ya no hay que cruzar Carrera+Cuatrimestre+Letra,
+    // ID_GRUPO alcanza) para pintar la tabla de asistencia sin recargar la pagina.
     private void obtenerAlumnosPorGrupo(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
 
@@ -66,19 +66,15 @@ public class SesionGrupalServlet extends HttpServlet {
             return;
         }
 
-        int idCarrera;
-        int idCuatrimestre;
-        int idLetra;
+        int idGrupo;
         try {
-            idCarrera = Integer.parseInt(request.getParameter("idCarrera").trim());
-            idCuatrimestre = Integer.parseInt(request.getParameter("idCuatrimestre").trim());
-            idLetra = Integer.parseInt(request.getParameter("idLetra").trim());
+            idGrupo = Integer.parseInt(request.getParameter("idGrupo").trim());
         } catch (Exception e) {
             response.getWriter().write("[]");
             return;
         }
 
-        List<Alumno> alumnos = asistenciaGrupalDao.getAlumnosPorFiltros(idLetra, idCarrera, idCuatrimestre);
+        List<Alumno> alumnos = asistenciaGrupalDao.getAlumnosPorGrupo(idGrupo);
 
         StringBuilder json = new StringBuilder("[");
         for (int i = 0; i < alumnos.size(); i++) {
@@ -114,20 +110,20 @@ public class SesionGrupalServlet extends HttpServlet {
             return;
         }
 
-        Tutor tutor = tutorDao.findByIdUsuario((Integer) session.getAttribute("idUsuario"));
+        Tutor tutor = tutorDao.getById((Integer) session.getAttribute("idUsuario"));
         if (tutor == null) {
             response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=tutor_no_encontrado");
             return;
         }
 
-        String grupoAsignadoStr = request.getParameter("grupoAsignado");
+        String idGrupoStr = request.getParameter("idGrupo");
         String fechaStr = request.getParameter("fecha");
         String hora = request.getParameter("hora");
         String acuerdos = request.getParameter("acuerdos");
         String temas = request.getParameter("temas");
         String asesorias = request.getParameter("asesorias");
 
-        if (grupoAsignadoStr == null || grupoAsignadoStr.isBlank()
+        if (idGrupoStr == null || idGrupoStr.isBlank()
                 || fechaStr == null || fechaStr.isBlank()
                 || hora == null || hora.isBlank()
                 || acuerdos == null || acuerdos.isBlank()
@@ -136,20 +132,10 @@ public class SesionGrupalServlet extends HttpServlet {
             return;
         }
 
-        // "grupoAsignado" viene del <select> como "idCarrera|idCuatrimestre|idLetra"
-        String[] partesGrupo = grupoAsignadoStr.split("\\|");
-
-        int idCarrera;
-        int idCuatrimestre;
-        int idLetra;
+        int idGrupo;
         Date fecha;
         try {
-            if (partesGrupo.length != 3) {
-                throw new IllegalArgumentException("Formato de grupo inválido");
-            }
-            idCarrera = Integer.parseInt(partesGrupo[0].trim());
-            idCuatrimestre = Integer.parseInt(partesGrupo[1].trim());
-            idLetra = Integer.parseInt(partesGrupo[2].trim());
+            idGrupo = Integer.parseInt(idGrupoStr.trim());
             fecha = Date.valueOf(fechaStr.trim());
         } catch (IllegalArgumentException e) {
             response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=datos_invalidos");
@@ -186,7 +172,7 @@ public class SesionGrupalServlet extends HttpServlet {
         // Blindaje de servidor: el grupo enviado debe ser uno de los que el tutor
         // realmente tiene asignados, sin confiar en que el <select> del formulario
         // no fue manipulado.
-        if (!asignacionTutorDao.existeAsignacionParaTutor(tutor.getIdTutor(), idCarrera, idCuatrimestre, idLetra)) {
+        if (!asignacionTutorDao.existeAsignacionParaTutor(tutor.getNumeroEmpleado(), idGrupo)) {
             response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=grupo_no_asignado");
             return;
         }
@@ -195,16 +181,14 @@ public class SesionGrupalServlet extends HttpServlet {
         asesorias = (asesorias != null && !asesorias.isBlank()) ? asesorias.trim() : null;
 
         SesionGrupal sesion = new SesionGrupal();
-        sesion.setIdCarrera(idCarrera);
-        sesion.setIdLetraGrupo(idLetra);
-        sesion.setIdCuatrimestre(idCuatrimestre);
-        sesion.setIdTutor(tutor.getIdTutor());
+        sesion.setIdGrupo(idGrupo);
+        sesion.setIdTutor(tutor.getNumeroEmpleado());
         sesion.setFecha(fecha);
         sesion.setHora(hora.trim());
         sesion.setTemasTratados(temas.trim());
         sesion.setAcuerdos(acuerdos.trim());
         sesion.setAsesoriasGrupales(asesorias);
-        sesion.setEstado("Tomada");
+        sesion.setEstado("Completado");
         sesion.setAsistentes(request.getParameterValues("asistentes"));
 
         boolean guardado = sesionGrupalDao.create(sesion);

@@ -20,7 +20,9 @@ import java.util.*;
 public class SolicitudServlet extends HttpServlet {
 
     private static final String[] DIAS_SEMANA = {
-            "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"
+            // Sin acento en "Miercoles" para que coincida con CK_HORARIO_DIA y con lo que
+            // devuelve HorarioDao (ver TutorDao.normalizarDiaSemana).
+            "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"
     };
 
     private final SolicitudDao solicitudDao = new SolicitudDao();
@@ -38,23 +40,22 @@ public class SolicitudServlet extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("idUsuario") == null) {
+        if (session == null || session.getAttribute("usuario") == null) {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
 
-        int idUsuario = (Integer) session.getAttribute("idUsuario");
         String accion = request.getParameter("accion");
 
         // ---- Formulario de nueva solicitud (alumno) ----
         if ("nueva".equals(accion)) {
-            mostrarFormularioNuevaSolicitud(request, response, idUsuario);
+            mostrarFormularioNuevaSolicitud(request, response, (String) session.getAttribute("matricula"));
             return;
         }
 
         // ---- Historial de solicitudes del alumno (Mis Solicitudes) ----
         if ("historial".equals(accion)) {
-            mostrarHistorialAlumno(request, response, idUsuario);
+            mostrarHistorialAlumno(request, response, (String) session.getAttribute("matricula"));
             return;
         }
 
@@ -104,14 +105,15 @@ public class SolicitudServlet extends HttpServlet {
         }
 
         // ---- Listado de solicitudes del tutor (imagen 2: Solicitudes) ----
-        Tutor tutor = tutorDao.findByIdUsuario(idUsuario);
+        Integer idUsuario = (Integer) session.getAttribute("idUsuario");
+        Tutor tutor = idUsuario != null ? tutorDao.getById(idUsuario) : null;
         if (tutor == null) {
             request.setAttribute("error", "No se encontró el tutor asociado a este usuario.");
             request.getRequestDispatcher("/tutor/solicitudes.jsp").forward(request, response);
             return;
         }
 
-        List<Solicitud> listaSolicitudes = solicitudDao.findByTutor(tutor.getIdTutor());
+        List<Solicitud> listaSolicitudes = solicitudDao.findByTutor(tutor.getNumeroEmpleado());
         request.setAttribute("listaSolicitudes", listaSolicitudes);
         request.getRequestDispatcher("/tutor/solicitudes.jsp").forward(request, response);
     }
@@ -124,27 +126,26 @@ public class SolicitudServlet extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("idUsuario") == null) {
+        if (session == null || session.getAttribute("usuario") == null) {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
 
-        int idUsuario = (Integer) session.getAttribute("idUsuario");
         String accion = request.getParameter("accion");
 
         // ---- Crear solicitud (formulario solicitud.jsp del alumno) ----
         if ("crear".equals(accion)) {
-            Alumno alumno = alumnoDAO.getByIdUsuario(idUsuario);
+            String matricula = (String) session.getAttribute("matricula");
+            Alumno alumno = matricula != null ? alumnoDAO.getById(matricula) : null;
 
-            if (alumno == null) {
+            if (alumno == null || alumno.getIdGrupo() == null) {
                 response.sendRedirect(request.getContextPath() + "/alumno/solicitud.jsp?exito=error");
                 return;
             }
 
             // No confiamos en un idTutor mandado por el formulario: lo calculamos
-            // aquí igual que en el JSP, a partir del grupo+cuatrimestre del alumno.
-            Integer idTutor = asignacionTutorDao.findIdTutorByGrupoYCuatrimestre(
-                    alumno.getIdLetraGrupo(), alumno.getIdCuatrimestre());
+            // aquí igual que en el JSP, a partir del grupo del alumno.
+            Integer idTutor = asignacionTutorDao.findIdTutorByGrupo(alumno.getIdGrupo());
 
             if (idTutor == null) {
                 response.sendRedirect(request.getContextPath() + "/alumno/solicitud.jsp?exito=error");
@@ -199,8 +200,8 @@ public class SolicitudServlet extends HttpServlet {
 
             solicitudDao.actualizarEstatus(idSolicitud, "Confirmada");
 
-            // Al aceptar, la solicitud se convierte en una sesión programada:
-            // así deja de ser invisible para el alumno y aparece en su agenda.
+            // Al aceptar, la solicitud se convierte en una sesión pendiente: así deja de
+            // ser invisible para el alumno y aparece en su agenda.
             if (solicitud != null && solicitud.getFechaPropuesta() != null) {
                 SesionIndividual sesion = new SesionIndividual();
                 sesion.setIdTutor(solicitud.getIdTutor());
@@ -209,7 +210,7 @@ public class SolicitudServlet extends HttpServlet {
                 sesion.setHora(solicitud.getHoraPropuesta());
                 sesion.setTemasTratados("Por definir");
                 sesion.setAcuerdos("Por definir");
-                sesion.setEstado("Programada");
+                sesion.setEstado("Pendiente");
                 sesionIndividualDao.create(sesion);
             }
 
@@ -284,16 +285,15 @@ public class SolicitudServlet extends HttpServlet {
     // Formulario de nueva solicitud: arma la disponibilidad real del
     // tutor asignado (próximos 14 días) para reemplazar el dummy del JSP.
     // -----------------------------------------------------------------
-    private void mostrarFormularioNuevaSolicitud(HttpServletRequest request, HttpServletResponse response, int idUsuario)
+    private void mostrarFormularioNuevaSolicitud(HttpServletRequest request, HttpServletResponse response, String matricula)
             throws ServletException, IOException {
 
-        Alumno alumno = alumnoDAO.getByIdUsuario(idUsuario);
+        Alumno alumno = matricula != null ? alumnoDAO.getById(matricula) : null;
         List<Horario> listaHorarios = new ArrayList<>();
         Integer idTutorAsignado = null;
 
-        if (alumno != null) {
-            idTutorAsignado = asignacionTutorDao.findIdTutorByGrupoYCuatrimestre(
-                    alumno.getIdLetraGrupo(), alumno.getIdCuatrimestre());
+        if (alumno != null && alumno.getIdGrupo() != null) {
+            idTutorAsignado = asignacionTutorDao.findIdTutorByGrupo(alumno.getIdGrupo());
 
             if (idTutorAsignado != null) {
                 listaHorarios = horarioDao.findDisponiblesByTutor(idTutorAsignado);
@@ -392,12 +392,11 @@ public class SolicitudServlet extends HttpServlet {
     // -----------------------------------------------------------------
     // Historial de solicitudes del alumno logueado (vista "Mis Solicitudes")
     // -----------------------------------------------------------------
-    private void mostrarHistorialAlumno(HttpServletRequest request, HttpServletResponse response, int idUsuario)
+    private void mostrarHistorialAlumno(HttpServletRequest request, HttpServletResponse response, String matricula)
             throws ServletException, IOException {
 
-        Alumno alumno = alumnoDAO.getByIdUsuario(idUsuario);
-        List<Solicitud> listaSolicitudes = (alumno != null)
-                ? solicitudDao.getSolicitudesByAlumno(alumno.getIdAlumno())
+        List<Solicitud> listaSolicitudes = (matricula != null)
+                ? solicitudDao.getSolicitudesByAlumno(matricula)
                 : Collections.emptyList();
 
         request.setAttribute("listaSolicitudes", listaSolicitudes);

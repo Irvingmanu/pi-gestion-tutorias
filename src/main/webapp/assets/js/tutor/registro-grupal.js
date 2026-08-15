@@ -76,19 +76,12 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        var partes = valor.split('|');
-        var idCarrera = partes[0];
-        var idCuatrimestre = partes[1];
-        var idLetra = partes[2];
-
         contenedorAsistencia.style.display = 'block';
         mostrarFilaMensaje('Cargando alumnos...', 'text-muted');
 
         // Utilizamos APP_CONTEXT definido en el JSP en lugar del EL tag
         var url = APP_CONTEXT + '/tutoria-grupal?accion=obtenerAlumnos'
-            + '&idCarrera=' + encodeURIComponent(idCarrera)
-            + '&idCuatrimestre=' + encodeURIComponent(idCuatrimestre)
-            + '&idLetra=' + encodeURIComponent(idLetra);
+            + '&idGrupo=' + encodeURIComponent(valor);
 
         fetch(url)
             .then(function (resp) { return resp.json(); })

@@ -77,24 +77,24 @@
                             </thead>
                             <tbody>
                             <c:forEach var="periodo" items="${listaPeriodos}">
-                                <tr class="${periodo.activo == 'N' ? 'fila-inactiva' : ''}" data-activo="${periodo.activo == 'N' ? 'N' : 'S'}">
+                                <tr class="${periodo.estado == 'N' ? 'fila-inactiva' : ''}" data-activo="${periodo.estado == 'N' ? 'N' : 'S'}">
                                     <td>${periodo.nombre}</td>
                                     <td><fmt:formatDate value="${periodo.fechaInicio}" pattern="dd/MM/yyyy" /></td>
                                     <td><fmt:formatDate value="${periodo.fechaFin}" pattern="dd/MM/yyyy" /></td>
                                     <td>
                                         <c:choose>
-                                            <c:when test="${periodo.activo == 'N'}"><span class="badge-inactivo">Baja</span></c:when>
+                                            <c:when test="${periodo.estado == 'N'}"><span class="badge-inactivo">Baja</span></c:when>
                                             <c:otherwise>Activo</c:otherwise>
                                         </c:choose>
                                     </td>
                                     <td>
                                         <div class="d-flex justify-content-center gap-2">
-                                            <c:if test="${periodo.activo != 'N'}">
+                                            <c:if test="${periodo.estado != 'N'}">
                                                 <button type="button" class="btn-accion btn-eliminar" onclick="prepararEliminacionPeriodo('${periodo.idPeriodo}')">
                                                     <img src="${pageContext.request.contextPath}/assets/img/coordinador/eliminar.png" width="16" alt="Eliminar">
                                                 </button>
                                             </c:if>
-                                            <c:if test="${periodo.activo == 'N'}">
+                                            <c:if test="${periodo.estado == 'N'}">
                                                 <button type="button" class="btn-accion btn-reactivar" onclick="prepararReactivacionPeriodo('${periodo.idPeriodo}')">
                                                     <img src="${pageContext.request.contextPath}/assets/img/coordinador/reactivar.png" width="16" alt="Reactivar">
                                                 </button>

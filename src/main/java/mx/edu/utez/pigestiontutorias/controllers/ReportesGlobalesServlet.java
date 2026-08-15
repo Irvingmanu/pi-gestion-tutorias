@@ -8,8 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import mx.edu.utez.pigestiontutorias.models.Carrera;
-import mx.edu.utez.pigestiontutorias.models.Cuatrimestre;
-import mx.edu.utez.pigestiontutorias.models.LetraGrupo;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
@@ -34,14 +32,10 @@ public class ReportesGlobalesServlet extends HttpServlet {
         }
 
         List<Carrera> listaCarreras = alumnoDAO.getAllCarreras();
-        List<Cuatrimestre> listaCuatrimestres = alumnoDAO.getAllCuatrimestres();
-        List<LetraGrupo> listaLetrasGrupo = alumnoDAO.getAllLetrasGrupo();
         List<Tutor> listaTutores = tutorDao.findAll();
 
         request.setAttribute("paginaActiva", "reportes");
         request.setAttribute("listaCarreras", listaCarreras);
-        request.setAttribute("listaCuatrimestres", listaCuatrimestres);
-        request.setAttribute("listaLetrasGrupo", listaLetrasGrupo);
         request.setAttribute("listaTutores", listaTutores);
 
         RequestDispatcher rd = request.getRequestDispatcher("/coordinador/reportes-globales.jsp");

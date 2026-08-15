@@ -49,9 +49,7 @@
 
             <p class="fw-bold fs-5 mt-4 mb-3">Información Académica</p>
             <ul class="ms-3">
-                <li class="mb-2"><strong>Carrera:</strong> ${alumno.carrera.nombre}</li>
-                <li class="mb-2"><strong>Grado (Cuatrimestre):</strong> ${alumno.cuatrimestre.numero}</li>
-                <li class="mb-2"><strong>Grupo:</strong> ${alumno.letraGrupo.letra}</li>
+                <li class="mb-2"><strong>Grupo:</strong> ${alumno.grupo.nombreGrupo}</li>
             </ul>
 
             <div class="d-flex justify-content-end mt-4">

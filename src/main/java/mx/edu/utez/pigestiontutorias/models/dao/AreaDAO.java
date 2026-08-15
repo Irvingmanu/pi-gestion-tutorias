@@ -21,14 +21,16 @@ public class AreaDAO implements Dao<Area, Integer> {
 
     // Devuelve el ID_AREA generado para poder insertar sus motivos hijos
     public int createAndGetId(Area entidad) {
-        String sql = "INSERT INTO AREA_APOYO(NOMBRE, ENCARGADO, CORREO_CONTACTO, ENLACE_CITA) VALUES(?, ?, ?, ?)";
+        String sql = "INSERT INTO AREA_APOYO(NOMBRE, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, CORREO_CONTACTO, ENLACE_CITA) VALUES(?, ?, ?, ?, ?, ?)";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql, new String[]{"ID_AREA"})) {
 
             ps.setString(1, entidad.getNombre());
-            ps.setString(2, entidad.getEncargado());
-            ps.setString(3, entidad.getCorreoContacto());
-            ps.setString(4, entidad.getEnlaceCita());
+            ps.setString(2, entidad.getNombresEncargado());
+            ps.setString(3, entidad.getApellidoPaternoEncargado());
+            ps.setString(4, entidad.getApellidoMaternoEncargado());
+            ps.setString(5, entidad.getCorreoContacto());
+            ps.setString(6, entidad.getEnlaceCita());
 
             int filasAfectadas = ps.executeUpdate();
             if (filasAfectadas > 0) {
@@ -88,13 +90,7 @@ public class AreaDAO implements Dao<Area, Integer> {
              ResultSet rs = ps.executeQuery()) {
 
             while (rs.next()) {
-                Area a = new Area();
-                a.setIdArea(rs.getInt("ID_AREA"));
-                a.setNombre(rs.getString("NOMBRE"));
-                a.setEncargado(rs.getString("ENCARGADO"));
-                a.setCorreoContacto(rs.getString("CORREO_CONTACTO"));
-                a.setEnlaceCita(rs.getString("ENLACE_CITA"));
-                listaAreas.add(a);
+                listaAreas.add(mapearArea(rs));
             }
         } catch (SQLException e) {
             e.printStackTrace();
@@ -121,12 +117,7 @@ public class AreaDAO implements Dao<Area, Integer> {
             ps.setInt(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) {
-                    Area a = new Area();
-                    a.setIdArea(rs.getInt("ID_AREA"));
-                    a.setNombre(rs.getString("NOMBRE"));
-                    a.setEncargado(rs.getString("ENCARGADO"));
-                    a.setCorreoContacto(rs.getString("CORREO_CONTACTO"));
-                    a.setEnlaceCita(rs.getString("ENLACE_CITA"));
+                    Area a = mapearArea(rs);
                     a.setMotivos(motivoDAO.getByIdArea(a.getIdArea()));
                     return a;
                 }
@@ -142,16 +133,18 @@ public class AreaDAO implements Dao<Area, Integer> {
         // ENLACE_CITA usa COALESCE porque el formulario de coordinador (formulario-area.jsp)
         // todavia no tiene un campo para capturarlo: si viene null aqui, se conserva el valor
         // que ya estaba en BD en vez de borrarlo en cada edicion de nombre/encargado/correo.
-        String sql = "UPDATE AREA_APOYO SET NOMBRE = ?, ENCARGADO = ?, CORREO_CONTACTO = ?, " +
+        String sql = "UPDATE AREA_APOYO SET NOMBRE = ?, NOMBRES = ?, APELLIDO_PATERNO = ?, APELLIDO_MATERNO = ?, CORREO_CONTACTO = ?, " +
                 "ENLACE_CITA = COALESCE(?, ENLACE_CITA) WHERE ID_AREA = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, entidad.getNombre());
-            ps.setString(2, entidad.getEncargado());
-            ps.setString(3, entidad.getCorreoContacto());
-            ps.setString(4, entidad.getEnlaceCita());
-            ps.setInt(5, entidad.getIdArea());
+            ps.setString(2, entidad.getNombresEncargado());
+            ps.setString(3, entidad.getApellidoPaternoEncargado());
+            ps.setString(4, entidad.getApellidoMaternoEncargado());
+            ps.setString(5, entidad.getCorreoContacto());
+            ps.setString(6, entidad.getEnlaceCita());
+            ps.setInt(7, entidad.getIdArea());
 
             int filasAfectadas = ps.executeUpdate();
             return filasAfectadas > 0;
@@ -203,5 +196,17 @@ public class AreaDAO implements Dao<Area, Integer> {
                 }
             }
         }
+    }
+
+    private Area mapearArea(ResultSet rs) throws SQLException {
+        Area a = new Area();
+        a.setIdArea(rs.getInt("ID_AREA"));
+        a.setNombre(rs.getString("NOMBRE"));
+        a.setNombresEncargado(rs.getString("NOMBRES"));
+        a.setApellidoPaternoEncargado(rs.getString("APELLIDO_PATERNO"));
+        a.setApellidoMaternoEncargado(rs.getString("APELLIDO_MATERNO"));
+        a.setCorreoContacto(rs.getString("CORREO_CONTACTO"));
+        a.setEnlaceCita(rs.getString("ENLACE_CITA"));
+        return a;
     }
 }

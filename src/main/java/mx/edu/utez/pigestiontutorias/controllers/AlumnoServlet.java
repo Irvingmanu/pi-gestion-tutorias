@@ -6,14 +6,17 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import mx.edu.utez.pigestiontutorias.models.*;
-import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
-import mx.edu.utez.pigestiontutorias.models.dao.AsignacionTutorDao;
+import mx.edu.utez.pigestiontutorias.models.dao.*;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// Carrera+Cuatrimestre+Letra ya no se guardan como 3 FKs sueltas en ALUMNO: el formulario
+// las captura (select en cascada: Carrera -> Cuatrimestre segun NIVEL, Letra fija A-F) y
+// el servlet resuelve/crea el GRUPO real correspondiente via GrupoDao, guardando solo
+// ID_GRUPO en ALUMNO.
 @WebServlet(name = "AlumnoServlet", value = "/gestion-grupos")
 public class AlumnoServlet extends HttpServlet {
 
@@ -24,18 +27,22 @@ public class AlumnoServlet extends HttpServlet {
 
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();
     private final AsignacionTutorDao asignacionTutorDAO = new AsignacionTutorDao();
+    private final GrupoDao grupoDao = new GrupoDao();
+    private final PeriodoEscolarDao periodoEscolarDao = new PeriodoEscolarDao();
+    private final AcademiaDao academiaDao = new AcademiaDao();
+    private final CarreraDao carreraDao = new CarreraDao();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String accion = request.getParameter("accion");
+
         if ("agenda".equals(accion)) {
 
             String matricula = request.getParameter("matricula");
             Alumno alumnoConsultado = alumnoDAO.getById(matricula);
 
-            List<EventoAgenda> listaEventos = (alumnoConsultado != null)
-                    ? alumnoDAO.getAgendaAlumno(alumnoConsultado.getMatricula(), alumnoConsultado.getIdCarrera(),
-                    alumnoConsultado.getIdCuatrimestre(), alumnoConsultado.getIdLetraGrupo())
+            List<EventoAgenda> listaEventos = (alumnoConsultado != null && alumnoConsultado.getIdGrupo() != null)
+                    ? alumnoDAO.getAgendaAlumno(alumnoConsultado.getMatricula(), alumnoConsultado.getIdGrupo())
                     : java.util.Collections.emptyList();
 
             request.setAttribute("listaEventosAgenda", listaEventos);
@@ -58,66 +65,49 @@ public class AlumnoServlet extends HttpServlet {
         }
 
         if ("nuevo".equals(accion) || "prepararEdicion".equals(accion)) {
-            request.setAttribute("listaGeneros", alumnoDAO.getAllGeneros());
-            request.setAttribute("listaCarreras", alumnoDAO.getAllCarreras());
-            request.setAttribute("listaCuatrimestres", alumnoDAO.getAllCuatrimestres());
-            request.setAttribute("listaLetrasGrupo", alumnoDAO.getAllLetrasGrupo());
-
-            if ("prepararEdicion".equals(accion)) {
-                Alumno alumnoEdit = alumnoDAO.getById(request.getParameter("matricula"));
-                request.setAttribute("alumnoEdit", alumnoEdit);
-            }
-
-            request.getRequestDispatcher("/coordinador/formulario-alumno.jsp").forward(request, response);
+            Alumno alumnoEdit = "prepararEdicion".equals(accion)
+                    ? alumnoDAO.getPerfilCompleto(request.getParameter("matricula"))
+                    : null;
+            forwardAFormulario(request, response, alumnoEdit, null, null);
             return;
         }
 
         // ==================== LISTADO GENERAL (con filtros) ====================
         List<Genero> listaGeneros = alumnoDAO.getAllGeneros();
-        List<Carrera> listaCarreras = alumnoDAO.getAllCarreras();
-        List<Cuatrimestre> listaCuatrimestres = alumnoDAO.getAllCuatrimestres();
-        List<LetraGrupo> listaLetrasGrupo = alumnoDAO.getAllLetrasGrupo();
 
-        // Mapas de traduccion ID -> texto, usados por la tabla para mostrar
-        // nombre de genero/carrera/cuatrimestre/grupo sin volver a consultar la BD por fila.
+        // Mapa de traduccion ID -> nombre de genero, usado por la tabla para mostrar
+        // el nombre sin volver a consultar la BD por fila.
         Map<Integer, String> nombresGenero = new HashMap<>();
         for (Genero genero : listaGeneros) {
             nombresGenero.put(genero.getId(), genero.getNombre());
         }
 
-        Map<Integer, String> nombresCarrera = new HashMap<>();
-        for (Carrera carrera : listaCarreras) {
-            nombresCarrera.put(carrera.getIdCarrera(), carrera.getNombre());
-        }
-
-        Map<Integer, Integer> numerosCuatrimestre = new HashMap<>();
-        for (Cuatrimestre cuatrimestre : listaCuatrimestres) {
-            numerosCuatrimestre.put(cuatrimestre.getIdCuatrimestre(), cuatrimestre.getNumero());
-        }
-
-        Map<Integer, String> nombresLetra = new HashMap<>();
-        for (LetraGrupo letraGrupo : listaLetrasGrupo) {
-            nombresLetra.put(letraGrupo.getIdLetra(), letraGrupo.getLetra());
-        }
-
-        // Tutor asignado por grupo (Carrera + Cuatrimestre + Letra), para mostrarlo junto
-        // al titulo de cada tabla agrupada en gestion-grupos.jsp. La clave se arma igual que
-        // en alumnos.js (carrera + '|' + cuatrimestre + '|' + letra) para poder cruzarlos ahi.
-        Map<String, String> tutoresPorGrupo = new HashMap<>();
+        // Tutor asignado por grupo, para mostrarlo junto al titulo de cada tabla agrupada
+        // en gestion-grupos.jsp. La clave es el ID_GRUPO directo (ya no hay que armarla
+        // a mano con carrera+cuatrimestre+letra).
+        Map<Integer, String> tutoresPorGrupo = new HashMap<>();
         for (AsignacionTutor asignacion : asignacionTutorDAO.getAll()) {
-            String clave = asignacion.getNombreCarrera() + "|" + asignacion.getNumeroCuatrimestre() + "|" + asignacion.getLetraGrupo();
-            tutoresPorGrupo.put(clave, asignacion.getNombresTutor() + " " + asignacion.getApellidosTutor());
+            tutoresPorGrupo.put(asignacion.getIdGrupo(), asignacion.getNombresTutor() + " " + asignacion.getApellidosTutor());
+        }
+
+        // Grupo (Carrera + Cuatrimestre + Letra) de cada alumno, indexado por ID_GRUPO:
+        // el JSP lo usa para pintar la columna Carrera/Cuatri/Grupo y agrupar la tabla
+        // sin tener que resolver el perfil completo de cada alumno.
+        List<Grupo> listaGrupos = grupoDao.getAll();
+        Map<Integer, Grupo> gruposPorId = new HashMap<>();
+        for (Grupo grupo : listaGrupos) {
+            gruposPorId.put(grupo.getIdGrupo(), grupo);
         }
 
         request.setAttribute("listaAlumnos", alumnoDAO.getAll());
-        request.setAttribute("listaCarreras", listaCarreras);
-        request.setAttribute("listaCuatrimestres", listaCuatrimestres);
-        request.setAttribute("listaLetrasGrupo", listaLetrasGrupo);
+        request.setAttribute("listaGrupos", listaGrupos);
+        request.setAttribute("gruposPorId", gruposPorId);
         request.setAttribute("nombresGenero", nombresGenero);
-        request.setAttribute("nombresCarrera", nombresCarrera);
-        request.setAttribute("numerosCuatrimestre", numerosCuatrimestre);
-        request.setAttribute("nombresLetra", nombresLetra);
-        request.setAttribute("tutoresPorGrupoJson", aJson(tutoresPorGrupo));
+        request.setAttribute("tutoresPorGrupo", tutoresPorGrupo);
+        // Filtro Academia -> Carrera del listado (#academiaFiltroPrincipal / #carreraFiltroPrincipal):
+        // listaCarreras trae TODAS las carreras del sistema, no solo las que ya tienen grupos.
+        request.setAttribute("listaAcademias", academiaDao.getAll());
+        request.setAttribute("listaCarreras", alumnoDAO.getAllCarreras());
 
         request.getRequestDispatcher("/coordinador/gestion-grupos.jsp").forward(request, response);
     }
@@ -145,46 +135,62 @@ public class AlumnoServlet extends HttpServlet {
         Alumno alumno = new Alumno();
         alumno.setMatricula(matricula != null ? matricula.trim().toUpperCase() : null);
         alumno.setNombres(request.getParameter("nombres"));
-        alumno.setApellidos(request.getParameter("apellidos"));
+        alumno.setApellidoPaterno(request.getParameter("apellidoPaterno"));
+        alumno.setApellidoMaterno(request.getParameter("apellidoMaterno"));
         alumno.setCorreoInstitucional(request.getParameter("correo"));
         alumno.setTelefono(request.getParameter("telefono"));
-
-        alumno.setIdGenero(Integer.parseInt(request.getParameter("idGenero")));
-        alumno.setIdCarrera(Integer.parseInt(request.getParameter("idCarrera")));
-        alumno.setIdCuatrimestre(Integer.parseInt(request.getParameter("idCuatrimestre")));
-        alumno.setIdLetraGrupo(Integer.parseInt(request.getParameter("idLetraGrupo")));
+        alumno.setIdGenero(parseIntOrNull(request.getParameter("idGenero")));
 
         boolean formatoValido = alumno.getMatricula() != null && alumno.getMatricula().matches(REGEX_MATRICULA)
                 && alumno.getNombres() != null && alumno.getNombres().matches(REGEX_NOMBRE)
-                && alumno.getApellidos() != null && alumno.getApellidos().matches(REGEX_NOMBRE)
+                && alumno.getApellidoPaterno() != null && alumno.getApellidoPaterno().matches(REGEX_NOMBRE)
+                && (alumno.getApellidoMaterno() == null || alumno.getApellidoMaterno().isBlank() || alumno.getApellidoMaterno().matches(REGEX_NOMBRE))
                 && alumno.getTelefono() != null && alumno.getTelefono().matches(REGEX_TELEFONO)
-                && alumno.getCorreoInstitucional() != null && alumno.getCorreoInstitucional().matches(REGEX_CORREO);
+                && alumno.getCorreoInstitucional() != null && alumno.getCorreoInstitucional().matches(REGEX_CORREO)
+                && alumno.getIdGenero() != null;
 
         if (!formatoValido) {
-            request.setAttribute("error", "formato_invalido");
-            request.setAttribute("alumno", alumno);
-            request.setAttribute("listaGeneros", alumnoDAO.getAllGeneros());
-            request.setAttribute("listaCarreras", alumnoDAO.getAllCarreras());
-            request.setAttribute("listaCuatrimestres", alumnoDAO.getAllCuatrimestres());
-            request.setAttribute("listaLetrasGrupo", alumnoDAO.getAllLetrasGrupo());
-            request.getRequestDispatcher("/coordinador/formulario-alumno.jsp").forward(request, response);
+            forwardAFormulario(request, response, null, alumno, "formato_invalido");
             return;
         }
+
+        // Resolucion del grupo: Carrera (select) + Cuatrimestre (select en cascada segun
+        // el NIVEL de la carrera) + Letra (fija A-F en el HTML). Se valida por separado
+        // (con su propio codigo de error) para no confundirlo con un error de formato
+        // en los datos personales: son fallas de naturaleza distinta.
+        Integer idCarrera = parseIntOrNull(request.getParameter("idCarrera"));
+        Integer cuatrimestre = parseIntOrNull(request.getParameter("cuatrimestre"));
+        String letra = request.getParameter("letra");
+
+        Carrera carrera = idCarrera != null ? carreraDao.getById(idCarrera) : null;
+        boolean grupoValido = carrera != null && cuatrimestre != null && letra != null && !letra.isBlank()
+                && esCuatrimestreValidoParaNivel(cuatrimestre, carrera.getNivel());
+
+        if (!grupoValido) {
+            forwardAFormulario(request, response, null, alumno, "grupo_invalido");
+            return;
+        }
+
+        PeriodoEscolar periodoVigente = periodoEscolarDao.getPeriodoVigente();
+        if (periodoVigente == null) {
+            forwardAFormulario(request, response, null, alumno, "sin_periodo_vigente");
+            return;
+        }
+
+        Integer idGrupo = grupoDao.findOrCreate(idCarrera, cuatrimestre, letra.trim(), periodoVigente.getIdPeriodo());
+        if (idGrupo == null) {
+            forwardAFormulario(request, response, null, alumno, "grupo_invalido");
+            return;
+        }
+        alumno.setIdGrupo(idGrupo);
 
         boolean esEdicion = "editar".equals(accion);
         String errorDuplicado = null;
 
         if (esEdicion) {
-            Alumno alumnoActual = alumnoDAO.getById(alumno.getMatricula());
-            int idAlumnoActual = alumnoActual != null ? alumnoActual.getIdAlumno() : -1;
-            alumno.setIdAlumno(idAlumnoActual);
-            alumno.setIdUsuario(alumnoActual != null ? alumnoActual.getIdUsuario() : null);
-
-            if (alumnoDAO.existeMatricula(alumno.getMatricula(), idAlumnoActual)) {
-                errorDuplicado = "matricula_duplicada";
-            } else if (alumnoDAO.existeCorreo(alumno.getCorreoInstitucional(), idAlumnoActual)) {
+            if (alumnoDAO.existeCorreo(alumno.getCorreoInstitucional(), alumno.getMatricula())) {
                 errorDuplicado = "correo_duplicado";
-            } else if (alumnoDAO.existeTelefono(alumno.getTelefono(), idAlumnoActual)) {
+            } else if (alumnoDAO.existeTelefono(alumno.getTelefono(), alumno.getMatricula())) {
                 errorDuplicado = "telefono_duplicado";
             }
         } else {
@@ -198,13 +204,7 @@ public class AlumnoServlet extends HttpServlet {
         }
 
         if (errorDuplicado != null) {
-            request.setAttribute("error", errorDuplicado);
-            request.setAttribute("alumno", alumno);
-            request.setAttribute("listaGeneros", alumnoDAO.getAllGeneros());
-            request.setAttribute("listaCarreras", alumnoDAO.getAllCarreras());
-            request.setAttribute("listaCuatrimestres", alumnoDAO.getAllCuatrimestres());
-            request.setAttribute("listaLetrasGrupo", alumnoDAO.getAllLetrasGrupo());
-            request.getRequestDispatcher("/coordinador/formulario-alumno.jsp").forward(request, response);
+            forwardAFormulario(request, response, null, alumno, errorDuplicado);
             return;
         }
 
@@ -220,22 +220,66 @@ public class AlumnoServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/gestion-grupos?exito=" + parametroExito);
     }
 
-    // Serializa un Map<String,String> a JSON simple para incrustarlo en un <script> del JSP;
-    // no se usa una libreria porque el proyecto no trae ninguna y este es el unico caso.
-    private static String aJson(Map<String, String> mapa) {
-        StringBuilder json = new StringBuilder("{");
-        boolean primero = true;
-        for (Map.Entry<String, String> entrada : mapa.entrySet()) {
-            if (!primero) json.append(",");
-            primero = false;
-            json.append(escaparJson(entrada.getKey())).append(":").append(escaparJson(entrada.getValue()));
+    // TSU: cuatrimestres 1-6. Ingenieria (ING): cuatrimestres 7-10.
+    private boolean esCuatrimestreValidoParaNivel(int cuatrimestre, String nivel) {
+        if ("TSU".equals(nivel)) {
+            return cuatrimestre >= 1 && cuatrimestre <= 6;
         }
-        json.append("}");
-        return json.toString();
+        if ("ING".equals(nivel)) {
+            return cuatrimestre >= 7 && cuatrimestre <= 10;
+        }
+        return false;
     }
 
-    private static String escaparJson(String texto) {
-        String seguro = texto == null ? "" : texto.replace("\\", "\\\\").replace("\"", "\\\"");
-        return "\"" + seguro + "\"";
+    private Integer parseIntOrNull(String valor) {
+        if (valor == null || valor.isBlank()) return null;
+        try {
+            return Integer.parseInt(valor.trim());
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
+
+    // Centraliza lo que antes calculaba el scriptlet de arriba en formulario-alumno.jsp
+    // (alumnoFormulario, esEdicion, tituloBanner, mensajeError): esa logica no le
+    // corresponde a la vista, vive aqui junto con el resto de las reglas del formulario.
+    private void forwardAFormulario(HttpServletRequest request, HttpServletResponse response,
+                                     Alumno alumnoEdit, Alumno alumnoConError, String codigoError)
+            throws ServletException, IOException {
+        Alumno alumnoFormulario = alumnoEdit != null ? alumnoEdit : alumnoConError;
+        boolean esEdicion = alumnoEdit != null || "editar".equals(request.getParameter("accion"));
+
+        request.setAttribute("alumnoFormulario", alumnoFormulario);
+        request.setAttribute("esEdicion", esEdicion);
+        request.setAttribute("tituloBanner", esEdicion ? "Editar Alumno" : "Nuevo Alumno");
+        request.setAttribute("mensajeError", resolverMensajeError(codigoError));
+        request.setAttribute("listaGeneros", alumnoDAO.getAllGeneros());
+        request.setAttribute("listaCarreras", alumnoDAO.getAllCarreras());
+        request.setAttribute("listaAcademias", academiaDao.getAll());
+
+        request.getRequestDispatcher("/coordinador/formulario-alumno.jsp").forward(request, response);
+    }
+
+    private String resolverMensajeError(String codigoError) {
+        if ("matricula_duplicada".equals(codigoError)) {
+            return "Esta matrícula ya está registrada en el sistema.";
+        }
+        if ("correo_duplicado".equals(codigoError)) {
+            return "Este correo ya está registrado en el sistema.";
+        }
+        if ("telefono_duplicado".equals(codigoError)) {
+            return "Este número de teléfono ya está registrado en el sistema.";
+        }
+        if ("formato_invalido".equals(codigoError)) {
+            return "Verifica los datos. El formato de uno o más campos es incorrecto.";
+        }
+        if ("grupo_invalido".equals(codigoError)) {
+            return "Selecciona una Carrera, Cuatrimestre y Grupo válidos. El cuatrimestre debe corresponder al nivel de la carrera elegida (TSU: 1° a 6°, Ingeniería: 7° a 10°).";
+        }
+        if ("sin_periodo_vigente".equals(codigoError)) {
+            return "No hay un periodo escolar vigente que incluya la fecha de hoy. Ve a Periodos Escolares y crea uno antes de registrar alumnos.";
+        }
+        return null;
+    }
+
 }

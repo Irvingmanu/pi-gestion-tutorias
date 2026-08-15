@@ -152,6 +152,126 @@ function eliminarHorario(btn) {
 }
 
 /**
+ * Ajusta un <input type="time"> de horario a los limites 07:00-21:00, y evita que
+ * "Hasta" quede antes (o igual) que "Desde". Usado por formulario-tutor.jsp.
+ * @param {HTMLInputElement} input
+ */
+function validarLimitesHora(input) {
+    const minHora = '07:00';
+    const maxHora = '21:00';
+    if (input.value) {
+        if (input.value < minHora) { input.value = minHora; }
+        else if (input.value > maxHora) { input.value = maxHora; }
+    }
+
+    // "Hasta" nunca puede quedar antes (ni igual) que "Desde": se revisa aqui sin importar
+    // cual de los dos inputs disparo el cambio, para que tambien se corrija si el usuario
+    // edita "Hasta" directamente a una hora anterior a la ya elegida en "Desde".
+    const inputDesde = document.getElementById('horarioDesde');
+    const inputHasta = document.getElementById('horarioHasta');
+    if (inputDesde && inputHasta && inputDesde.value) {
+        inputHasta.min = inputDesde.value;
+        if (inputHasta.value && inputHasta.value <= inputDesde.value) {
+            inputHasta.value = inputDesde.value;
+        }
+    }
+}
+
+// ==========================================================================
+// VALIDACIÓN EN VIVO DE formulario-tutor.jsp. Este archivo tambien se carga en
+// gestion-tutores.jsp (listado), que no tiene #formGuardar; el guard de abajo evita
+// que este bloque intente enganchar listeners a elementos que no existen ahi.
+// ==========================================================================
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('formGuardar');
+    if (!form) {
+        return;
+    }
+
+    const btnGuardar = document.getElementById('btnGuardar');
+    const contenedorHorarios = document.getElementById('contenedorHorarios');
+    const inputCorreo = document.getElementById('correo');
+    // Ojo: "input, select" a proposito, no "input[required], select[required]". Apellido
+    // materno es opcional (sin required) pero SI tiene pattern (letras y espacios); si
+    // solo se enganchan los campos required, escribir un caracter invalido ahi nunca
+    // marca is-invalid ni bloquea Guardar, aunque el patron lo rechace.
+    const inputsValidables = form.querySelectorAll('input, select');
+
+    function tieneHorarios() {
+        return contenedorHorarios.querySelectorAll('input[name="horariosDispo"]').length > 0;
+    }
+
+    function verificarFormulario() {
+        let esValido = true;
+        inputsValidables.forEach(function (input) {
+            if (!input.checkValidity()) {
+                esValido = false;
+            }
+        });
+
+        if (!tieneHorarios()) {
+            esValido = false;
+        }
+
+        btnGuardar.disabled = !esValido;
+        return esValido;
+    }
+
+    inputsValidables.forEach(function (input) {
+        input.addEventListener('input', function () {
+            if (this.checkValidity()) {
+                this.classList.remove('is-invalid');
+            } else {
+                this.classList.add('is-invalid');
+            }
+            verificarFormulario();
+        });
+
+        input.addEventListener('blur', function () {
+            if (!this.checkValidity()) {
+                this.classList.add('is-invalid');
+            }
+            verificarFormulario();
+        });
+    });
+
+    // Al enviar el formulario, avisar con las alertas ya definidas el motivo exacto
+    // por el que no se puede guardar (en vez de solo dejar el boton deshabilitado).
+    form.addEventListener('submit', function (evento) {
+        if (inputCorreo && !inputCorreo.checkValidity()) {
+            evento.preventDefault();
+            inputCorreo.classList.add('is-invalid');
+            mostrarAlerta('error', 'Correo inválido', 'El correo debe ser un correo institucional válido terminado en @utez.edu.mx.');
+            return;
+        }
+
+        if (!tieneHorarios()) {
+            evento.preventDefault();
+            mostrarAlerta('error', 'Horario requerido', 'Debes agregar al menos un horario de atención antes de guardar.');
+            return;
+        }
+
+        if (!form.checkValidity()) {
+            evento.preventDefault();
+            mostrarAlerta('error', 'Formulario incompleto', 'Verifica que todos los campos estén completos y correctos.');
+        }
+    });
+
+    // Expuesta para que agregarHorario()/eliminarHorario() (arriba) puedan re-evaluar
+    // el boton al agregar/quitar horarios.
+    window.actualizarEstadoGuardar = verificarFormulario;
+
+    verificarFormulario();
+
+    // Toast de error (mensajeError resuelto server-side en TutoresServlet, expuesto
+    // via data-attribute; ausente en gestion-tutores.jsp, asi que no hace falta guard aparte).
+    const mensajeError = document.body.dataset.mensajeError;
+    if (mensajeError) {
+        mostrarAlerta('error', 'Error', mensajeError);
+    }
+});
+
+/**
  * Filtrado en tiempo real de la tabla de tutores.
  */
 function filtrarTutores() {
@@ -162,6 +282,8 @@ function filtrarTutores() {
     let textoBuscar = inputBuscar.value.trim().toLowerCase();
     let mostrarInactivos = document.getElementById('mostrarInactivos');
     let incluirInactivos = mostrarInactivos ? mostrarInactivos.checked : false;
+    let selectAcademia = document.getElementById('academiaFiltroTutores');
+    let academiaSeleccionada = selectAcademia ? selectAcademia.value : '';
 
     let filas = document.querySelectorAll('#tablaTutores tr');
     let filasVisibles = 0;
@@ -171,11 +293,13 @@ function filtrarTutores() {
 
         let nombre = fila.dataset.nombre || '';
         let activo = fila.dataset.activo !== 'N';
+        let academia = fila.dataset.academia || '';
 
         let coincideNombre = nombre.includes(textoBuscar);
         let coincideActivo = activo || incluirInactivos;
+        let coincideAcademia = academiaSeleccionada === '' || academia === academiaSeleccionada;
 
-        let coincide = coincideNombre && coincideActivo;
+        let coincide = coincideNombre && coincideActivo && coincideAcademia;
         fila.style.display = coincide ? '' : 'none';
         if (coincide) filasVisibles++;
     });
@@ -190,10 +314,12 @@ document.addEventListener('DOMContentLoaded', function () {
     let buscarTutor = document.getElementById('buscarTutor');
     let btnAgregar = document.getElementById('btnAgregarHorario');
     let mostrarInactivos = document.getElementById('mostrarInactivos');
+    let academiaFiltroTutores = document.getElementById('academiaFiltroTutores');
 
     if (buscarTutor) buscarTutor.addEventListener('input', filtrarTutores);
     if (btnAgregar) btnAgregar.addEventListener('click', agregarHorario);
     if (mostrarInactivos) mostrarInactivos.addEventListener('change', filtrarTutores);
+    if (academiaFiltroTutores) academiaFiltroTutores.addEventListener('change', filtrarTutores);
 
     filtrarTutores();
 });

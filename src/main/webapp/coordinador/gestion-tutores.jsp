@@ -33,13 +33,22 @@
             Gestión de Tutores
         </div>
 
-        <!-- Buscar tutor / Nuevo Tutor -->
+        <!-- Buscar tutor / Filtro Academia / Nuevo Tutor -->
         <div class="row mb-3">
             <div class="col-12 d-flex justify-content-between align-items-end">
                 <div>
                     <label class="campo-label fs-6" for="buscarTutor">Buscar tutor</label>
                     <input type="text" id="buscarTutor" class="campo-buscar campo-buscar-tutor"
                            placeholder="Buscar por nombre">
+                </div>
+                <div class="flex-grow-1 mx-3">
+                    <label class="campo-label fs-6" for="academiaFiltroTutores">Academia</label>
+                    <select id="academiaFiltroTutores" class="campo-select w-100">
+                        <option value="">Todas las academias</option>
+                        <c:forEach var="academia" items="${listaAcademias}">
+                            <option value="${academia.idAcademia}">${academia.nombre}</option>
+                        </c:forEach>
+                    </select>
                 </div>
                 <div class="text-center">
                     <label class="campo-label fs-6">Nuevo Tutor</label>
@@ -84,13 +93,14 @@
                     </thead>
                     <tbody id="tablaTutores">
                     <c:forEach var="tutor" items="${listaTutores}">
-                        <tr class="${tutor.activo == 'N' ? 'fila-inactiva' : ''}"
+                        <tr class="${tutor.estado == 'N' ? 'fila-inactiva' : ''}"
                             data-nombre="${fn:toLowerCase(tutor.nombres)} ${fn:toLowerCase(tutor.apellidos)}"
-                            data-activo="${tutor.activo == 'N' ? 'N' : 'S'}">
-                            <td>${tutor.nomina}</td>
+                            data-academia="${tutor.idAcademia}"
+                            data-activo="${tutor.estado == 'N' ? 'N' : 'S'}">
+                            <td>${tutor.numeroEmpleado}</td>
                             <td>
                                     ${tutor.nombres} ${tutor.apellidos}
-                                <c:if test="${tutor.activo == 'N'}">
+                                <c:if test="${tutor.estado == 'N'}">
                                     <span class="badge-inactivo">(Baja)</span>
                                 </c:if>
                             </td>
@@ -99,16 +109,16 @@
                             <td>${nombresAcademia[tutor.idAcademia]}</td>
                             <td>
                                 <div class="d-flex justify-content-center gap-2">
-                                    <c:if test="${tutor.activo != 'N'}">
-                                        <a href="${pageContext.request.contextPath}/gestion-tutores?accion=prepararEdicion&nomina=${tutor.nomina}" class="btn-accion btn-editar">
+                                    <c:if test="${tutor.estado != 'N'}">
+                                        <a href="${pageContext.request.contextPath}/gestion-tutores?accion=prepararEdicion&nomina=${tutor.numeroEmpleado}" class="btn-accion btn-editar">
                                             <img src="${pageContext.request.contextPath}/assets/img/coordinador/editar.png" width="16" alt="Editar">
                                         </a>
-                                        <button type="button" class="btn-accion btn-eliminar" onclick="prepararEliminacion('${tutor.nomina}')">
+                                        <button type="button" class="btn-accion btn-eliminar" onclick="prepararEliminacion('${tutor.numeroEmpleado}')">
                                             <img src="${pageContext.request.contextPath}/assets/img/coordinador/eliminar.png" width="16" alt="Eliminar">
                                         </button>
                                     </c:if>
-                                    <c:if test="${tutor.activo == 'N'}">
-                                        <button type="button" class="btn-accion btn-reactivar" onclick="prepararReactivacion('${tutor.nomina}')">
+                                    <c:if test="${tutor.estado == 'N'}">
+                                        <button type="button" class="btn-accion btn-reactivar" onclick="prepararReactivacion('${tutor.numeroEmpleado}')">
                                             <img src="${pageContext.request.contextPath}/assets/img/coordinador/reactivar.png" width="16" alt="Reactivar">
                                         </button>
                                     </c:if>

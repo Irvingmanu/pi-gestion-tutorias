@@ -70,7 +70,9 @@ function filtrarAlumnos() {
     if (!inputBuscar) return;
 
     let textoBuscar = inputBuscar.value.trim().toLowerCase();
-    let carreraSeleccionada = document.getElementById('carrera').value;
+    let selectAcademiaFiltro = document.getElementById('academiaFiltroPrincipal');
+    let academiaSeleccionada = selectAcademiaFiltro ? selectAcademiaFiltro.value : '';
+    let carreraSeleccionada = document.getElementById('carreraFiltroPrincipal').value;
     let grupoSeleccionado = document.getElementById('grupo').value;
     let cuatrimestreSeleccionado = document.getElementById('cuatrimestre').value;
     let mostrarInactivos = document.getElementById('mostrarInactivos');
@@ -78,18 +80,20 @@ function filtrarAlumnos() {
 
     let filasFiltradas = filasAlumnosOriginales.filter(function (fila) {
         let nombre = fila.dataset.nombre || '';
+        let academia = fila.dataset.academia || '';
         let carrera = fila.dataset.carrera || '';
         let cuatri = fila.dataset.cuatri || '';
         let grupo = fila.dataset.grupo || '';
         let activo = fila.dataset.activo !== 'N';
 
         let coincideNombre = nombre.includes(textoBuscar);
+        let coincideAcademia = academiaSeleccionada === '' || academia === academiaSeleccionada;
         let coincideCarrera = carreraSeleccionada === '' || carrera === carreraSeleccionada;
         let coincideGrupo = grupoSeleccionado === '' || grupo === grupoSeleccionado;
         let coincideCuatri = cuatrimestreSeleccionado === '' || cuatri === cuatrimestreSeleccionado;
         let coincideActivo = activo || incluirInactivos;
 
-        return coincideNombre && coincideCarrera && coincideGrupo && coincideCuatri && coincideActivo;
+        return coincideNombre && coincideAcademia && coincideCarrera && coincideGrupo && coincideCuatri && coincideActivo;
     });
 
     renderizarGruposAlumnos(filasFiltradas);
@@ -102,8 +106,17 @@ function renderizarGruposAlumnos(filas) {
 
     contenedor.innerHTML = '';
 
-    if (filas.length === 0) {
-        contenedor.innerHTML = '<div class="alert alert-info text-center">No se encontraron alumnos con los filtros seleccionados.</div>';
+    // filas.length ya ES el conteo de <tr> que van a quedar visibles (equivalente a
+    // contar los <tr> normales con display:'' en gestion-tutores.js/asignacion.js,
+    // pero aqui el conteo se conoce antes de pintar nada porque las tablas se
+    // reconstruyen desde cero en cada filtro, no se ocultan filas existentes).
+    let tablaSinResultados = document.getElementById('tablaSinResultados');
+    let filaSinResultados = document.getElementById('filaSinResultados');
+    let sinResultados = filas.length === 0;
+    if (tablaSinResultados) tablaSinResultados.style.display = sinResultados ? '' : 'none';
+    if (filaSinResultados) filaSinResultados.style.display = sinResultados ? '' : 'none';
+
+    if (sinResultados) {
         return;
     }
 
@@ -115,6 +128,7 @@ function renderizarGruposAlumnos(filas) {
                 carrera: fila.dataset.carrera,
                 cuatri: fila.dataset.cuatri,
                 grupo: fila.dataset.grupo,
+                idGrupo: fila.dataset.grupoId,
                 filas: []
             });
         }
@@ -142,8 +156,7 @@ function construirTablaGrupo(grupoInfo) {
     titulo.className = 'titulo-grupo-tabla h6 mb-2';
     titulo.textContent = grupoInfo.carrera + ' - ' + grupoInfo.cuatri + '° ' + grupoInfo.grupo;
 
-    let claveGrupo = grupoInfo.carrera + '|' + grupoInfo.cuatri + '|' + grupoInfo.grupo;
-    let nombreTutor = (window.tutoresPorGrupo || {})[claveGrupo];
+    let nombreTutor = (window.tutoresPorGrupo || {})[grupoInfo.idGrupo];
 
     let tutorSpan = document.createElement('span');
     tutorSpan.className = 'tutor-grupo-tabla';
@@ -183,19 +196,132 @@ function construirTablaGrupo(grupoInfo) {
     return bloque;
 }
 
+// ==================== FILTROS DE CUATRIMESTRE/GRUPO LIMITADOS A GRUPOS REALES ====================
+// window.gruposExistentes (pintado en gestion-grupos.jsp) trae los GRUPO reales de BD.
+// En vez de un rango fijo (1-11 / A-F), el <select> de Cuatrimestre solo ofrece los
+// cuatrimestres que existen para la Carrera elegida, y el de Grupo solo las letras que
+// existen para esa Carrera+Cuatrimestre. Evita armar una busqueda que nunca va a traer
+// resultados porque esa combinacion nunca existio como grupo real.
+
+function valoresUnicos(campo, filtroCarrera, filtroCuatri) {
+    let vistos = new Set();
+    (window.gruposExistentes || []).forEach(function (g) {
+        if (filtroCarrera && g.carrera !== filtroCarrera) return;
+        if (filtroCuatri && g.cuatri !== filtroCuatri) return;
+        vistos.add(g[campo]);
+    });
+    return Array.from(vistos);
+}
+
+// Filtro OPCIONAL Academia -> Carrera (cliente, sin fetch, sin bloquear el select):
+// #carreraFiltroPrincipal ya viene con TODAS las carreras del sistema renderizadas
+// (JSTL) y habilitado desde el inicio; esto solo oculta (display:none) las <option>
+// cuyo data-academia-id no coincida. Mismo patron que formulario-alumno.js.
+function aplicarFiltroAcademiaPrincipal() {
+    let selectAcademia = document.getElementById('academiaFiltroPrincipal');
+    let selectCarrera = document.getElementById('carreraFiltroPrincipal');
+    if (!selectAcademia || !selectCarrera) return;
+
+    let idAcademia = selectAcademia.value;
+    let opcionSeleccionadaSigueVisible = false;
+
+    Array.prototype.forEach.call(selectCarrera.options, function (opcion) {
+        if (!opcion.value) {
+            return; // el placeholder "Seleccione la carrera" siempre se conserva
+        }
+
+        let coincide = !idAcademia || opcion.getAttribute('data-academia-id') === idAcademia;
+        opcion.style.display = coincide ? '' : 'none';
+        if (coincide && opcion.selected) {
+            opcionSeleccionadaSigueVisible = true;
+        }
+    });
+
+    // Si la carrera elegida ya no pertenece a la academia filtrada, se limpia la
+    // seleccion y se re-dispara el resto de la cascada (Cuatrimestre/Grupo/tabla).
+    // En cualquier otro caso, la tabla igual se refiltra de una vez: cambiar de
+    // academia debe ocultar/mostrar filas al instante, no solo tocar el <select>.
+    if (selectCarrera.value && !opcionSeleccionadaSigueVisible) {
+        selectCarrera.value = '';
+        selectCarrera.dispatchEvent(new Event('change'));
+    } else {
+        filtrarAlumnos();
+    }
+}
+
+function poblarSelectCuatrimestre(carreraSeleccionada) {
+    let select = document.getElementById('cuatrimestre');
+    if (!select) return;
+    let valorActual = select.value;
+
+    let opciones = valoresUnicos('cuatri', carreraSeleccionada, '')
+        .sort(function (a, b) { return Number(a) - Number(b); });
+
+    select.innerHTML = '<option value="">Seleccione el cuatrimestre</option>';
+    opciones.forEach(function (numero) {
+        let opcion = document.createElement('option');
+        opcion.value = numero;
+        opcion.textContent = numero + '°';
+        select.appendChild(opcion);
+    });
+
+    select.value = opciones.indexOf(valorActual) !== -1 ? valorActual : '';
+}
+
+function poblarSelectGrupo(carreraSeleccionada, cuatrimestreSeleccionado) {
+    let select = document.getElementById('grupo');
+    if (!select) return;
+    let valorActual = select.value;
+
+    let opciones = valoresUnicos('letra', carreraSeleccionada, cuatrimestreSeleccionado).sort();
+
+    select.innerHTML = '<option value="">Seleccione el Grupo</option>';
+    opciones.forEach(function (letra) {
+        let opcion = document.createElement('option');
+        opcion.value = letra;
+        opcion.textContent = letra;
+        select.appendChild(opcion);
+    });
+
+    select.value = opciones.indexOf(valorActual) !== -1 ? valorActual : '';
+}
+
 document.addEventListener('DOMContentLoaded', function () {
+    // Este archivo tambien se carga en formulario-alumno.jsp (solo por confirmarCancelacion()),
+    // que reutiliza el id "cuatrimestre" para su propia cascada Carrera->Cuatrimestre. Sin
+    // este guard, este bloque (pensado para el listado de gestion-grupos.jsp) lo pisaba con
+    // las opciones del listado apenas cargaba la pagina.
+    let contenedorGrupos = document.getElementById('contenedorGruposAlumnos');
+    if (!contenedorGrupos) {
+        return;
+    }
+
     let buscarAlumno = document.getElementById('buscarAlumno');
-    let carrera = document.getElementById('carrera');
+    let academiaFiltro = document.getElementById('academiaFiltroPrincipal');
+    let carrera = document.getElementById('carreraFiltroPrincipal');
     let grupo = document.getElementById('grupo');
     let cuatrimestre = document.getElementById('cuatrimestre');
     let mostrarInactivos = document.getElementById('mostrarInactivos');
 
+    // #carreraFiltroPrincipal ya viene con todas sus opciones desde el JSP (JSTL);
+    // solo falta poblar Cuatrimestre/Grupo, que si siguen siendo dinamicos.
+    poblarSelectCuatrimestre('');
+    poblarSelectGrupo('', '');
+    aplicarFiltroAcademiaPrincipal();
     inicializarAgrupacionAlumnos();
 
     if (buscarAlumno) buscarAlumno.addEventListener('input', filtrarAlumnos);
-    if (carrera) carrera.addEventListener('change', filtrarAlumnos);
+    if (academiaFiltro) academiaFiltro.addEventListener('change', aplicarFiltroAcademiaPrincipal);
+    if (carrera) carrera.addEventListener('change', function () {
+        poblarSelectCuatrimestre(carrera.value);
+        poblarSelectGrupo(carrera.value, cuatrimestre.value);
+        filtrarAlumnos();
+    });
+    if (cuatrimestre) cuatrimestre.addEventListener('change', function () {
+        poblarSelectGrupo(carrera.value, cuatrimestre.value);
+        filtrarAlumnos();
+    });
     if (grupo) grupo.addEventListener('change', filtrarAlumnos);
-    if (cuatrimestre) cuatrimestre.addEventListener('change', filtrarAlumnos);
     if (mostrarInactivos) mostrarInactivos.addEventListener('change', filtrarAlumnos);
 });
 

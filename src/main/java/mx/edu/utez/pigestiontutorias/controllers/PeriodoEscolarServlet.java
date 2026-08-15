@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.List;
 
 @WebServlet(name = "PeriodoEscolarServlet", value = "/gestion-periodos")
 public class PeriodoEscolarServlet extends HttpServlet {
@@ -87,7 +86,7 @@ public class PeriodoEscolarServlet extends HttpServlet {
         periodo.setNombre(nombre.trim());
         periodo.setFechaInicio(Date.valueOf(fechaInicio));
         periodo.setFechaFin(Date.valueOf(fechaFin));
-        periodo.setActivo("S");
+        periodo.setEstado("S");
 
         boolean guardado = periodoDao.create(periodo);
 

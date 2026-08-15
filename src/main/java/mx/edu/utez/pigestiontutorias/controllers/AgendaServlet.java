@@ -22,16 +22,16 @@ public class AgendaServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("idUsuario") == null) {
+        if (session == null || session.getAttribute("matricula") == null) {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
 
-        int idUsuario = (Integer) session.getAttribute("idUsuario");
-        Alumno alumno = alumnoDAO.getByIdUsuario(idUsuario);
+        String matricula = (String) session.getAttribute("matricula");
+        Alumno alumno = alumnoDAO.getById(matricula);
 
-        List<EventoAgenda> listaEventos = (alumno != null)
-                ? alumnoDAO.getAgendaAlumno(alumno.getMatricula(), alumno.getIdCarrera(), alumno.getIdCuatrimestre(), alumno.getIdLetraGrupo())
+        List<EventoAgenda> listaEventos = (alumno != null && alumno.getIdGrupo() != null)
+                ? alumnoDAO.getAgendaAlumno(alumno.getMatricula(), alumno.getIdGrupo())
                 : Collections.emptyList();
 
         request.setAttribute("listaEventosAgenda", listaEventos);

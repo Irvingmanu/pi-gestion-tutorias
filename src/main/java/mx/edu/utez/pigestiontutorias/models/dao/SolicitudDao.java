@@ -30,7 +30,7 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
     // ---------------------------------------------------------------
     @Override
     public boolean create(Solicitud solicitud) {
-        String sql = "INSERT INTO ADMIN.SOLICITUD_TUTORIA " +
+        String sql = "INSERT INTO SOLICITUD_TUTORIA " +
                 "(MATRICULA, ID_TUTOR, ID_HORARIO, ASUNTO, DESCRIPCION, ESTATUS, FECHA_PROPUESTA, DURACION, HORA_PROPUESTA) " +
                 "VALUES (?, ?, ?, ?, ?, 'Pendiente', ?, ?, ?)";
 
@@ -76,9 +76,9 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         String sql = "SELECT s.ID_SOLICITUD, s.MATRICULA, s.ID_TUTOR, " +
                 "s.ASUNTO, s.DESCRIPCION, s.ESTATUS, s.FECHA_PROPUESTA, s.NUEVA_FECHA, s.NUEVA_HORA, " +
                 "s.DURACION, s.HORA_PROPUESTA, s.FECHA_REGISTRO, " +
-                "a.NOMBRES, a.APELLIDOS " +
-                "FROM ADMIN.SOLICITUD_TUTORIA s " +
-                "JOIN ADMIN.ALUMNO a ON a.MATRICULA = s.MATRICULA " +
+                "a.NOMBRES, a.APELLIDO_PATERNO, a.APELLIDO_MATERNO " +
+                "FROM SOLICITUD_TUTORIA s " +
+                "JOIN ALUMNO a ON a.MATRICULA = s.MATRICULA " +
                 "WHERE s.ID_TUTOR = ? " +
                 "ORDER BY s.ID_SOLICITUD DESC";
 
@@ -109,9 +109,9 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         String sql = "SELECT s.ID_SOLICITUD, s.MATRICULA, s.ID_TUTOR, " +
                 "s.ASUNTO, s.DESCRIPCION, s.ESTATUS, s.FECHA_PROPUESTA, s.NUEVA_FECHA, s.NUEVA_HORA, " +
                 "s.DURACION, s.HORA_PROPUESTA, s.FECHA_REGISTRO, " +
-                "a.NOMBRES, a.APELLIDOS " +
-                "FROM ADMIN.SOLICITUD_TUTORIA s " +
-                "JOIN ADMIN.ALUMNO a ON a.MATRICULA = s.MATRICULA " +
+                "a.NOMBRES, a.APELLIDO_PATERNO, a.APELLIDO_MATERNO " +
+                "FROM SOLICITUD_TUTORIA s " +
+                "JOIN ALUMNO a ON a.MATRICULA = s.MATRICULA " +
                 "WHERE s.ID_SOLICITUD = ?";
 
         try (Connection con = SQLConnector.getConnection();
@@ -137,7 +137,7 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
     // 4. Aceptar o rechazar una solicitud (actualiza estatus)
     // ---------------------------------------------------------------
     public boolean actualizarEstatus(int idSolicitud, String nuevoEstatus) {
-        String sql = "UPDATE ADMIN.SOLICITUD_TUTORIA " +
+        String sql = "UPDATE SOLICITUD_TUTORIA " +
                 "SET ESTATUS = ?, FECHA_RESPUESTA = SYSDATE " +
                 "WHERE ID_SOLICITUD = ?";
 
@@ -161,7 +161,7 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
     // 5. Reprogramar: el tutor propone una nueva fecha (contrapropuesta)
     // ---------------------------------------------------------------
     public boolean reprogramar(int idSolicitud, Date nuevaFecha, String nuevaHora) {
-        String sql = "UPDATE ADMIN.SOLICITUD_TUTORIA " +
+        String sql = "UPDATE SOLICITUD_TUTORIA " +
                 "SET ESTATUS = 'Reprogramada', NUEVA_FECHA = ?, NUEVA_HORA = ?, FECHA_RESPUESTA = SYSDATE " +
                 "WHERE ID_SOLICITUD = ?";
 
@@ -191,7 +191,7 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         Map<LocalDate, Set<String>> ocupadas = new HashMap<>();
 
         String sqlSolicitudes = "SELECT FECHA_PROPUESTA, HORA_PROPUESTA, DURACION " +
-                "FROM ADMIN.SOLICITUD_TUTORIA " +
+                "FROM SOLICITUD_TUTORIA " +
                 "WHERE ID_TUTOR = ? AND ESTATUS = 'Confirmada' " +
                 "AND FECHA_PROPUESTA BETWEEN ? AND ?";
 
@@ -258,21 +258,21 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
     // ---------------------------------------------------------------
     // 7. Historial de solicitudes de un alumno (vista "Mis Solicitudes")
     // ---------------------------------------------------------------
-    public List<Solicitud> getSolicitudesByAlumno(int idAlumno) {
+    public List<Solicitud> getSolicitudesByAlumno(String matricula) {
         List<Solicitud> lista = new ArrayList<>();
         String sql = "SELECT s.ID_SOLICITUD, s.MATRICULA, s.ID_TUTOR, " +
                 "s.ASUNTO, s.DESCRIPCION, s.ESTATUS, s.FECHA_PROPUESTA, s.NUEVA_FECHA, s.NUEVA_HORA, " +
                 "s.DURACION, s.HORA_PROPUESTA, s.FECHA_REGISTRO, " +
-                "a.NOMBRES, a.APELLIDOS " +
-                "FROM ADMIN.SOLICITUD_TUTORIA s " +
-                "JOIN ADMIN.ALUMNO a ON a.MATRICULA = s.MATRICULA " +
-                "WHERE a.ID_ALUMNO = ? " +
+                "a.NOMBRES, a.APELLIDO_PATERNO, a.APELLIDO_MATERNO " +
+                "FROM SOLICITUD_TUTORIA s " +
+                "JOIN ALUMNO a ON a.MATRICULA = s.MATRICULA " +
+                "WHERE s.MATRICULA = ? " +
                 "ORDER BY s.FECHA_REGISTRO DESC";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
-            ps.setInt(1, idAlumno);
+            ps.setString(1, matricula);
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -307,7 +307,11 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         solicitud.setHoraPropuesta(rs.getString("HORA_PROPUESTA"));
         solicitud.setFechaRegistro(rs.getTimestamp("FECHA_REGISTRO"));
         solicitud.setNombreAlumno(rs.getString("NOMBRES"));
-        solicitud.setApellidosAlumno(rs.getString("APELLIDOS"));
+
+        String apellidoM = rs.getString("APELLIDO_MATERNO");
+        String apellidos = rs.getString("APELLIDO_PATERNO") + (apellidoM != null && !apellidoM.isBlank() ? " " + apellidoM : "");
+        solicitud.setApellidosAlumno(apellidos);
+
         return solicitud;
     }
 }

@@ -46,7 +46,7 @@ public class HorarioDao implements Dao<Horario, Integer> {
                 "EXTRACT(HOUR FROM HORA_DESDE) AS HD_HORA, EXTRACT(MINUTE FROM HORA_DESDE) AS HD_MIN, " +
                 "EXTRACT(HOUR FROM HORA_HASTA) AS HH_HORA, EXTRACT(MINUTE FROM HORA_HASTA) AS HH_MIN " +
                 "FROM HORARIO_ATENCION " +
-                "WHERE ID_TUTOR = ? AND ACTIVO = 'S' " +
+                "WHERE ID_TUTOR = ? AND ESTADO = 'S' " +
                 "ORDER BY ID_HORARIO";
 
         try (Connection con = SQLConnector.getConnection();
@@ -62,7 +62,7 @@ public class HorarioDao implements Dao<Horario, Integer> {
                     h.setDiaSemana(rs.getString("DIA_SEMANA"));
                     h.setHoraDesde(formatear(rs.getInt("HD_HORA"), rs.getInt("HD_MIN")));
                     h.setHoraHasta(formatear(rs.getInt("HH_HORA"), rs.getInt("HH_MIN")));
-                    h.setActivo("S");
+                    h.setEstado("S");
                     lista.add(h);
                 }
             }

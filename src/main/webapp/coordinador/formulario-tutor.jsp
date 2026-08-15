@@ -1,49 +1,19 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="java.util.List" %>
-<%@ page import="mx.edu.utez.pigestiontutorias.models.Tutor" %>
-<%@ page import="mx.edu.utez.pigestiontutorias.models.Academia" %>
-<%
-    request.setAttribute("paginaActiva", "tutores");
-
-    Tutor tutorEdit = (Tutor) request.getAttribute("tutorEdit");
-    Tutor tutorConError = (Tutor) request.getAttribute("tutor");
-    Tutor tutorFormulario = tutorEdit != null ? tutorEdit : tutorConError;
-
-    List<Academia> listaAcademias = (List<Academia>) request.getAttribute("listaAcademias");
-
-    String accionParam = request.getParameter("accion");
-    boolean esEdicion = tutorEdit != null || "editar".equals(accionParam) || "prepararEdicion".equals(accionParam);
-    String tituloBanner = esEdicion ? "Editar Tutor" : "Nuevo Tutor";
-
-    String codigoError = (String) request.getAttribute("error");
-    String mensajeError = null;
-    if ("nomina_duplicada".equals(codigoError)) {
-        mensajeError = "Esta nómina ya está registrada en el sistema.";
-    } else if ("correo_duplicado".equals(codigoError)) {
-        mensajeError = "Este correo ya está registrado en el sistema.";
-    } else if ("telefono_duplicado".equals(codigoError)) {
-        mensajeError = "Este número de teléfono ya está registrado en el sistema.";
-    } else if ("formato_invalido".equals(codigoError)) {
-        mensajeError = "Verifica los datos. El formato de uno o más campos es incorrecto.";
-    } else if ("correo_invalido".equals(codigoError)) {
-        mensajeError = "El correo debe ser un correo institucional válido terminado en @utez.edu.mx.";
-    } else if ("horario_requerido".equals(codigoError)) {
-        mensajeError = "Debes agregar al menos un horario de atención antes de guardar.";
-    } else if ("registro_fallido".equals(codigoError)) {
-        mensajeError = "No se pudo guardar el tutor. Intenta de nuevo.";
-    }
-%>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<c:set var="paginaActiva" value="tutores" scope="request"/>
+<!-- tutorFormulario, esEdicion, tituloBanner y mensajeError ya vienen calculados desde
+     TutoresServlet (forwardAFormulario/resolverMensajeError): esta vista solo los consume. -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión de Tutorías - <%= tituloBanner %></title>
-    <link href="<%= request.getContextPath() %>/assets/css/bootstrap.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/global.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/coordinador/navbar.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/alertas.css" rel="stylesheet">
-    <link href="<%= request.getContextPath() %>/assets/css/coordinador/gestion-tutores.css" rel="stylesheet">
+    <title>Sistema de Gestión de Tutorías - ${tituloBanner}</title>
+    <link href="${pageContext.request.contextPath}/assets/css/bootstrap.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/global.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/alertas.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/coordinador/gestion-tutores.css" rel="stylesheet">
 
     <style>
         /* Ajuste para iconos de error en inputs personalizados */
@@ -66,7 +36,7 @@
         }
     </style>
 </head>
-<body>
+<body data-mensaje-error="${mensajeError}">
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
@@ -79,15 +49,13 @@
         <h2 class="titulo-principal h5 mb-3 mt-2">Sistema de Gestión de Tutorías</h2>
 
         <div class="banner-grupos h5 mb-4">
-            <%= tituloBanner %>
+            ${tituloBanner}
         </div>
 
         <!-- Atributo novalidate para quitar los mensajes por defecto del navegador -->
-        <form id="formGuardar" class="form-wrap-figma mt-3 needs-validation" style="max-width: 1100px;" action="<%= request.getContextPath() %>/gestion-tutores" method="post" novalidate>
+        <form id="formGuardar" class="form-wrap-figma mt-3 needs-validation" style="max-width: 1100px;" action="${pageContext.request.contextPath}/gestion-tutores" method="post" novalidate>
 
-            <input type="hidden" name="accion" value="<%= esEdicion ? "editar" : "nuevo" %>">
-            <input type="hidden" name="idTutor" value="<%= tutorFormulario != null ? tutorFormulario.getIdTutor() : 0 %>">
-            <input type="hidden" name="idUsuario" value="<%= tutorFormulario != null ? tutorFormulario.getIdUsuario() : 0 %>">
+            <input type="hidden" name="accion" value="${esEdicion ? 'editar' : 'nuevo'}">
 
             <div class="row">
 
@@ -98,25 +66,33 @@
                     <div class="mb-4">
                         <label for="nombres" class="form-label fs-6 fw-bold">Nombres</label>
                         <input type="text" id="nombres" name="nombres" class="form-control form-control-figma w-100 fs-6"
-                               value="<%= tutorFormulario != null && tutorFormulario.getNombres() != null ? tutorFormulario.getNombres() : "" %>"
+                               value="${tutorFormulario.nombres}"
                                placeholder="Escribe los nombres" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                                required>
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
                     <div class="mb-4">
-                        <label for="apellidos" class="form-label fs-6 fw-bold">Apellidos</label>
-                        <input type="text" id="apellidos" name="apellidos" class="form-control form-control-figma w-100 fs-6"
-                               value="<%= tutorFormulario != null && tutorFormulario.getApellidos() != null ? tutorFormulario.getApellidos() : "" %>"
-                               placeholder="Escribe los apellidos" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
+                        <label for="apellidoPaterno" class="form-label fs-6 fw-bold">Apellido paterno</label>
+                        <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control form-control-figma w-100 fs-6"
+                               value="${tutorFormulario.apellidoPaterno}"
+                               placeholder="Escribe el apellido paterno" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
                                required>
+                        <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="apellidoMaterno" class="form-label fs-6 fw-bold">Apellido materno</label>
+                        <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control form-control-figma w-100 fs-6"
+                               value="${tutorFormulario.apellidoMaterno}"
+                               placeholder="Escribe el apellido materno" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$">
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
                     <div class="mb-4">
                         <label for="telefono" class="form-label fs-6 fw-bold">Teléfono</label>
                         <input type="text" id="telefono" name="telefono" class="form-control form-control-figma w-100 fs-6"
-                               value="<%= tutorFormulario != null && tutorFormulario.getTelefono() != null ? tutorFormulario.getTelefono() : "" %>"
+                               value="${tutorFormulario.telefono}"
                                placeholder="+52 ..." pattern="^\d{10}$" maxlength="10" minlength="10"
                                oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
                         <div class="invalid-feedback">Debe contener exactamente 10 dígitos numéricos.</div>
@@ -125,7 +101,7 @@
                     <div class="mb-4">
                         <label for="correo" class="form-label fs-6 fw-bold">Correo</label>
                         <input type="email" id="correo" name="correo" class="form-control form-control-figma w-100 fs-6"
-                               value="<%= tutorFormulario != null && tutorFormulario.getCorreoInstitucional() != null ? tutorFormulario.getCorreoInstitucional() : "" %>"
+                               value="${tutorFormulario.correoInstitucional}"
                                placeholder="Escribe el correo" pattern="^[a-zA-Z0-9._-]+@utez\.edu\.mx$"
                                oninput="this.value = this.value.replace(/[^a-zA-Z0-9.\-_@]/g, '')" required>
                         <div class="invalid-feedback">Debe ser un correo válido terminado en @utez.edu.mx.</div>
@@ -139,25 +115,23 @@
                     <div class="mb-4">
                         <label for="nomina" class="form-label fs-6 fw-bold">Nómina</label>
                         <input type="text" id="nomina" name="nomina" class="form-control form-control-figma w-100 fs-6"
-                               value="<%= tutorFormulario != null && tutorFormulario.getNomina() > 0 ? tutorFormulario.getNomina() : "" %>"
+                               value="${tutorFormulario != null && tutorFormulario.numeroEmpleado > 0 ? tutorFormulario.numeroEmpleado : ''}"
                                placeholder="Escribe la nómina" maxlength="4" minlength="4" pattern="^[0-9]{4}$"
                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                            <%= esEdicion ? "readonly" : "" %> required>
+                            ${esEdicion ? 'readonly' : ''} required>
                         <div class="invalid-feedback">La nómina debe tener exactamente 4 dígitos.</div>
                     </div>
 
                     <div class="mb-4">
-                        <label for="academia" class="form-label fs-6 fw-bold">Academia</label>
-                        <select id="academia" name="idAcademia" class="form-select form-control-figma w-100 fs-6" required>
-                            <option value="" <%= tutorFormulario == null ? "selected" : "" %>>Seleccione la academia</option>
-                            <% if (listaAcademias != null) {
-                                for (Academia academia : listaAcademias) { %>
-                            <option value="<%= academia.getIdAcademia() %>"
-                                    <%= (tutorFormulario != null && tutorFormulario.getIdAcademia() == academia.getIdAcademia()) ? "selected" : "" %>>
-                                <%= academia.getNombre() %>
-                            </option>
-                            <%  }
-                            } %>
+                        <label for="academiaTutor" class="form-label fs-6 fw-bold">Academia</label>
+                        <select id="academiaTutor" name="idAcademia" class="form-select form-control-figma w-100 fs-6" required>
+                            <option value="" ${empty tutorFormulario ? 'selected' : ''}>Seleccione la academia</option>
+                            <c:forEach var="academia" items="${listaAcademias}">
+                                <option value="${academia.idAcademia}"
+                                        ${tutorFormulario != null && tutorFormulario.idAcademia == academia.idAcademia ? 'selected' : ''}>
+                                        ${academia.nombre}
+                                </option>
+                            </c:forEach>
                         </select>
                         <div class="invalid-feedback">Por favor selecciona una academia.</div>
                     </div>
@@ -200,15 +174,13 @@
 
                     <div id="contenedorHorarios" class="d-flex flex-column gap-2 mt-2 mb-4 p-2 rounded-figma border bg-white shadow-sm"
                          style="height: 180px !important; max-height: 180px !important; overflow-y: auto !important; overflow-x: hidden;">
-                        <% if (tutorFormulario != null && tutorFormulario.getHorariosDispo() != null) {
-                            for (String horario : tutorFormulario.getHorariosDispo()) { %>
-                        <div class="d-flex align-items-center gap-2 mb-2 horario-item">
-                            <input type="text" class="form-control form-control-figma fs-6" value="<%= horario %>" readonly>
-                            <input type="hidden" name="horariosDispo" value="<%= horario %>">
-                            <button type="button" class="btn-cancelar-figma btn-cancelar-figma-sm flex-shrink-0" onclick="eliminarHorario(this)" title="Eliminar Horario">-</button>
-                        </div>
-                        <%   }
-                        } %>
+                        <c:forEach var="horario" items="${tutorFormulario.horariosDispo}">
+                            <div class="d-flex align-items-center gap-2 mb-2 horario-item">
+                                <input type="text" class="form-control form-control-figma fs-6" value="${horario}" readonly>
+                                <input type="hidden" name="horariosDispo" value="${horario}">
+                                <button type="button" class="btn-cancelar-figma btn-cancelar-figma-sm flex-shrink-0" onclick="eliminarHorario(this)" title="Eliminar Horario">-</button>
+                            </div>
+                        </c:forEach>
                     </div>
                 </div>
 
@@ -216,7 +188,7 @@
 
             <div class="d-flex justify-content-center gap-3 mt-4 border-top pt-4">
                 <button type="button" id="btnCancelarFormulario" class="btn-cancelar-figma fw-medium fs-5 px-4 py-2"
-                        data-url-cancelar="<%= request.getContextPath() %>/gestion-tutores" onclick="confirmarCancelacion()">Cancelar</button>
+                        data-url-cancelar="${pageContext.request.contextPath}/gestion-tutores" onclick="confirmarCancelacion()">Cancelar</button>
                 <!-- Botón de Guardar con ID para manipularlo con JS -->
                 <button type="submit" id="btnGuardar" class="btn-figma fw-medium fs-5 px-4 py-2" disabled>Guardar</button>
             </div>
@@ -229,113 +201,8 @@
 
 <jsp:include page="../includes/alertas.jsp" />
 
-<script src="<%= request.getContextPath() %>/assets/js/bootstrap.js"></script>
-<script src="<%= request.getContextPath() %>/assets/js/alertas.js"></script>
-<script src="<%= request.getContextPath() %>/assets/js/coordinador/tutor.js"></script>
-
-<% if (mensajeError != null) { %>
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        mostrarAlerta('error', 'Error', '<%= mensajeError %>');
-    });
-</script>
-<% } %>
-
-<script>
-    function validarLimitesHora(input) {
-        const minHora = '07:00';
-        const maxHora = '21:00';
-        if (input.value) {
-            if (input.value < minHora) { input.value = minHora; }
-            else if (input.value > maxHora) { input.value = maxHora; }
-        }
-
-        // "Hasta" nunca puede quedar antes (ni igual) que "Desde": se revisa aqui sin importar
-        // cual de los dos inputs disparo el cambio, para que tambien se corrija si el usuario
-        // edita "Hasta" directamente a una hora anterior a la ya elegida en "Desde".
-        const inputDesde = document.getElementById('horarioDesde');
-        const inputHasta = document.getElementById('horarioHasta');
-        if (inputDesde && inputHasta && inputDesde.value) {
-            inputHasta.min = inputDesde.value;
-            if (inputHasta.value && inputHasta.value <= inputDesde.value) {
-                inputHasta.value = inputDesde.value;
-            }
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        const form = document.getElementById('formGuardar');
-        const btnGuardar = document.getElementById('btnGuardar');
-        const contenedorHorarios = document.getElementById('contenedorHorarios');
-        const inputCorreo = document.getElementById('correo');
-        const inputsRequeridos = form.querySelectorAll('input[required], select[required]');
-
-        function tieneHorarios() {
-            return contenedorHorarios.querySelectorAll('input[name="horariosDispo"]').length > 0;
-        }
-
-        function verificarFormulario() {
-            let esValido = true;
-            inputsRequeridos.forEach(input => {
-                if (!input.checkValidity()) {
-                    esValido = false;
-                }
-            });
-
-            if (!tieneHorarios()) {
-                esValido = false;
-            }
-
-            btnGuardar.disabled = !esValido;
-            return esValido;
-        }
-
-        inputsRequeridos.forEach(input => {
-
-            input.addEventListener('input', function () {
-                if (this.checkValidity()) {
-                    this.classList.remove('is-invalid');
-                } else {
-                    this.classList.add('is-invalid');
-                }
-                verificarFormulario();
-            });
-
-            input.addEventListener('blur', function () {
-                if (!this.checkValidity()) {
-                    this.classList.add('is-invalid');
-                }
-                verificarFormulario();
-            });
-        });
-
-        // Al enviar el formulario, avisar con las alertas ya definidas el motivo exacto
-        // por el que no se puede guardar (en vez de solo dejar el boton deshabilitado).
-        form.addEventListener('submit', function (evento) {
-            if (inputCorreo && !inputCorreo.checkValidity()) {
-                evento.preventDefault();
-                inputCorreo.classList.add('is-invalid');
-                mostrarAlerta('error', 'Correo inválido', 'El correo debe ser un correo institucional válido terminado en @utez.edu.mx.');
-                return;
-            }
-
-            if (!tieneHorarios()) {
-                evento.preventDefault();
-                mostrarAlerta('error', 'Horario requerido', 'Debes agregar al menos un horario de atención antes de guardar.');
-                return;
-            }
-
-            if (!form.checkValidity()) {
-                evento.preventDefault();
-                mostrarAlerta('error', 'Formulario incompleto', 'Verifica que todos los campos estén completos y correctos.');
-            }
-        });
-
-        // Expuesta para que tutor.js pueda re-evaluar el boton al agregar/quitar horarios.
-        window.actualizarEstadoGuardar = verificarFormulario;
-
-        verificarFormulario();
-    });
-</script>
+<script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/coordinador/tutor.js"></script>
 </body>
 </html>

@@ -6,17 +6,28 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import mx.edu.utez.pigestiontutorias.models.Usuario;
-import mx.edu.utez.pigestiontutorias.models.dao.UsuarioDao;
+import mx.edu.utez.pigestiontutorias.models.Alumno;
+import mx.edu.utez.pigestiontutorias.models.Coordinador;
+import mx.edu.utez.pigestiontutorias.models.Tutor;
+import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
+import mx.edu.utez.pigestiontutorias.models.dao.CoordinadorDAO;
+import mx.edu.utez.pigestiontutorias.models.dao.TokenDao;
+import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
 import mx.edu.utez.pigestiontutorias.utils.EmailSender;
 
 import java.io.IOException;
 import java.security.SecureRandom;
 
+// Recuperacion de contraseña contra el nuevo esquema: ya no hay CODIGO_RECUPERACION en
+// USUARIO, los codigos ahora viven en TOKENS (TIPO='Recuperacion') enlazados a exactamente
+// uno de ALUMNO/TUTOR/COORDINADOR. El correo se busca en las 3 tablas, igual que en el login.
 @WebServlet(name = "RecuperarServlet", urlPatterns = {"/recuperar"})
 public class RecuperarServlet extends HttpServlet {
 
-    private final UsuarioDao usuarioDao = new UsuarioDao();
+    private final AlumnoDAO alumnoDAO = new AlumnoDAO();
+    private final TutorDao tutorDao = new TutorDao();
+    private final CoordinadorDAO coordinadorDAO = new CoordinadorDAO();
+    private final TokenDao tokenDao = new TokenDao();
     private final EmailSender emailSender = new EmailSender();
 
     @Override
@@ -37,15 +48,27 @@ public class RecuperarServlet extends HttpServlet {
     private void solicitarCodigo(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String dato = request.getParameter("dato");
-        Usuario usuario = usuarioDao.buscarPorCorreoOMatricula(dato != null ? dato.trim() : null);
+        String correo = request.getParameter("dato");
+        correo = correo != null ? correo.trim() : null;
 
-        if (usuario != null && usuario.getCorreoInstitucional() != null && !usuario.getCorreoInstitucional().isBlank()) {
+        if (correo != null && !correo.isBlank()) {
             String codigo = generarCodigo(6);
-            boolean guardado = usuarioDao.guardarCodigoRecuperacion(usuario.getIdUsuario(), codigo);
-            if (guardado) {
+            boolean creado = false;
 
-                emailSender.enviarCodigoRecuperacion(usuario.getCorreoInstitucional(), codigo);
+            Alumno alumno = alumnoDAO.findByCorreo(correo);
+            Tutor tutor = alumno == null ? tutorDao.findByCorreo(correo) : null;
+            Coordinador coordinador = (alumno == null && tutor == null) ? coordinadorDAO.findByCorreo(correo) : null;
+
+            if (alumno != null) {
+                creado = tokenDao.crearParaAlumno(codigo, alumno.getMatricula());
+            } else if (tutor != null) {
+                creado = tokenDao.crearParaTutor(codigo, tutor.getNumeroEmpleado());
+            } else if (coordinador != null) {
+                creado = tokenDao.crearParaCoordinador(codigo, coordinador.getNumeroEmpleado());
+            }
+
+            if (creado) {
+                emailSender.enviarCodigoRecuperacion(correo, codigo);
             }
         }
 
@@ -58,12 +81,14 @@ public class RecuperarServlet extends HttpServlet {
             throws ServletException, IOException {
 
         String codigo = request.getParameter("codigo");
-        Usuario usuario = usuarioDao.verificarCodigo(codigo);
+        TokenDao.TokenInfo info = codigo != null && !codigo.isBlank() ? tokenDao.buscarVigente(codigo.trim()) : null;
 
-        if (usuario != null) {
+        if (info != null) {
             HttpSession session = request.getSession();
-            session.setAttribute("idUsuarioRecuperacion", usuario.getIdUsuario());
-            session.setAttribute("correoUsuarioRecuperacion", usuario.getCorreoInstitucional());
+            session.setAttribute("idTokenRecuperacion", info.idToken);
+            session.setAttribute("rolRecuperacion", info.rol);
+            session.setAttribute("matriculaRecuperacion", info.matricula);
+            session.setAttribute("numeroEmpleadoRecuperacion", info.numeroEmpleado);
 
             request.setAttribute("step", "cambiar");
             request.getRequestDispatcher("recuperar-contra.jsp").forward(request, response);
@@ -78,24 +103,58 @@ public class RecuperarServlet extends HttpServlet {
             throws ServletException, IOException {
 
         HttpSession session = request.getSession();
-        Integer idUsuario = (Integer) session.getAttribute("idUsuarioRecuperacion");
-        String correo = (String) session.getAttribute("correoUsuarioRecuperacion");
+        Integer idToken = (Integer) session.getAttribute("idTokenRecuperacion");
+        String rol = (String) session.getAttribute("rolRecuperacion");
+        String matricula = (String) session.getAttribute("matriculaRecuperacion");
+        Integer numeroEmpleado = (Integer) session.getAttribute("numeroEmpleadoRecuperacion");
 
-        if (idUsuario == null) {
+        if (idToken == null || rol == null) {
             response.sendRedirect("recuperar-contra.jsp");
             return;
         }
 
         String pass1 = request.getParameter("pass1");
         String pass2 = request.getParameter("pass2");
+        pass1 = pass1 != null ? pass1.trim() : null;
+        pass2 = pass2 != null ? pass2.trim() : null;
 
-        if (pass1 != null && pass1.equals(pass2) && !pass1.trim().isEmpty()) {
-            boolean actualizado = usuarioDao.actualizarPasswordLimpiaCodigo(idUsuario, pass1);
+        if (pass1 != null && pass1.equals(pass2) && !pass1.isEmpty()) {
+            boolean actualizado = false;
+            String correoNotificar = null;
+
+            switch (rol) {
+                case "Alumno" -> {
+                    actualizado = alumnoDAO.actualizarPassword(matricula, pass1);
+                    if (actualizado) {
+                        Alumno a = alumnoDAO.getById(matricula);
+                        correoNotificar = a != null ? a.getCorreoInstitucional() : null;
+                    }
+                }
+                case "Tutor" -> {
+                    actualizado = tutorDao.actualizarPassword(numeroEmpleado, pass1);
+                    if (actualizado) {
+                        Tutor t = tutorDao.getById(numeroEmpleado);
+                        correoNotificar = t != null ? t.getCorreoInstitucional() : null;
+                    }
+                }
+                case "Coordinador" -> {
+                    actualizado = coordinadorDAO.actualizarPassword(numeroEmpleado, pass1);
+                    if (actualizado) {
+                        Coordinador c = coordinadorDAO.getById(numeroEmpleado);
+                        correoNotificar = c != null ? c.getCorreoInstitucional() : null;
+                    }
+                }
+            }
 
             if (actualizado) {
-                emailSender.enviarConfirmacionCambio(correo);
-                session.removeAttribute("idUsuarioRecuperacion");
-                session.removeAttribute("correoUsuarioRecuperacion");
+                tokenDao.marcarUtilizado(idToken);
+                if (correoNotificar != null) {
+                    emailSender.enviarConfirmacionCambio(correoNotificar);
+                }
+                session.removeAttribute("idTokenRecuperacion");
+                session.removeAttribute("rolRecuperacion");
+                session.removeAttribute("matriculaRecuperacion");
+                session.removeAttribute("numeroEmpleadoRecuperacion");
 
                 request.setAttribute("mensajeExito", "Tu contraseña ha sido cambiada exitosamente.");
                 request.getRequestDispatcher("login.jsp").forward(request, response);

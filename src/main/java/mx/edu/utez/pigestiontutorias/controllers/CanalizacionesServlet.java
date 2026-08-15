@@ -24,13 +24,13 @@ public class CanalizacionesServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
-        if (session == null || session.getAttribute("idUsuario") == null) {
+        if (session == null || session.getAttribute("matricula") == null) {
             response.sendRedirect(request.getContextPath() + "/login.jsp");
             return;
         }
 
-        int idUsuario = (Integer) session.getAttribute("idUsuario");
-        Alumno alumno = alumnoDAO.getByIdUsuario(idUsuario);
+        String matricula = (String) session.getAttribute("matricula");
+        Alumno alumno = alumnoDAO.getById(matricula);
 
         List<Canalizacion> listaCanalizaciones = (alumno != null)
                 ? canalizacionDao.getByMatricula(alumno.getMatricula())

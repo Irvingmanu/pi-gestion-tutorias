@@ -68,6 +68,14 @@
             <!-- ==================== TAB 1: ASIGNACIONES ACTUALES ==================== -->
             <div class="tab-pane fade show active" id="tab-asignaciones" role="tabpanel">
 
+                <!-- Filtro OPCIONAL: solo oculta filas de la tabla por JS, no bloquea nada. -->
+                <select id="filtroAcademiaTabla" class="form-select form-control-figma w-auto mb-3">
+                    <option value="">Todas las academias</option>
+                    <c:forEach var="academia" items="${listaAcademias}">
+                        <option value="${academia.idAcademia}">${academia.nombre}</option>
+                    </c:forEach>
+                </select>
+
                 <div class="table-responsive mb-auto">
                     <c:if test="${empty listaAsignaciones}">
                         <div class="alert alert-info text-center">
@@ -75,25 +83,19 @@
                         </div>
                     </c:if>
                     <c:if test="${not empty listaAsignaciones}">
-                        <table class="tabla-grupos fs-6">
+                        <table class="tabla-grupos fs-6" id="tablaAsignaciones">
                             <thead>
                             <tr>
                                 <th>Tutor</th>
-                                <th>Carrera</th>
-                                <th>Cuatrimestre</th>
                                 <th>Grupo</th>
-                                <th>Periodo</th>
                                 <th>Acciones</th>
                             </tr>
                             </thead>
                             <tbody>
                             <c:forEach var="asignacion" items="${listaAsignaciones}">
-                                <tr>
+                                <tr data-academia-id="${asignacion.idAcademia}">
                                     <td>${asignacion.nombresTutor} ${asignacion.apellidosTutor}</td>
-                                    <td>${asignacion.nombreCarrera}</td>
-                                    <td>${asignacion.numeroCuatrimestre}&deg;</td>
-                                    <td>${asignacion.letraGrupo}</td>
-                                    <td>${not empty asignacion.nombrePeriodo ? asignacion.nombrePeriodo : '—'}</td>
+                                    <td>${asignacion.nombreGrupo}</td>
                                     <td>
                                         <div class="d-flex justify-content-center gap-2">
                                             <button type="button" class="btn-accion btn-eliminar" onclick="prepararEliminacionAsignacion('${asignacion.idAsignacion}')">
@@ -103,6 +105,9 @@
                                     </td>
                                 </tr>
                             </c:forEach>
+                            <tr id="filaSinResultados" style="display: none;">
+                                <td colspan="3" class="text-center text-muted">No se encontraron asignaciones para la academia seleccionada.</td>
+                            </tr>
                             </tbody>
                         </table>
                     </c:if>
@@ -113,68 +118,53 @@
             <!-- ==================== TAB 2: NUEVA ASIGNACIÓN ==================== -->
             <div class="tab-pane fade" id="tab-nueva" role="tabpanel">
 
-                <c:if test="${empty listaPeriodos}">
+                <c:if test="${empty listaGrupos}">
                     <div class="alert alert-warning text-center">
-                        No hay periodos escolares del año actual registrados.
-                        Ve a <a href="${pageContext.request.contextPath}/gestion-periodos">Periodos Escolares</a> para crear uno antes de asignar tutores.
+                        Todavía no hay grupos registrados.
+                        Ve a <a href="${pageContext.request.contextPath}/gestion-grupos">Gestión de Grupos</a> y registra al menos un alumno antes de asignar tutores.
                     </div>
                 </c:if>
 
                 <form id="formGuardar" action="${pageContext.request.contextPath}/asignacion" method="POST" class="asignacion-form-wrap mt-3 needs-validation" novalidate>
 
                     <div class="mb-4">
+                        <label class="campo-label fs-6 fw-bold" for="academiaFormulario">Academia</label>
+                        <!-- Filtro OBLIGATORIO en cascada: no lleva "name" (no viaja en el POST),
+                             solo oculta opciones de Tutor y Grupo hasta que se elige una academia. -->
+                        <select id="academiaFormulario" class="form-select form-control-figma mb-3" required>
+                            <option value="" selected disabled>Seleccione la academia</option>
+                            <c:forEach var="academia" items="${listaAcademias}">
+                                <option value="${academia.idAcademia}">${academia.nombre}</option>
+                            </c:forEach>
+                        </select>
+                        <div class="invalid-feedback">Por favor seleccione una academia.</div>
+                    </div>
+
+                    <div class="mb-4">
                         <label class="campo-label fs-6 fw-bold" for="tutor">Tutor</label>
-                        <select id="tutor" name="id_tutor" class="form-select form-control-figma w-100 fs-6" required>
-                            <option value="" selected disabled>Seleccione el tutor</option>
+                        <!-- Deshabilitado hasta elegir Academia; todas las opciones ya vienen
+                             renderizadas con data-academia-id (ver asignacion.js). -->
+                        <select id="tutor" name="id_tutor" class="form-select form-control-figma w-100 fs-6" required disabled>
+                            <option value="" selected disabled>Seleccione primero la academia</option>
                             <c:forEach var="tutor" items="${listaTutores}">
-                                <option value="${tutor.idTutor}">${tutor.nombres} ${tutor.apellidos}</option>
+                                <option value="${tutor.numeroEmpleado}" data-academia-id="${tutor.idAcademia}">${tutor.nombres} ${tutor.apellidos}</option>
                             </c:forEach>
                         </select>
                         <div class="invalid-feedback">Por favor seleccione un tutor.</div>
                     </div>
 
                     <div class="mb-4">
-                        <label class="campo-label fs-6 fw-bold" for="carrera">Carrera</label>
-                        <select id="carrera" name="id_carrera" class="form-select form-control-figma w-100 fs-6" required>
-                            <option value="" selected disabled>Seleccione la carrera</option>
-                            <c:forEach var="carrera" items="${carreras}">
-                                <option value="${carrera.idCarrera}">${carrera.nombre}</option>
-                            </c:forEach>
-                        </select>
-                        <div class="invalid-feedback">Por favor seleccione una carrera.</div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="campo-label fs-6 fw-bold" for="cuatrimestre">Cuatrimestre</label>
-                        <select id="cuatrimestre" name="id_cuatrimestre" class="form-select form-control-figma w-100 fs-6" required>
-                            <option value="" selected disabled>Seleccione el cuatrimestre</option>
-                            <c:forEach var="cuatrimestre" items="${listaCuatrimestres}">
-                                <option value="${cuatrimestre.idCuatrimestre}">${cuatrimestre.numero}°</option>
-                            </c:forEach>
-                        </select>
-                        <div class="invalid-feedback">Por favor seleccione un cuatrimestre.</div>
-                    </div>
-
-                    <div class="mb-4">
                         <label class="campo-label fs-6 fw-bold" for="grupo">Grupo</label>
-                        <select id="grupo" name="id_letra_grupo" class="form-select form-control-figma w-100 fs-6" required>
-                            <option value="" selected disabled>Seleccione el Grupo</option>
-                            <c:forEach var="letraGrupo" items="${listaLetras}">
-                                <option value="${letraGrupo.idLetra}">${letraGrupo.letra}</option>
+                        <!-- Regla de negocio: un tutor solo puede asignarse a grupos de su misma
+                             academia (ej. un tutor de DATIT no puede recibir un grupo de otra
+                             academia). Deshabilitado hasta elegir Academia, igual que Tutor. -->
+                        <select id="grupo" name="id_grupo" class="form-select form-control-figma w-100 fs-6" required disabled>
+                            <option value="" selected disabled>Seleccione primero la academia</option>
+                            <c:forEach var="grupo" items="${listaGrupos}">
+                                <option value="${grupo.idGrupo}" data-academia-id="${grupo.idAcademia}">${grupo.nombreGrupo}</option>
                             </c:forEach>
                         </select>
                         <div class="invalid-feedback">Por favor seleccione un grupo.</div>
-                    </div>
-
-                    <div class="mb-4">
-                        <label class="campo-label fs-6 fw-bold" for="periodo">Periodo escolar</label>
-                        <select id="periodo" name="id_periodo" class="form-select form-control-figma w-100 fs-6" required>
-                            <option value="" selected disabled>Seleccione el periodo</option>
-                            <c:forEach var="periodo" items="${listaPeriodos}">
-                                <option value="${periodo.idPeriodo}">${periodo.nombre}</option>
-                            </c:forEach>
-                        </select>
-                        <div class="invalid-feedback">Por favor seleccione el periodo escolar.</div>
                     </div>
 
                     <div class="text-center mt-4">

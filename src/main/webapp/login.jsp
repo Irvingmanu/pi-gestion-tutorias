@@ -39,28 +39,13 @@
         <form action="login" method="POST" id="loginForm" novalidate>
 
             <div class="mb-4">
-                <label for="opcionAsignacion" class="auth-label">Opción de asignación</label>
-                <div class="auth-field">
-                    <select class="form-select" id="opcionAsignacion" name="opcionAsignacion" required>
-                        <option value="" disabled ${empty param.opcionAsignacion ? 'selected' : ''}>Seleccione una opción</option>
-                        <option value="coordinador" ${param.opcionAsignacion == 'coordinador' ? 'selected' : ''}>Coordinador</option>
-                        <option value="tutor" ${param.opcionAsignacion == 'tutor' ? 'selected' : ''}>Tutor</option>
-                        <option value="alumno" ${param.opcionAsignacion == 'alumno' ? 'selected' : ''}>Alumno</option>
-                    </select>
-                    <div class="invalid-feedback">
-                        Selecciona una opción de asignación.
-                    </div>
-                </div>
-            </div>
-
-            <div class="mb-4">
-                <label for="usuario" class="auth-label">Nomina/Matricula</label>
+                <label for="correo" class="auth-label">Correo institucional</label>
                 <div class="auth-field">
                     <img src="assets/img/login/usuario.png" alt="" class="auth-icon-left">
-                    <input type="text" class="form-control auth-input" id="usuario" name="usuario"
-                           value="${param.usuario}" placeholder="Usuario" required>
+                    <input type="email" class="form-control auth-input" id="correo" name="correo"
+                           value="${param.correo}" placeholder="correo@utez.edu.mx" required>
                     <div class="invalid-feedback">
-                        Ingresa tu matrícula o nómina.
+                        Ingresa tu correo institucional.
                     </div>
                 </div>
             </div>

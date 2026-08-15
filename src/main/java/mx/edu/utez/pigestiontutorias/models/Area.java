@@ -5,19 +5,14 @@ import java.util.List;
 public class Area {
     private int idArea;
     private String nombre;
-    private String encargado;
+    private String nombresEncargado;
+    private String apellidoPaternoEncargado;
+    private String apellidoMaternoEncargado;
     private String correoContacto;
     private String enlaceCita;
     private List<Motivo> motivos;
 
     public Area() {
-    }
-
-    public Area(int idArea, String nombre, String encargado, String correoContacto) {
-        this.idArea = idArea;
-        this.nombre = nombre;
-        this.encargado = encargado;
-        this.correoContacto = correoContacto;
     }
 
     public int getIdArea() {
@@ -36,12 +31,23 @@ public class Area {
         this.nombre = nombre;
     }
 
-    public String getEncargado() {
-        return encargado;
-    }
+    public String getNombresEncargado() { return nombresEncargado; }
+    public void setNombresEncargado(String nombresEncargado) { this.nombresEncargado = nombresEncargado; }
 
-    public void setEncargado(String encargado) {
-        this.encargado = encargado;
+    public String getApellidoPaternoEncargado() { return apellidoPaternoEncargado; }
+    public void setApellidoPaternoEncargado(String apellidoPaternoEncargado) { this.apellidoPaternoEncargado = apellidoPaternoEncargado; }
+
+    public String getApellidoMaternoEncargado() { return apellidoMaternoEncargado; }
+    public void setApellidoMaternoEncargado(String apellidoMaternoEncargado) { this.apellidoMaternoEncargado = apellidoMaternoEncargado; }
+
+    // Nombre completo del encargado (NOMBRES + APELLIDO_PATERNO + APELLIDO_MATERNO,
+    // columnas separadas en BD) para mostrar en listados y correos.
+    public String getEncargado() {
+        if (nombresEncargado == null) return null;
+        StringBuilder sb = new StringBuilder(nombresEncargado);
+        if (apellidoPaternoEncargado != null && !apellidoPaternoEncargado.isBlank()) sb.append(' ').append(apellidoPaternoEncargado);
+        if (apellidoMaternoEncargado != null && !apellidoMaternoEncargado.isBlank()) sb.append(' ').append(apellidoMaternoEncargado);
+        return sb.toString();
     }
 
     public String getCorreoContacto() {
@@ -70,6 +76,6 @@ public class Area {
 
     @Override
     public String toString() {
-        return idArea + ',' + nombre + ',' + encargado + ',' + correoContacto;
+        return idArea + ',' + nombre + ',' + getEncargado() + ',' + correoContacto;
     }
 }

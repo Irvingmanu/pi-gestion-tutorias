@@ -4,9 +4,7 @@ import java.sql.Date;
 
 public class SesionGrupal {
     private int idSesionGrupal;
-    private int idCarrera;
-    private int idLetraGrupo;
-    private int idCuatrimestre;
+    private int idGrupo;
     private int idTutor;
     private Date fecha;
     private String hora;
@@ -24,14 +22,8 @@ public class SesionGrupal {
     public int getIdSesionGrupal() { return idSesionGrupal; }
     public void setIdSesionGrupal(int idSesionGrupal) { this.idSesionGrupal = idSesionGrupal; }
 
-    public int getIdCarrera() { return idCarrera; }
-    public void setIdCarrera(int idCarrera) { this.idCarrera = idCarrera; }
-
-    public int getIdLetraGrupo() { return idLetraGrupo; }
-    public void setIdLetraGrupo(int idLetraGrupo) { this.idLetraGrupo = idLetraGrupo; }
-
-    public int getIdCuatrimestre() { return idCuatrimestre; }
-    public void setIdCuatrimestre(int idCuatrimestre) { this.idCuatrimestre = idCuatrimestre; }
+    public int getIdGrupo() { return idGrupo; }
+    public void setIdGrupo(int idGrupo) { this.idGrupo = idGrupo; }
 
     public int getIdTutor() { return idTutor; }
     public void setIdTutor(int idTutor) { this.idTutor = idTutor; }

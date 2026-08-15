@@ -5,42 +5,42 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import mx.edu.utez.pigestiontutorias.models.*;
-import mx.edu.utez.pigestiontutorias.models.dao.*;
+import mx.edu.utez.pigestiontutorias.models.AsignacionTutor;
+import mx.edu.utez.pigestiontutorias.models.Grupo;
+import mx.edu.utez.pigestiontutorias.models.Tutor;
+import mx.edu.utez.pigestiontutorias.models.dao.AcademiaDao;
+import mx.edu.utez.pigestiontutorias.models.dao.AsignacionTutorDao;
+import mx.edu.utez.pigestiontutorias.models.dao.GrupoDao;
+import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
 
 import java.io.IOException;
 import java.util.List;
 
+// Un tutor solo se puede asignar a un GRUPO que ya existe (creado previamente al dar de
+// alta a un alumno), nunca a uno inventado en el formulario: por eso "Nueva Asignacion"
+// elige de la lista real de GrupoDao.getAll() en vez de armar Carrera+Cuatrimestre+Letra
+// libres y resolver/crear el grupo via findOrCreate (eso permitia "asignar" tutores a
+// combinaciones fantasma que nunca tuvieron un alumno).
 @WebServlet(name = "AsignacionServlet", value = "/asignacion")
 public class AsignacionServlet extends HttpServlet {
 
+    private final TutorDao tutorDao = new TutorDao();
+    private final AsignacionTutorDao asignacionTutorDao = new AsignacionTutorDao();
+    private final GrupoDao grupoDao = new GrupoDao();
+    private final AcademiaDao academiaDao = new AcademiaDao();
+
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        CarreraDao carreraDao = new CarreraDao();
-        List<Carrera> listaCarreras = carreraDao.getAll();
-
-        TutorDao tutorDao = new TutorDao();
         List<Tutor> listaTutores = tutorDao.findAll();
-
-        CuatrimestreDao cuatrimestreDao = new CuatrimestreDao();
-        List<Cuatrimestre> listaCuatrimestres = cuatrimestreDao.getAll();
-
-        LetraGrupoDao letraGrupoDao = new LetraGrupoDao();
-        List<LetraGrupo> listaLetras = letraGrupoDao.getAll();
-
-        AsignacionTutorDao asignacionTutorDao = new AsignacionTutorDao();
         List<AsignacionTutor> listaAsignaciones = asignacionTutorDao.getAll();
+        List<Grupo> listaGrupos = grupoDao.getAll();
 
-        // Solo periodos del año ACTUAL (dinamico, sirve igual el proximo año).
-        PeriodoEscolarDao periodoDao = new PeriodoEscolarDao();
-        List<PeriodoEscolar> listaPeriodos = periodoDao.getDelAnioActual();
-
-        request.setAttribute("carreras", listaCarreras);
         request.setAttribute("listaTutores", listaTutores);
-        request.setAttribute("listaCuatrimestres", listaCuatrimestres);
-        request.setAttribute("listaLetras", listaLetras);
         request.setAttribute("listaAsignaciones", listaAsignaciones);
-        request.setAttribute("listaPeriodos", listaPeriodos);
+        request.setAttribute("listaGrupos", listaGrupos);
+        // Alimenta filtroAcademiaTabla (tab "Asignaciones Actuales") y academiaFormulario
+        // (tab "Nueva Asignación") en asignacion.jsp.
+        request.setAttribute("listaAcademias", academiaDao.getAll());
 
         request.getRequestDispatcher("/coordinador/asignacion.jsp").forward(request, response);
     }
@@ -49,35 +49,59 @@ public class AsignacionServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
 
-        AsignacionTutorDao dao = new AsignacionTutorDao();
         String accion = request.getParameter("accion");
 
         if ("eliminar".equals(accion)) {
             int idAsignacion = Integer.parseInt(request.getParameter("id_asignacion"));
-            boolean eliminado = dao.delete(idAsignacion);
+            boolean eliminado = asignacionTutorDao.delete(idAsignacion);
             String parametro = eliminado ? "exito=eliminado" : "error=true";
             response.sendRedirect(request.getContextPath() + "/asignacion?" + parametro);
             return;
         }
 
         int idTutor = Integer.parseInt(request.getParameter("id_tutor"));
-        int idCarrera = Integer.parseInt(request.getParameter("id_carrera"));
-        int idLetraGrupo = Integer.parseInt(request.getParameter("id_letra_grupo"));
-        int idCuatrimestre = Integer.parseInt(request.getParameter("id_cuatrimestre"));
-        int idPeriodo = Integer.parseInt(request.getParameter("id_periodo"));
+        int idGrupo = Integer.parseInt(request.getParameter("id_grupo"));
 
-        if (dao.existeAsignacionActiva(idLetraGrupo, idCarrera, idCuatrimestre, idPeriodo)) {
+        // Blindaje de servidor: el grupo enviado debe ser uno que realmente existe en BD
+        // (y sigue activo), nunca una combinacion armada a mano en el request.
+        Grupo grupo = grupoDao.getById(idGrupo);
+        if (grupo == null || !"S".equals(grupo.getEstado())) {
+            response.sendRedirect(request.getContextPath() + "/asignacion?error=true");
+            return;
+        }
+
+        // Blindaje de servidor: un tutor solo puede asignarse a grupos de su propia
+        // academia (ej. un tutor de DATIT no puede recibir un grupo de otra academia),
+        // sin confiar en que el filtro del <select> del formulario no fue manipulado.
+        Tutor tutor = tutorDao.getById(idTutor);
+        if (tutor == null || tutor.getIdAcademia() != grupo.getIdAcademia()) {
+            response.sendRedirect(request.getContextPath() + "/asignacion?error=academia_no_coincide");
+            return;
+        }
+
+        if (asignacionTutorDao.existeAsignacionActiva(idGrupo)) {
             response.sendRedirect(request.getContextPath() + "/asignacion?error=grupo_asignado");
             return;
         }
 
-        AsignacionTutor nuevaAsignacion = new AsignacionTutor(idTutor, idCarrera, idLetraGrupo, idCuatrimestre, idPeriodo);
-        boolean guardado = dao.create(nuevaAsignacion);
+        AsignacionTutor nuevaAsignacion = new AsignacionTutor(idTutor, idGrupo);
+        boolean guardado = asignacionTutorDao.create(nuevaAsignacion);
 
         if (guardado) {
             response.sendRedirect(request.getContextPath() + "/asignacion?exito=true");
         } else {
             response.sendRedirect(request.getContextPath() + "/asignacion?error=true");
         }
+    }
+
+    // TSU: cuatrimestres 1-6. Ingenieria (ING): cuatrimestres 7-10.
+    private boolean esCuatrimestreValidoParaNivel(int cuatrimestre, String nivel) {
+        if ("TSU".equals(nivel)) {
+            return cuatrimestre >= 1 && cuatrimestre <= 6;
+        }
+        if ("ING".equals(nivel)) {
+            return cuatrimestre >= 7 && cuatrimestre <= 10;
+        }
+        return false;
     }
 }

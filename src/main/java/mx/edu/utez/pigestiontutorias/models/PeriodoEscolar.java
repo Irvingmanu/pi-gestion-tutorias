@@ -7,7 +7,7 @@ public class PeriodoEscolar {
     private String nombre;
     private Date fechaInicio;
     private Date fechaFin;
-    private String activo;
+    private String estado;
 
     public PeriodoEscolar() {}
 
@@ -23,6 +23,6 @@ public class PeriodoEscolar {
     public Date getFechaFin() { return fechaFin; }
     public void setFechaFin(Date fechaFin) { this.fechaFin = fechaFin; }
 
-    public String getActivo() { return activo; }
-    public void setActivo(String activo) { this.activo = activo; }
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
 }

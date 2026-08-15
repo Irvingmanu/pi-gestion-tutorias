@@ -1,32 +1,26 @@
 package mx.edu.utez.pigestiontutorias.models;
 
+// ASIGNACION_TUTOR ahora solo enlaza ID_TUTOR con ID_GRUPO: el grupo (Carrera+Cuatrimestre+
+// Letra+Periodo) ya es una sola entidad en BD, no 3 FKs sueltas.
 public class AsignacionTutor {
     private int idAsignacion;
     private int idTutor;
-    private int idCarrera;
-    private int idLetraGrupo;
-    private int idCuatrimestre;
-    private int idPeriodo;
-    private int activo;
+    private int idGrupo;
+    private String estado;
 
     // Campos extra que NO existen en la tabla, solo para mostrar datos
-    // del tutor/carrera/grupo/cuatrimestre/periodo en la lista (se llenan con un JOIN)
+    // del tutor/grupo en la lista (se llenan con un JOIN)
     private String nombresTutor;
     private String apellidosTutor;
-    private String nombreCarrera;
-    private String letraGrupo;
-    private int numeroCuatrimestre;
-    private String nombrePeriodo;
+    private String nombreGrupo;
+    private int idAcademia;
 
     public AsignacionTutor() {}
 
-    public AsignacionTutor(int idTutor, int idCarrera, int idLetraGrupo, int idCuatrimestre, int idPeriodo) {
+    public AsignacionTutor(int idTutor, int idGrupo) {
         this.idTutor = idTutor;
-        this.idCarrera = idCarrera;
-        this.idLetraGrupo = idLetraGrupo;
-        this.idCuatrimestre = idCuatrimestre;
-        this.idPeriodo = idPeriodo;
-        this.activo = 1; // Por defecto activo al crear
+        this.idGrupo = idGrupo;
+        this.estado = "S";
     }
 
     public int getIdAsignacion() { return idAsignacion; }
@@ -35,20 +29,11 @@ public class AsignacionTutor {
     public int getIdTutor() { return idTutor; }
     public void setIdTutor(int idTutor) { this.idTutor = idTutor; }
 
-    public int getIdCarrera() { return idCarrera; }
-    public void setIdCarrera(int idCarrera) { this.idCarrera = idCarrera; }
+    public int getIdGrupo() { return idGrupo; }
+    public void setIdGrupo(int idGrupo) { this.idGrupo = idGrupo; }
 
-    public int getIdLetraGrupo() { return idLetraGrupo; }
-    public void setIdLetraGrupo(int idLetraGrupo) { this.idLetraGrupo = idLetraGrupo; }
-
-    public int getIdCuatrimestre() { return idCuatrimestre; }
-    public void setIdCuatrimestre(int idCuatrimestre) { this.idCuatrimestre = idCuatrimestre; }
-
-    public int getIdPeriodo() { return idPeriodo; }
-    public void setIdPeriodo(int idPeriodo) { this.idPeriodo = idPeriodo; }
-
-    public int getActivo() { return activo; }
-    public void setActivo(int activo) { this.activo = activo; }
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
 
     public String getNombresTutor() { return nombresTutor; }
     public void setNombresTutor(String nombresTutor) { this.nombresTutor = nombresTutor; }
@@ -56,15 +41,9 @@ public class AsignacionTutor {
     public String getApellidosTutor() { return apellidosTutor; }
     public void setApellidosTutor(String apellidosTutor) { this.apellidosTutor = apellidosTutor; }
 
-    public String getNombreCarrera() { return nombreCarrera; }
-    public void setNombreCarrera(String nombreCarrera) { this.nombreCarrera = nombreCarrera; }
+    public String getNombreGrupo() { return nombreGrupo; }
+    public void setNombreGrupo(String nombreGrupo) { this.nombreGrupo = nombreGrupo; }
 
-    public String getLetraGrupo() { return letraGrupo; }
-    public void setLetraGrupo(String letraGrupo) { this.letraGrupo = letraGrupo; }
-
-    public int getNumeroCuatrimestre() { return numeroCuatrimestre; }
-    public void setNumeroCuatrimestre(int numeroCuatrimestre) { this.numeroCuatrimestre = numeroCuatrimestre; }
-
-    public String getNombrePeriodo() { return nombrePeriodo; }
-    public void setNombrePeriodo(String nombrePeriodo) { this.nombrePeriodo = nombrePeriodo; }
+    public int getIdAcademia() { return idAcademia; }
+    public void setIdAcademia(int idAcademia) { this.idAcademia = idAcademia; }
 }

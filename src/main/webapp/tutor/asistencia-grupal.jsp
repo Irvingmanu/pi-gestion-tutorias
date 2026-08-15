@@ -34,41 +34,15 @@
             <!-- Formulario 1: Filtros y Consulta (Método GET) -->
             <form action="${pageContext.request.contextPath}/tutor/asistencia-grupal" method="get">
 
-                <!-- Fila 1: Grupo / Carrera -->
+                <!-- Fila 1: Grupo / Fecha -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <label for="grupo" class="form-label fs-6 fw-bold">Grupo</label>
-                        <select id="grupo" name="idLetraGrupo" class="form-select form-control-figma w-100 fs-6" required>
+                        <select id="grupo" name="idGrupo" class="form-select form-control-figma w-100 fs-6" required>
                             <option value="">Seleccione el grupo</option>
                             <c:forEach var="grupo" items="${listaGrupos}">
-                                <option value="${grupo.idLetra}" ${param.idLetraGrupo == grupo.idLetra ? 'selected' : ''}>
-                                        ${grupo.letra}
-                                </option>
-                            </c:forEach>
-                        </select>
-                    </div>
-                    <div class="col-md-6">
-                        <label for="carrera" class="form-label fs-6 fw-bold">Carrera</label>
-                        <select id="carrera" name="idCarrera" class="form-select form-control-figma w-100 fs-6" required>
-                            <option value="">Seleccione la carrera</option>
-                            <c:forEach var="carrera" items="${listaCarreras}">
-                                <option value="${carrera.idCarrera}" ${param.idCarrera == carrera.idCarrera ? 'selected' : ''}>
-                                        ${carrera.nombre}
-                                </option>
-                            </c:forEach>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Fila 2: Cuatrimestre / Fecha -->
-                <div class="row g-3 mb-4">
-                    <div class="col-md-6">
-                        <label for="cuatrimestre" class="form-label fs-6 fw-bold">Cuatrimestre</label>
-                        <select id="cuatrimestre" name="idCuatrimestre" class="form-select form-control-figma w-100 fs-6" required>
-                            <option value="">Seleccione el cuatrimestre</option>
-                            <c:forEach var="cuatrimestre" items="${listaCuatrimestres}">
-                                <option value="${cuatrimestre.idCuatrimestre}" ${param.idCuatrimestre == cuatrimestre.idCuatrimestre ? 'selected' : ''}>
-                                        ${cuatrimestre.numero}°
+                                <option value="${grupo.idGrupo}" ${param.idGrupo == grupo.idGrupo ? 'selected' : ''}>
+                                        ${grupo.nombreGrupo}
                                 </option>
                             </c:forEach>
                         </select>
@@ -86,9 +60,7 @@
 
             <!-- Formulario 2: Tabla de Alumnos y Guardado (Método POST) -->
             <form id="formGuardar" action="${pageContext.request.contextPath}/tutor/asistencia-grupal" method="post">
-                <input type="hidden" name="idLetraGrupo" value="${param.idLetraGrupo}">
-                <input type="hidden" name="idCarrera" value="${param.idCarrera}">
-                <input type="hidden" name="idCuatrimestre" value="${param.idCuatrimestre}">
+                <input type="hidden" name="idGrupo" value="${param.idGrupo}">
                 <input type="hidden" name="fecha" value="${param.fecha}">
 
                 <div class="table-responsive mb-4">
@@ -102,13 +74,13 @@
                         </thead>
                         <tbody>
                         <c:choose>
-                            <c:when test="${not empty listaAlumnos}">
-                                <c:forEach var="alumno" items="${listaAlumnos}">
+                            <c:when test="${not empty listaAlumnosGrupo}">
+                                <c:forEach var="alumno" items="${listaAlumnosGrupo}">
                                     <tr>
                                         <td>${alumno.nombres}</td>
                                         <td>${alumno.apellidos}</td>
                                         <td class="text-center">
-                                            <input type="checkbox" name="asistencia" value="${alumno.idAlumno}" ${idsAsistidos.contains(alumno.idAlumno) ? 'checked' : ''} />
+                                            <input type="checkbox" name="asistencia" value="${alumno.matricula}" ${matriculasAsistidas.contains(alumno.matricula) ? 'checked' : ''} />
                                         </td>
                                     </tr>
                                 </c:forEach>

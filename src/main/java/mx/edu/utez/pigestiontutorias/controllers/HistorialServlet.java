@@ -7,10 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import mx.edu.utez.pigestiontutorias.models.*;
-import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
-import mx.edu.utez.pigestiontutorias.models.dao.SesionGrupalDao;
-import mx.edu.utez.pigestiontutorias.models.dao.SesionIndividualDao;
-import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
+import mx.edu.utez.pigestiontutorias.models.dao.*;
 
 import java.io.IOException;
 import java.util.*;
@@ -22,6 +19,7 @@ public class HistorialServlet extends HttpServlet {
     private final SesionGrupalDao sesionGrupalDao = new SesionGrupalDao();
     private final SesionIndividualDao sesionIndividualDao = new SesionIndividualDao();
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();
+    private final GrupoDao grupoDao = new GrupoDao();
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -31,7 +29,7 @@ public class HistorialServlet extends HttpServlet {
             return;
         }
 
-        Tutor tutor = tutorDao.findByIdUsuario((Integer) session.getAttribute("idUsuario"));
+        Tutor tutor = tutorDao.getById((Integer) session.getAttribute("idUsuario"));
         if (tutor == null) {
             request.setAttribute("error", "No se encontró el perfil de tutor asociado a tu cuenta.");
             request.setAttribute("paginaActiva", "historial");
@@ -45,31 +43,20 @@ public class HistorialServlet extends HttpServlet {
         String fechaFin = request.getParameter("fechaFin");
         if (tipo == null) tipo = "";
 
-        // Mapas ID -> texto para armar etiquetas legibles del grupo (mismo patron que AlumnoServlet)
-        Map<Integer, String> nombresCarrera = new HashMap<>();
-        for (Carrera c : alumnoDAO.getAllCarreras()) {
-            nombresCarrera.put(c.getIdCarrera(), c.getNombre());
-        }
-        Map<Integer, Integer> numerosCuatrimestre = new HashMap<>();
-        for (Cuatrimestre c : alumnoDAO.getAllCuatrimestres()) {
-            numerosCuatrimestre.put(c.getIdCuatrimestre(), c.getNumero());
-        }
-        Map<Integer, String> nombresLetra = new HashMap<>();
-        for (LetraGrupo l : alumnoDAO.getAllLetrasGrupo()) {
-            nombresLetra.put(l.getIdLetra(), l.getLetra());
-        }
-
         List<HistorialItemDTO> historial = new ArrayList<>();
 
         if (tipo.isBlank() || tipo.equals("grupal")) {
-            List<SesionGrupal> grupales = sesionGrupalDao.getHistorialByTutor(tutor.getIdTutor(), fechaInicio, fechaFin);
+            // Cache local para no repetir GrupoDao.getById() si varias sesiones son del mismo grupo.
+            Map<Integer, Grupo> gruposCache = new HashMap<>();
+            List<SesionGrupal> grupales = sesionGrupalDao.getHistorialByTutor(tutor.getNumeroEmpleado(), fechaInicio, fechaFin);
             for (SesionGrupal sg : grupales) {
+                Grupo grupo = gruposCache.computeIfAbsent(sg.getIdGrupo(), grupoDao::getById);
+
                 HistorialItemDTO item = new HistorialItemDTO();
                 item.setTipo("Grupal");
                 item.setFecha(sg.getFecha());
                 item.setHora(sg.getHora());
-                item.setReferencia(etiquetaGrupo(sg.getIdCarrera(), sg.getIdCuatrimestre(), sg.getIdLetraGrupo(),
-                        nombresCarrera, numerosCuatrimestre, nombresLetra));
+                item.setReferencia(grupo != null ? grupo.getNombreGrupo() : "Grupo " + sg.getIdGrupo());
                 item.setTemasTratados(sg.getTemasTratados());
                 item.setAcuerdos(sg.getAcuerdos());
                 item.setEstado(sg.getEstado());
@@ -78,14 +65,14 @@ public class HistorialServlet extends HttpServlet {
         }
 
         if (tipo.isBlank() || tipo.equals("individual")) {
-            List<SesionIndividual> individuales = sesionIndividualDao.getHistorialByTutor(tutor.getIdTutor(), "Programada", fechaInicio, fechaFin);
+            List<SesionIndividual> individuales = sesionIndividualDao.getHistorialByTutor(tutor.getNumeroEmpleado(), "Programada", fechaInicio, fechaFin);
             for (SesionIndividual si : individuales) {
                 historial.add(mapearIndividual(si, "Individual"));
             }
         }
 
         if (tipo.isBlank() || tipo.equals("espontanea")) {
-            List<SesionIndividual> espontaneas = sesionIndividualDao.getHistorialByTutor(tutor.getIdTutor(), "Espontanea", fechaInicio, fechaFin);
+            List<SesionIndividual> espontaneas = sesionIndividualDao.getHistorialByTutor(tutor.getNumeroEmpleado(), "Espontanea", fechaInicio, fechaFin);
             for (SesionIndividual si : espontaneas) {
                 historial.add(mapearIndividual(si, "Espontanea"));
             }
@@ -100,15 +87,6 @@ public class HistorialServlet extends HttpServlet {
         request.setAttribute("fechaFinSeleccionada", fechaFin);
         request.setAttribute("paginaActiva", "historial");
         request.getRequestDispatcher("/tutor/historial.jsp").forward(request, response);
-    }
-
-    private String etiquetaGrupo(int idCarrera, int idCuatrimestre, int idLetra,
-                                 Map<Integer, String> nombresCarrera, Map<Integer, Integer> numerosCuatrimestre,
-                                 Map<Integer, String> nombresLetra) {
-        String carrera = nombresCarrera.getOrDefault(idCarrera, "Carrera " + idCarrera);
-        Integer numero = numerosCuatrimestre.get(idCuatrimestre);
-        String letra = nombresLetra.getOrDefault(idLetra, "?");
-        return carrera + " - " + (numero != null ? numero + "°" : "Cuatri " + idCuatrimestre) + " " + letra;
     }
 
     private HistorialItemDTO mapearIndividual(SesionIndividual si, String tipoEtiqueta) {

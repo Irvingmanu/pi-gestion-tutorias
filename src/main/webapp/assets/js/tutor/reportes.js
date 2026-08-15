@@ -3,8 +3,8 @@ let graficaPastelReporte = null;
 function cargarReporte(opciones) {
     const mapaParametros = {
         filtroCarrera: 'idCarrera',
-        filtroCuatrimestre: 'idCuatrimestre',
-        filtroGrupo: 'idLetraGrupo',
+        filtroCuatrimestre: 'cuatrimestre',
+        filtroGrupo: 'letra',
         filtroTutor: 'idTutor',
         filtroDesde: 'desde',
         filtroHasta: 'hasta'

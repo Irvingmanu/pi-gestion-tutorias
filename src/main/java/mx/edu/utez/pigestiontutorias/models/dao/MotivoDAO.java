@@ -10,6 +10,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+// MOTIVO_AREA guarda el texto del motivo en la columna NOMBRE (no NOMBRE_MOTIVO); el
+// modelo Java sigue llamando al campo "nombreMotivo" para no confundirlo con AREA_APOYO.NOMBRE.
 public class MotivoDAO implements Dao<Motivo, Integer> {
 
     public List<Motivo> getByIdArea(int idArea) {
@@ -33,7 +35,7 @@ public class MotivoDAO implements Dao<Motivo, Integer> {
 
     @Override
     public boolean create(Motivo entidad) {
-        String sql = "INSERT INTO MOTIVO_AREA(ID_AREA, NOMBRE_MOTIVO) VALUES(?, ?)";
+        String sql = "INSERT INTO MOTIVO_AREA(ID_AREA, NOMBRE) VALUES(?, ?)";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -86,7 +88,7 @@ public class MotivoDAO implements Dao<Motivo, Integer> {
 
     @Override
     public boolean update(Motivo entidad) {
-        String sql = "UPDATE MOTIVO_AREA SET NOMBRE_MOTIVO = ? WHERE ID_MOTIVO = ?";
+        String sql = "UPDATE MOTIVO_AREA SET NOMBRE = ? WHERE ID_MOTIVO = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -121,7 +123,7 @@ public class MotivoDAO implements Dao<Motivo, Integer> {
         Motivo m = new Motivo();
         m.setIdMotivo(rs.getInt("ID_MOTIVO"));
         m.setIdArea(rs.getInt("ID_AREA"));
-        m.setNombreMotivo(rs.getString("NOMBRE_MOTIVO"));
+        m.setNombreMotivo(rs.getString("NOMBRE"));
         return m;
     }
 }

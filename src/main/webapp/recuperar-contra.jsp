@@ -25,7 +25,7 @@
                 <c:choose>
                     <c:when test="${step == 'verificar'}">Ingresa el código de 6 caracteres que recibiste por correo</c:when>
                     <c:when test="${step == 'cambiar'}">Ingresa tu nueva contraseña</c:when>
-                    <c:otherwise>Ingresa tu correo electrónico o matrícula/nómina</c:otherwise>
+                    <c:otherwise>Ingresa tu correo institucional</c:otherwise>
                 </c:choose>
             </p>
         </div>
@@ -122,13 +122,13 @@
                     <input type="hidden" name="action" value="solicitar">
 
                     <div class="mb-4">
-                        <label for="dato" class="auth-label">Correo electrónico o Matrícula/Nómina</label>
+                        <label for="dato" class="auth-label">Correo institucional</label>
                         <div class="auth-field">
                             <img src="assets/img/login/correo.png" alt="" class="auth-icon-left">
-                            <input type="text" class="form-control auth-input" id="dato" name="dato"
-                                   placeholder="correo@utez.edu.mx o matrícula" required>
+                            <input type="email" class="form-control auth-input" id="dato" name="dato"
+                                   placeholder="correo@utez.edu.mx" required>
                             <div class="invalid-feedback">
-                                Ingresa tu correo o matrícula/nómina.
+                                Ingresa tu correo institucional.
                             </div>
                         </div>
                     </div>

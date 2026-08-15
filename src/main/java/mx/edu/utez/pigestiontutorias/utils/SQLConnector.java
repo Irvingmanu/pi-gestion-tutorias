@@ -5,11 +5,11 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
-import java.nio.charset.StandardCharsets;
-import java.net.URLDecoder;
 
 public class SQLConnector {
 

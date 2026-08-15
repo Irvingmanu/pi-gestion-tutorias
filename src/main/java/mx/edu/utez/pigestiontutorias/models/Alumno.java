@@ -1,43 +1,21 @@
 package mx.edu.utez.pigestiontutorias.models;
 
 public class Alumno {
-    private Integer idAlumno;
     private String matricula;
     private String nombres;
-    private String apellidos;
+    private String apellidoPaterno;
+    private String apellidoMaterno;
     private String correoInstitucional;
     private String telefono;
     private Integer idGenero;
-    private Integer idCarrera;
-    private Integer idCuatrimestre;
-    private Integer idLetraGrupo;
-    private Integer idUsuario;
-    private String activo;
+    private Integer idGrupo;
+    private String pass;
+    private String estado;
 
-    private Carrera carrera;
-    private Cuatrimestre cuatrimestre;
-    private LetraGrupo letraGrupo;
+    private Grupo grupo;
 
     public Alumno() {
     }
-
-    public Alumno(String matricula, String nombres, String apellidos, String correoInstitucional,
-                  String telefono, Integer idGenero, Integer idCarrera, Integer idCuatrimestre,
-                  Integer idLetraGrupo, Integer idUsuario) {
-        this.matricula = matricula;
-        this.nombres = nombres;
-        this.apellidos = apellidos;
-        this.correoInstitucional = correoInstitucional;
-        this.telefono = telefono;
-        this.idGenero = idGenero;
-        this.idCarrera = idCarrera;
-        this.idCuatrimestre = idCuatrimestre;
-        this.idLetraGrupo = idLetraGrupo;
-        this.idUsuario = idUsuario;
-    }
-
-    public Integer getIdAlumno() { return idAlumno; }
-    public void setIdAlumno(Integer idAlumno) { this.idAlumno = idAlumno; }
 
     public String getMatricula() { return matricula; }
     public void setMatricula(String matricula) { this.matricula = matricula; }
@@ -45,8 +23,18 @@ public class Alumno {
     public String getNombres() { return nombres; }
     public void setNombres(String nombres) { this.nombres = nombres; }
 
-    public String getApellidos() { return apellidos; }
-    public void setApellidos(String apellidos) { this.apellidos = apellidos; }
+    public String getApellidoPaterno() { return apellidoPaterno; }
+    public void setApellidoPaterno(String apellidoPaterno) { this.apellidoPaterno = apellidoPaterno; }
+
+    public String getApellidoMaterno() { return apellidoMaterno; }
+    public void setApellidoMaterno(String apellidoMaterno) { this.apellidoMaterno = apellidoMaterno; }
+
+    // Concatena APELLIDO_PATERNO + APELLIDO_MATERNO (columnas separadas en BD) para
+    // mostrarlos como un solo nombre completo en listados, historial y correos.
+    public String getApellidos() {
+        if (apellidoMaterno == null || apellidoMaterno.isBlank()) return apellidoPaterno;
+        return apellidoPaterno + " " + apellidoMaterno;
+    }
 
     public String getCorreoInstitucional() { return correoInstitucional; }
     public void setCorreoInstitucional(String correoInstitucional) { this.correoInstitucional = correoInstitucional; }
@@ -57,32 +45,20 @@ public class Alumno {
     public Integer getIdGenero() { return idGenero; }
     public void setIdGenero(Integer idGenero) { this.idGenero = idGenero; }
 
-    public Integer getIdCarrera() { return idCarrera; }
-    public void setIdCarrera(Integer idCarrera) { this.idCarrera = idCarrera; }
+    public Integer getIdGrupo() { return idGrupo; }
+    public void setIdGrupo(Integer idGrupo) { this.idGrupo = idGrupo; }
 
-    public Integer getIdCuatrimestre() { return idCuatrimestre; }
-    public void setIdCuatrimestre(Integer idCuatrimestre) { this.idCuatrimestre = idCuatrimestre; }
+    public String getPass() { return pass; }
+    public void setPass(String pass) { this.pass = pass; }
 
-    public Integer getIdLetraGrupo() { return idLetraGrupo; }
-    public void setIdLetraGrupo(Integer idLetraGrupo) { this.idLetraGrupo = idLetraGrupo; }
+    public String getEstado() { return estado; }
+    public void setEstado(String estado) { this.estado = estado; }
 
-    public Integer getIdUsuario() { return idUsuario; }
-    public void setIdUsuario(Integer idUsuario) { this.idUsuario = idUsuario; }
-
-    public String getActivo() { return activo; }
-    public void setActivo(String activo) { this.activo = activo; }
-
-    public Carrera getCarrera() { return carrera; }
-    public void setCarrera(Carrera carrera) { this.carrera = carrera; }
-
-    public Cuatrimestre getCuatrimestre() { return cuatrimestre; }
-    public void setCuatrimestre(Cuatrimestre cuatrimestre) { this.cuatrimestre = cuatrimestre; }
-
-    public LetraGrupo getLetraGrupo() { return letraGrupo; }
-    public void setLetraGrupo(LetraGrupo letraGrupo) { this.letraGrupo = letraGrupo; }
+    public Grupo getGrupo() { return grupo; }
+    public void setGrupo(Grupo grupo) { this.grupo = grupo; }
 
     @Override
     public String toString() {
-        return matricula + ',' + nombres + ',' + apellidos + ',' + correoInstitucional;
+        return matricula + ',' + nombres + ',' + getApellidos() + ',' + correoInstitucional;
     }
 }

@@ -187,6 +187,139 @@ document.addEventListener('DOMContentLoaded', function () {
         var btnGuardarEspontanea = document.getElementById('btnGuardarEspontanea');
         var inputsRequeridosEspontanea = formTutoriaEspontanea.querySelectorAll('input[required], select[required], textarea[required]');
 
+        // ==========================================================================
+        // SELECCIÓN EN CASCADA GRUPO -> ALUMNO, ahora con Select2 (jQuery) en vez del
+        // datalist/autocomplete propio de antes: Select2 resuelve el buscador y su UI.
+        // El <select id="alumnoBuscador" name="matricula" required> manda directo la
+        // matrícula en el POST, ya no hace falta un <input type="hidden"> aparte.
+        // ==========================================================================
+        var selectGrupo = document.getElementById('grupoSelector');
+        var feedbackAlumno = document.getElementById('alumnoEstado');
+        // Guardado defensivo: si el CDN de jQuery/Select2 no cargó (ej. red bloqueada),
+        // el resto del formulario (fecha, hora, temas, etc.) debe seguir funcionando.
+        var $alumnoBuscador = (typeof jQuery !== 'undefined' && jQuery.fn.select2)
+            ? jQuery('#alumnoBuscador')
+            : null;
+
+        if ($alumnoBuscador) {
+            $alumnoBuscador.select2({
+                theme: 'bootstrap-5',
+                width: '100%'
+            });
+        }
+
+        // Parche Bootstrap <-> Select2: el <select> real queda oculto (display:none)
+        // tras el widget de Select2, así que Bootstrap no puede pintarle su borde rojo
+        // ni activar ".is-invalid ~ .invalid-feedback" con solo ver el <select>. Estas
+        // dos funciones se llaman a mano desde donde antes se marcaba is-invalid en los
+        // demás campos: al perder foco/cerrarse sin elegir (select2:close, equivalente
+        // al "blur" de un input normal) y al intentar enviar el formulario.
+        function marcarAlumnoInvalido() {
+            if (!$alumnoBuscador) {
+                return;
+            }
+            $alumnoBuscador[0].classList.add('is-invalid');
+            var feedbackInvalido = document.getElementById('alumnoBuscadorInvalido');
+            if (feedbackInvalido) {
+                feedbackInvalido.style.display = 'block';
+            }
+            $alumnoBuscador.next('.select2-container').find('.select2-selection')
+                .css('border-color', 'var(--bs-form-invalid-border-color, #dc3545)');
+        }
+
+        function limpiarAlumnoInvalido() {
+            if (!$alumnoBuscador) {
+                return;
+            }
+            $alumnoBuscador[0].classList.remove('is-invalid');
+            var feedbackInvalido = document.getElementById('alumnoBuscadorInvalido');
+            if (feedbackInvalido) {
+                feedbackInvalido.style.display = '';
+            }
+            $alumnoBuscador.next('.select2-container').find('.select2-selection').css('border-color', '');
+        }
+
+        // Vacía el <select> e inyecta una opción por alumno (o un placeholder si aún
+        // no hay grupo/está cargando), y refresca la UI de Select2 con trigger('change').
+        function fijarOpcionesAlumno(opciones, deshabilitado) {
+            if (!$alumnoBuscador) {
+                return;
+            }
+            $alumnoBuscador.empty();
+            opciones.forEach(function (op) {
+                $alumnoBuscador.append(new Option(op.texto, op.valor, false, false));
+            });
+            $alumnoBuscador.prop('disabled', deshabilitado);
+            $alumnoBuscador.trigger('change');
+        }
+
+        if (selectGrupo) {
+            selectGrupo.addEventListener('change', function () {
+                if (feedbackAlumno) {
+                    feedbackAlumno.textContent = '';
+                    feedbackAlumno.className = 'form-text';
+                }
+
+                var idGrupo = selectGrupo.value;
+                if (!idGrupo) {
+                    fijarOpcionesAlumno([{ texto: 'Selecciona un grupo primero', valor: '' }], true);
+                    return;
+                }
+
+                fijarOpcionesAlumno([{ texto: 'Cargando alumnos...', valor: '' }], true);
+
+                fetch(formTutoriaEspontanea.action + '?accion=obtenerAlumnosPorGrupo&idGrupo=' + encodeURIComponent(idGrupo))
+                    .then(function (resp) { return resp.json(); })
+                    .then(function (alumnos) {
+                        // El tutor pudo haber cambiado de grupo mientras la peticion viajaba
+                        if (selectGrupo.value !== idGrupo) return;
+
+                        var opciones = [{ texto: 'Selecciona un alumno', valor: '' }];
+                        alumnos.forEach(function (a) {
+                            opciones.push({ texto: a.nombres + ' ' + a.apellidos, valor: a.matricula });
+                        });
+                        fijarOpcionesAlumno(opciones, false);
+                    })
+                    .catch(function () {
+                        fijarOpcionesAlumno([{ texto: 'No se pudo cargar la lista de alumnos', valor: '' }], true);
+                    });
+            });
+        }
+
+        if ($alumnoBuscador) {
+            $alumnoBuscador.on('change', function () {
+                var matricula = $alumnoBuscador.val();
+                if (feedbackAlumno) {
+                    if (matricula) {
+                        feedbackAlumno.textContent = 'Alumno seleccionado (matrícula ' + matricula + ').';
+                        feedbackAlumno.className = 'form-text text-success';
+                    } else {
+                        feedbackAlumno.textContent = '';
+                        feedbackAlumno.className = 'form-text';
+                    }
+                }
+
+                // Apenas el tutor elige un alumno válido, se limpia cualquier estado de
+                // error que haya quedado forzado (por submit o por select2:close abajo).
+                if (matricula) {
+                    limpiarAlumnoInvalido();
+                }
+
+                verificarFormularioEspontanea();
+            });
+
+            // select2:close es el equivalente al "blur" de un input normal: se dispara
+            // cuando el tutor cierra el desplegable (clic afuera, Escape, Tab) sin llegar
+            // a elegir nada. Si en ese momento el <select> sigue sin valor, se marca
+            // inválido igual que el resto de los campos requeridos al perder el foco.
+            $alumnoBuscador.on('select2:close', function () {
+                if (!$alumnoBuscador.val()) {
+                    marcarAlumnoInvalido();
+                }
+                verificarFormularioEspontanea();
+            });
+        }
+
         function verificarFormularioEspontanea() {
             var esValido = true;
             inputsRequeridosEspontanea.forEach(function (input) {
@@ -200,6 +333,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         inputsRequeridosEspontanea.forEach(function (input) {
+            // #alumnoBuscador (Select2) ya notifica cambios via su propio listener
+            // 'change' de arriba; el <select> real queda oculto tras el widget de
+            // Select2, así que marcarle is-invalid aquí no tendría efecto visible.
+            if (input.id === 'alumnoBuscador') {
+                return;
+            }
+
             input.addEventListener('input', function () {
                 if (this.checkValidity()) {
                     this.classList.remove('is-invalid');
@@ -223,12 +363,23 @@ document.addEventListener('DOMContentLoaded', function () {
     formTutoriaEspontanea.addEventListener('submit', function (e) {
         e.preventDefault();
 
+        // #alumnoBuscador ahora es un <select required name="matricula"> real, así que
+        // checkValidity() nativo ya refleja correctamente si se eligió un alumno.
         if (!formTutoriaEspontanea.checkValidity()) {
             inputsRequeridosEspontanea.forEach(function (input) {
                 if (!input.checkValidity()) {
                     input.classList.add('is-invalid');
                 }
             });
+
+            // Parche Bootstrap <-> Select2: el loop de arriba salta #alumnoBuscador a
+            // propósito (queda oculto tras el widget de Select2, marcarle is-invalid no
+            // se ve por sí solo). marcarAlumnoInvalido() hace a mano lo mismo que ya
+            // pasa con select2:close cuando el tutor sale del campo sin elegir nada.
+            if ($alumnoBuscador && !$alumnoBuscador.val()) {
+                marcarAlumnoInvalido();
+            }
+
             verificarFormularioEspontanea();
             return;
         }

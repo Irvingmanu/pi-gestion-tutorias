@@ -16,6 +16,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// NOMINA ya no es una columna separada: NUMERO_EMPLEADO es el unico identificador del
+// tutor (PK real de TUTOR), asi que cumple el mismo papel que antes tenia "nomina".
 @WebServlet(name = "TutoresServlet", value = "/gestion-tutores")
 public class TutoresServlet extends HttpServlet {
 
@@ -43,19 +45,14 @@ public class TutoresServlet extends HttpServlet {
 
         // 2. NUEVO O PREPARAR EDICIÓN DE TUTOR
         if ("nuevo".equals(accion) || "prepararEdicion".equals(accion)) {
-            request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
-
+            Tutor tutorEdit = null;
             if ("prepararEdicion".equals(accion)) {
                 String nominaStr = request.getParameter("nomina");
                 if (nominaStr != null && !nominaStr.trim().isEmpty()) {
-                    int nomina = Integer.parseInt(nominaStr.trim());
-                    Tutor tutorEdit = tutorDAO.getByNomina(nomina);
-                    request.setAttribute("tutorEdit", tutorEdit);
-                    request.setAttribute("tutor", tutorEdit);
+                    tutorEdit = tutorDAO.getById(Integer.parseInt(nominaStr.trim()));
                 }
             }
-
-            request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);
+            forwardAFormulario(request, response, tutorEdit, null, null);
             return;
         }
 
@@ -108,24 +105,15 @@ public class TutoresServlet extends HttpServlet {
             // "0000" cumple el regex de 4 digitos pero no es una nomina real (parsea a 0).
             nominaValida = nominaParseada > 0;
             if (nominaValida) {
-                tutor.setNomina(nominaParseada);
+                tutor.setNumeroEmpleado(nominaParseada);
             }
         }
 
         tutor.setNombres(request.getParameter("nombres"));
-        tutor.setApellidos(request.getParameter("apellidos"));
+        tutor.setApellidoPaterno(request.getParameter("apellidoPaterno"));
+        tutor.setApellidoMaterno(request.getParameter("apellidoMaterno"));
         tutor.setCorreoInstitucional(request.getParameter("correo"));
         tutor.setTelefono(request.getParameter("telefono"));
-
-        String idTutorStr = request.getParameter("idTutor");
-        if (idTutorStr != null && !idTutorStr.trim().isEmpty()) {
-            tutor.setIdTutor(Integer.parseInt(idTutorStr.trim()));
-        }
-
-        String idUsuarioStr = request.getParameter("idUsuario");
-        if (idUsuarioStr != null && !idUsuarioStr.trim().isEmpty()) {
-            tutor.setIdUsuario(Integer.parseInt(idUsuarioStr.trim()));
-        }
 
         // Capturar la lista de horarios enviados desde el formulario
         String[] horarios = request.getParameterValues("horariosDispo");
@@ -135,10 +123,10 @@ public class TutoresServlet extends HttpServlet {
         String idAcademiaStr = request.getParameter("idAcademia");
         if (idAcademiaStr != null && !idAcademiaStr.trim().isEmpty()) {
             tutor.setIdAcademia(Integer.parseInt(idAcademiaStr.trim()));
-        } else if ("editar".equals(accion)) {
+        } else if ("editar".equals(accion) && nominaValida) {
             // NUEVO: Si la academia viene vacía (ej. porque se deshabilitó en el frontend),
             // recuperamos el ID que ya tenía registrado en la base de datos para no reemplazarlo con un 0 (null).
-            Tutor tutorAntiguo = tutorDAO.getByNomina(tutor.getNomina());
+            Tutor tutorAntiguo = tutorDAO.getById(tutor.getNumeroEmpleado());
             if (tutorAntiguo != null) {
                 tutor.setIdAcademia(tutorAntiguo.getIdAcademia());
             }
@@ -147,10 +135,7 @@ public class TutoresServlet extends HttpServlet {
         boolean esEdicion = "editar".equals(accion);
 
         if (!nominaValida) {
-            request.setAttribute("error", "formato_invalido");
-            request.setAttribute("tutor", tutor);
-            request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
-            request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);
+            forwardAFormulario(request, response, null, tutor, "formato_invalido");
             return;
         }
 
@@ -160,32 +145,26 @@ public class TutoresServlet extends HttpServlet {
         String correo = tutor.getCorreoInstitucional();
         boolean correoValido = correo != null && correo.trim().matches(REGEX_CORREO);
         if (!correoValido) {
-            request.setAttribute("error", "correo_invalido");
-            request.setAttribute("tutor", tutor);
-            request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
-            request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);
+            forwardAFormulario(request, response, null, tutor, "correo_invalido");
             return;
         }
 
         // Blindaje de servidor: al menos un horario de atencion es obligatorio, ya que
         // el boton de Guardar solo lo exige en el cliente via JS.
         if (tutor.getHorariosDispo() == null || tutor.getHorariosDispo().isEmpty()) {
-            request.setAttribute("error", "horario_requerido");
-            request.setAttribute("tutor", tutor);
-            request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
-            request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);
+            forwardAFormulario(request, response, null, tutor, "horario_requerido");
             return;
         }
 
         String errorDuplicado = null;
         if (esEdicion) {
-            if (tutorDAO.existeCorreo(tutor.getCorreoInstitucional(), tutor.getIdTutor())) {
+            if (tutorDAO.existeCorreo(tutor.getCorreoInstitucional(), tutor.getNumeroEmpleado())) {
                 errorDuplicado = "correo_duplicado";
-            } else if (tutorDAO.existeTelefono(tutor.getTelefono(), tutor.getIdTutor())) {
+            } else if (tutorDAO.existeTelefono(tutor.getTelefono(), tutor.getNumeroEmpleado())) {
                 errorDuplicado = "telefono_duplicado";
             }
         } else {
-            if (tutorDAO.existeNomina(tutor.getNomina())) {
+            if (tutorDAO.existeNomina(tutor.getNumeroEmpleado())) {
                 errorDuplicado = "nomina_duplicada";
             } else if (tutorDAO.existeCorreo(tutor.getCorreoInstitucional())) {
                 errorDuplicado = "correo_duplicado";
@@ -195,10 +174,7 @@ public class TutoresServlet extends HttpServlet {
         }
 
         if (errorDuplicado != null) {
-            request.setAttribute("error", errorDuplicado);
-            request.setAttribute("tutor", tutor);
-            request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
-            request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);
+            forwardAFormulario(request, response, null, tutor, errorDuplicado);
             return;
         }
 
@@ -208,11 +184,52 @@ public class TutoresServlet extends HttpServlet {
             String exito = esEdicion ? "actualizado" : "guardado";
             response.sendRedirect(request.getContextPath() + "/gestion-tutores?exito=" + exito);
         } else {
-            request.setAttribute("error", "registro_fallido");
-            request.setAttribute("tutor", tutor);
-            request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
-            request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);
+            forwardAFormulario(request, response, null, tutor, "registro_fallido");
         }
+    }
+
+    // Centraliza lo que antes calculaba el scriptlet de arriba en formulario-tutor.jsp
+    // (tutorFormulario, esEdicion, tituloBanner, mensajeError): esa logica no le
+    // corresponde a la vista, vive aqui junto con el resto de las reglas del formulario.
+    private void forwardAFormulario(HttpServletRequest request, HttpServletResponse response,
+                                     Tutor tutorEdit, Tutor tutorConError, String codigoError)
+            throws ServletException, IOException {
+        Tutor tutorFormulario = tutorEdit != null ? tutorEdit : tutorConError;
+        String accionParam = request.getParameter("accion");
+        boolean esEdicion = tutorEdit != null || "editar".equals(accionParam) || "prepararEdicion".equals(accionParam);
+
+        request.setAttribute("tutorFormulario", tutorFormulario);
+        request.setAttribute("esEdicion", esEdicion);
+        request.setAttribute("tituloBanner", esEdicion ? "Editar Tutor" : "Nuevo Tutor");
+        request.setAttribute("mensajeError", resolverMensajeError(codigoError));
+        request.setAttribute("listaAcademias", tutorDAO.getAllAcademias());
+
+        request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);
+    }
+
+    private String resolverMensajeError(String codigoError) {
+        if ("nomina_duplicada".equals(codigoError)) {
+            return "Esta nómina ya está registrada en el sistema.";
+        }
+        if ("correo_duplicado".equals(codigoError)) {
+            return "Este correo ya está registrado en el sistema.";
+        }
+        if ("telefono_duplicado".equals(codigoError)) {
+            return "Este número de teléfono ya está registrado en el sistema.";
+        }
+        if ("formato_invalido".equals(codigoError)) {
+            return "Verifica los datos. El formato de uno o más campos es incorrecto.";
+        }
+        if ("correo_invalido".equals(codigoError)) {
+            return "El correo debe ser un correo institucional válido terminado en @utez.edu.mx.";
+        }
+        if ("horario_requerido".equals(codigoError)) {
+            return "Debes agregar al menos un horario de atención antes de guardar.";
+        }
+        if ("registro_fallido".equals(codigoError)) {
+            return "No se pudo guardar el tutor. Intenta de nuevo.";
+        }
+        return null;
     }
 
     private void procesarEliminacion(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -220,18 +237,18 @@ public class TutoresServlet extends HttpServlet {
         String nominaStr = request.getParameter("nomina");
         if (nominaStr != null && !nominaStr.trim().isEmpty()) {
             try {
-                int nomina = Integer.parseInt(nominaStr.trim());
+                int numeroEmpleado = Integer.parseInt(nominaStr.trim());
 
-                Tutor tutor = tutorDAO.getByNomina(nomina);
+                Tutor tutor = tutorDAO.getById(numeroEmpleado);
                 if (tutor != null) {
                     // Blindaje: no se permite eliminar (dar de baja) a un tutor si tiene
                     // al menos una asignación activa dentro de un periodo escolar activo.
-                    if (asignacionTutorDAO.existeAsignacionEnPeriodoActivo(tutor.getIdTutor())) {
+                    if (asignacionTutorDAO.existeAsignacionEnPeriodoActivo(tutor.getNumeroEmpleado())) {
                         response.sendRedirect(request.getContextPath() + "/gestion-tutores?error=tutor_periodo_activo");
                         return;
                     }
 
-                    boolean eliminado = tutorDAO.delete(nomina);
+                    boolean eliminado = tutorDAO.delete(numeroEmpleado);
                     parametro = eliminado ? "exito=eliminado" : "error=tutor_en_uso";
                 }
             } catch (Exception e) {
@@ -247,8 +264,8 @@ public class TutoresServlet extends HttpServlet {
         String nominaStr = request.getParameter("nomina");
         if (nominaStr != null && !nominaStr.trim().isEmpty()) {
             try {
-                int nomina = Integer.parseInt(nominaStr.trim());
-                boolean reactivado = tutorDAO.reactivar(nomina);
+                int numeroEmpleado = Integer.parseInt(nominaStr.trim());
+                boolean reactivado = tutorDAO.reactivar(numeroEmpleado);
                 parametro = reactivado ? "exito=reactivado" : "error=reactivacion_fallida";
             } catch (Exception e) {
                 e.printStackTrace();

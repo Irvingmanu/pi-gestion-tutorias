@@ -10,7 +10,7 @@ public class Canalizacion {
     private Date fechaCanalizacion;
     private String estatus;
     private String observaciones;
-    private String tokenConfirmacion;
+    private String idToken;
 
     // Campos extra que NO existen en la tabla CANALIZACION, solo para mostrar datos
     // del area y del motivo en la vista del alumno (se llenan con un JOIN, ver
@@ -44,8 +44,8 @@ public class Canalizacion {
     public String getObservaciones() { return observaciones; }
     public void setObservaciones(String observaciones) { this.observaciones = observaciones; }
 
-    public String getTokenConfirmacion() { return tokenConfirmacion; }
-    public void setTokenConfirmacion(String tokenConfirmacion) { this.tokenConfirmacion = tokenConfirmacion; }
+    public String getIdToken() { return idToken; }
+    public void setIdToken(String idToken) { this.idToken = idToken; }
 
     public String getNombreArea() { return nombreArea; }
     public void setNombreArea(String nombreArea) { this.nombreArea = nombreArea; }

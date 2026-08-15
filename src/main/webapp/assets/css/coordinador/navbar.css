@@ -9,16 +9,16 @@
     background-color: rgba(255, 255, 255, 0.9);
     border-radius: var(--radius-figma);
     box-shadow: var(--shadow-figma), inset var(--shadow-figma);
-    padding: 16px 8px;
+    padding: 10px 8px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 3px;
 }
 
 .sidebar-grupos .sidebar-logo {
     display: flex;
     justify-content: center;
-    padding: 10px 0 20px;
+    padding: 6px 0 10px;
 }
 .sidebar-grupos .sidebar-logo img {
     width: 70%;
@@ -35,7 +35,7 @@
     align-items: center;
     justify-content: center;
     gap: 2px;
-    padding: 8px 4px;
+    padding: 5px 4px;
     border-radius: var(--radius-figma);
     text-decoration: none;
     color: var(--texto);
@@ -136,7 +136,33 @@
 @media (min-width: 768px) {
     .offcanvas-md .offcanvas-body.sidebar-grupos {
         background-color: rgba(255, 255, 255, 0.9) !important;
-        padding: 16px 8px;
+        padding: 10px 8px;
+        /* Sidebar fijo en pantallas con tablas largas: al ser hijo de un
+           .container-fluid.d-flex (sin align-items propio, o sea stretch por
+           defecto), el <aside> que lo envuelve queda tan alto como la columna
+           de contenido; sticky aprovecha ese alto para "flotar" el menu con
+           el scroll sin salirse de su columna ni superponerse a otra cosa,
+           y se despega justo antes del final del contenido (no fixed, que
+           ignoraria por completo la columna y se superpondria a lo demas). */
+        position: sticky;
+        top: 1.5rem;
+        max-height: calc(100vh - 3rem);
+        overflow-y: auto;
+        /* Scrollbar delgada y discreta en vez de la gris gruesa nativa: se
+           deja visible (no display:none) a proposito, para que en pantallas
+           bajas el usuario siga viendo que hay mas botones debajo. */
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+    }
+    .offcanvas-md .offcanvas-body.sidebar-grupos::-webkit-scrollbar {
+        width: 6px;
+    }
+    .offcanvas-md .offcanvas-body.sidebar-grupos::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .offcanvas-md .offcanvas-body.sidebar-grupos::-webkit-scrollbar-thumb {
+        background-color: rgba(0, 0, 0, 0.2);
+        border-radius: 10px;
     }
 }
 

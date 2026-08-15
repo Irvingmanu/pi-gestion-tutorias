@@ -64,13 +64,13 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
 
     // Variante que reutiliza la conexión/transacción del llamador (no hace commit ni la cierra):
     // la usa SesionIndividualDao.completarSesion() para que la canalización quede en la misma
-    // transacción que el UPDATE de SESION_INDIVIDUAL. Genera el TOKEN_CONFIRMACION y lo deja en
+    // transacción que el UPDATE de SESION_INDIVIDUAL. Genera el ID_TOKEN y lo deja en
     // el objeto "c", pero NO manda el correo aquí — eso debe esperar a que el llamador confirme
     // el commit, para no notificar al encargado de un registro que después se puede revertir.
     public int crearEnTransaccion(Connection con, Canalizacion c) throws SQLException {
         String token = generarToken();
-        String sql = "INSERT INTO CANALIZACION(ID_AREA, ID_MOTIVO, MATRICULA, FECHA_CANALIZACION, ESTATUS, OBSERVACIONES, TOKEN_CONFIRMACION) " +
-                "VALUES(?, ?, ?, SYSDATE, 'Pendiente', ?, ?)";
+        String sql = "INSERT INTO CANALIZACION(ID_AREA, ID_MOTIVO, MATRICULA, FECHA_CANALIZACION, ESTATUS, OBSERVACIONES, ID_TOKEN) " +
+                "VALUES(?, ?, ?, SYSDATE, 'En proceso', ?, ?)";
 
         try (PreparedStatement ps = con.prepareStatement(sql, new String[]{"ID_CANALIZACION"})) {
             ps.setInt(1, c.getIdArea());
@@ -87,7 +87,7 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
             if (filasAfectadas > 0) {
                 try (ResultSet keys = ps.getGeneratedKeys()) {
                     if (keys.next()) {
-                        c.setTokenConfirmacion(token);
+                        c.setIdToken(token);
                         return keys.getInt(1);
                     }
                 }
@@ -100,7 +100,7 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
     // SesionIndividualDao.completarSesion() despues de su propio commit exitoso.
     public void enviarCorreoConfirmacion(Canalizacion c, String baseUrl) {
         Area area = areaDAO.getById(c.getIdArea());
-        if (area == null || area.getCorreoContacto() == null || c.getTokenConfirmacion() == null) {
+        if (area == null || area.getCorreoContacto() == null || c.getIdToken() == null) {
             return;
         }
 
@@ -108,7 +108,7 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
         String nombreAlumno = alumno != null ? (alumno.getNombres() + " " + alumno.getApellidos()) : "N/D";
         String motivoODetalle = c.getNombreMotivo() != null ? c.getNombreMotivo()
                 : (c.getObservaciones() != null ? c.getObservaciones() : "Sin especificar");
-        String link = baseUrl + "/confirmar-canalizacion?token=" + c.getTokenConfirmacion();
+        String link = baseUrl + "/confirmar-canalizacion?token=" + c.getIdToken();
 
         emailSender.enviarConfirmacionCanalizacion(area.getCorreoContacto(), area.getEncargado(), area.getNombre(),
                 nombreAlumno, c.getMatricula(), motivoODetalle, link);
@@ -118,8 +118,8 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
     // del correo. Devuelve "ok", "ya_confirmada" (el link ya se habia usado) o "invalido"
     // (el token no existe).
     public String confirmarPorToken(String token) {
-        String sqlSelect = "SELECT ESTATUS FROM CANALIZACION WHERE TOKEN_CONFIRMACION = ?";
-        String sqlUpdate = "UPDATE CANALIZACION SET ESTATUS = 'Atendida' WHERE TOKEN_CONFIRMACION = ?";
+        String sqlSelect = "SELECT ESTATUS FROM CANALIZACION WHERE ID_TOKEN = ?";
+        String sqlUpdate = "UPDATE CANALIZACION SET ESTATUS = 'Atendido' WHERE ID_TOKEN = ?";
 
         try (Connection con = SQLConnector.getConnection()) {
             String estatusActual = null;
@@ -135,7 +135,7 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
             if (estatusActual == null) {
                 return "invalido";
             }
-            if (!"Pendiente".equals(estatusActual)) {
+            if (!"En proceso".equals(estatusActual)) {
                 return "ya_confirmada";
             }
 
@@ -167,9 +167,10 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
         List<Canalizacion> lista = new ArrayList<>();
         String sql = "SELECT c.ID_CANALIZACION, c.ID_AREA, c.ID_MOTIVO, c.MATRICULA, c.FECHA_CANALIZACION, " +
                 "c.ESTATUS, c.OBSERVACIONES, " +
-                "ar.NOMBRE AS NOMBRE_AREA, ar.ENCARGADO AS ENCARGADO_AREA, " +
+                "ar.NOMBRE AS NOMBRE_AREA, ar.NOMBRES AS NOMBRES_ENCARGADO, " +
+                "ar.APELLIDO_PATERNO AS APELLIDO_PATERNO_ENCARGADO, ar.APELLIDO_MATERNO AS APELLIDO_MATERNO_ENCARGADO, " +
                 "ar.CORREO_CONTACTO AS CORREO_CONTACTO_AREA, ar.ENLACE_CITA AS ENLACE_CITA_AREA, " +
-                "m.NOMBRE_MOTIVO " +
+                "m.NOMBRE AS NOMBRE_MOTIVO " +
                 "FROM CANALIZACION c " +
                 "JOIN AREA_APOYO ar ON ar.ID_AREA = c.ID_AREA " +
                 "LEFT JOIN MOTIVO_AREA m ON m.ID_MOTIVO = c.ID_MOTIVO " +
@@ -196,7 +197,15 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
                     c.setObservaciones(rs.getString("OBSERVACIONES"));
 
                     c.setNombreArea(rs.getString("NOMBRE_AREA"));
-                    c.setEncargadoArea(rs.getString("ENCARGADO_AREA"));
+
+                    String nombresEncargado = rs.getString("NOMBRES_ENCARGADO");
+                    String apPaterno = rs.getString("APELLIDO_PATERNO_ENCARGADO");
+                    String apMaterno = rs.getString("APELLIDO_MATERNO_ENCARGADO");
+                    StringBuilder encargado = new StringBuilder(nombresEncargado != null ? nombresEncargado : "");
+                    if (apPaterno != null && !apPaterno.isBlank()) encargado.append(' ').append(apPaterno);
+                    if (apMaterno != null && !apMaterno.isBlank()) encargado.append(' ').append(apMaterno);
+                    c.setEncargadoArea(encargado.toString());
+
                     c.setCorreoContactoArea(rs.getString("CORREO_CONTACTO_AREA"));
                     c.setEnlaceCitaArea(rs.getString("ENLACE_CITA_AREA"));
                     c.setNombreMotivo(rs.getString("NOMBRE_MOTIVO"));

@@ -6,76 +6,93 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import mx.edu.utez.pigestiontutorias.models.Usuario;
+import mx.edu.utez.pigestiontutorias.models.Alumno;
+import mx.edu.utez.pigestiontutorias.models.Coordinador;
+import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
+import mx.edu.utez.pigestiontutorias.models.dao.CoordinadorDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
-import mx.edu.utez.pigestiontutorias.models.dao.UsuarioDao;
 
 import java.io.IOException;
-import java.util.Map;
 
+// todos los roles inician sesion con su correo institucional + password, y el correo se busca primero en
+// ALUMNO, luego en TUTOR y finalmente en COORDINADOR (regla de negocio del nuevo esquema).
 @WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
 public class LoginServlet extends HttpServlet {
 
-    private final UsuarioDao usuarioDao = new UsuarioDao();
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();
     private final TutorDao tutorDao = new TutorDao();
-
-    private static final Map<String, String> ROLES = Map.of(
-            "coordinador", "Coordinador",
-            "tutor", "Tutor",
-            "alumno", "Alumno"
-    );
-
-    private static final Map<String, String> DESTINOS = Map.of(
-            "coordinador", "gestion-tutores",
-            "tutor", "tutoria-individual",
-            "alumno", "agenda"
-    );
+    private final CoordinadorDAO coordinadorDAO = new CoordinadorDAO();
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        String opcion = request.getParameter("opcionAsignacion");
-        String usuarioInput = request.getParameter("usuario");
+        String correo = request.getParameter("correo");
         String password = request.getParameter("password");
 
-        if (opcion == null || opcion.isBlank()
-                || usuarioInput == null || usuarioInput.isBlank()
-                || password == null || password.isBlank()) {
+        if (correo == null || correo.isBlank() || password == null || password.isBlank()) {
             request.setAttribute("error", "Por favor completa todos los campos.");
             request.getRequestDispatcher("login.jsp").forward(request, response);
             return;
         }
 
-        Usuario usuario = usuarioDao.autenticar(usuarioInput.trim(), password);
-
-        if (usuario == null) {
-            request.setAttribute("error", "Usuario o contraseña incorrectos.");
-            request.getRequestDispatcher("login.jsp").forward(request, response);
-            return;
-        }
-
-        String rolEsperado = ROLES.get(opcion);
-        if (rolEsperado == null || !rolEsperado.equalsIgnoreCase(usuario.getRol())) {
-            request.setAttribute("error", "Usuario o contraseña incorrectos.");
-            request.getRequestDispatcher("login.jsp").forward(request, response);
-            return;
-        }
+        correo = correo.trim();
+        password = password.trim();
         HttpSession session = request.getSession(true);
-        session.setAttribute("usuario", usuario.getIdentificador());
-        session.setAttribute("idUsuario", usuario.getIdUsuario());
-        session.setAttribute("rol", usuario.getRol());
 
-        // Se deja el objeto completo del rol en sesión para que las vistas de
-        // perfil lo consuman directamente por EL, sin scriptlets ni servlet propio.
-        if ("alumno".equals(opcion)) {
-            session.setAttribute("alumno", alumnoDAO.getPerfilCompleto(usuario.getIdUsuario()));
-        } else if ("tutor".equals(opcion)) {
-            session.setAttribute("tutor", tutorDao.getPerfilCompleto(usuario.getIdUsuario()));
+        Alumno alumno = alumnoDAO.findByCorreo(correo);
+        if (alumno != null) {
+            if (!credencialesValidas(alumno.getEstado(), alumno.getPass(), password)) {
+                credencialesInvalidas(request, response);
+                return;
+            }
+            session.setAttribute("usuario", alumno.getCorreoInstitucional());
+            session.setAttribute("rol", "Alumno");
+            session.setAttribute("matricula", alumno.getMatricula());
+            session.setAttribute("alumno", alumnoDAO.getPerfilCompleto(alumno.getMatricula()));
+            response.sendRedirect(request.getContextPath() + "/agenda");
+            return;
         }
 
-        response.sendRedirect(request.getContextPath() + "/" + DESTINOS.get(opcion));
+        Tutor tutor = tutorDao.findByCorreo(correo);
+        if (tutor != null) {
+            if (!credencialesValidas(tutor.getEstado(), tutor.getPass(), password)) {
+                credencialesInvalidas(request, response);
+                return;
+            }
+            session.setAttribute("usuario", tutor.getCorreoInstitucional());
+            session.setAttribute("rol", "Tutor");
+            session.setAttribute("idUsuario", tutor.getNumeroEmpleado());
+            session.setAttribute("tutor", tutorDao.getById(tutor.getNumeroEmpleado()));
+            response.sendRedirect(request.getContextPath() + "/tutoria-individual");
+            return;
+        }
+
+        Coordinador coordinador = coordinadorDAO.findByCorreo(correo);
+        if (coordinador != null) {
+            if (!credencialesValidas(coordinador.getEstado(), coordinador.getPass(), password)) {
+                credencialesInvalidas(request, response);
+                return;
+            }
+            session.setAttribute("usuario", coordinador.getCorreoInstitucional());
+            session.setAttribute("rol", "Coordinador");
+            session.setAttribute("idUsuario", coordinador.getNumeroEmpleado());
+            session.setAttribute("coordinador", coordinador);
+            response.sendRedirect(request.getContextPath() + "/gestion-tutores");
+            return;
+        }
+
+        credencialesInvalidas(request, response);
+    }
+
+    private boolean credencialesValidas(String estado, String passAlmacenada, String passIngresada) {
+        return "S".equals(estado) && passAlmacenada != null && passAlmacenada.equals(passIngresada);
+    }
+
+    private void credencialesInvalidas(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        request.setAttribute("error", "Correo o contraseña incorrectos.");
+        request.getRequestDispatcher("login.jsp").forward(request, response);
     }
 }

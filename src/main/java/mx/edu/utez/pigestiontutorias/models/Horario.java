@@ -7,7 +7,7 @@ public class Horario {
     private String diaSemana;
     private String horaDesde;   // ya formateada como "08:00" para mostrar en el <select>
     private String horaHasta;   // ya formateada como "09:00"
-    private String activo;
+    private String estado;
 
     public Horario() {
     }
@@ -52,12 +52,12 @@ public class Horario {
         this.horaHasta = horaHasta;
     }
 
-    public String getActivo() {
-        return activo;
+    public String getEstado() {
+        return estado;
     }
 
-    public void setActivo(String activo) {
-        this.activo = activo;
+    public void setEstado(String estado) {
+        this.estado = estado;
     }
 
     // Útil para mostrar directo en el <option> del select, ej: "Lunes 08:00 - 09:00"

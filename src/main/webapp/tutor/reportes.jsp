@@ -65,8 +65,8 @@
                 <label for="filtroCuatrimestre" class="form-label fw-bold">Cuatrimestre</label>
                 <select id="filtroCuatrimestre" class="form-select form-control-figma">
                     <option value="">Seleccione el cuatrimestre</option>
-                    <c:forEach var="cuatri" items="${listaCuatrimestres}">
-                        <option value="${cuatri.idCuatrimestre}">${cuatri.numero}°</option>
+                    <c:forEach var="numero" begin="1" end="10">
+                        <option value="${numero}">${numero}°</option>
                     </c:forEach>
                 </select>
             </div>
@@ -74,9 +74,12 @@
                 <label for="filtroGrupo" class="form-label fw-bold">Grupo</label>
                 <select id="filtroGrupo" class="form-select form-control-figma">
                     <option value="">Seleccione el grupo</option>
-                    <c:forEach var="letra" items="${listaLetrasGrupo}">
-                        <option value="${letra.idLetra}">${letra.letra}</option>
-                    </c:forEach>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                    <option value="E">E</option>
+                    <option value="F">F</option>
                 </select>
             </div>
             <div class="col-md-4">
@@ -297,11 +300,11 @@
             params.append('nombreCarrera', selectCarrera.options[selectCarrera.selectedIndex].text);
         }
         if (selectCuatrimestre.value) {
-            params.append('idCuatrimestre', selectCuatrimestre.value);
+            params.append('cuatrimestre', selectCuatrimestre.value);
             params.append('nombreCuatrimestre', selectCuatrimestre.options[selectCuatrimestre.selectedIndex].text);
         }
         if (selectGrupo.value) {
-            params.append('idLetraGrupo', selectGrupo.value);
+            params.append('letra', selectGrupo.value);
             params.append('nombreGrupo', selectGrupo.options[selectGrupo.selectedIndex].text);
         }
         if (desde) params.append('desde', desde);

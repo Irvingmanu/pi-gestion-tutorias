@@ -29,7 +29,7 @@
         </div>
 
         <c:choose>
-            <c:when test="${empty asignaciones}">
+            <c:when test="${empty gruposAsignados}">
                 <div class="alert alert-warning text-center fs-5">
                     No tienes grupos asignados para tutoría.
                 </div>
@@ -42,12 +42,12 @@
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
                                 <label for="grupoAsignado" class="form-label fs-6 fw-bold">Grupo</label>
-                                <select id="grupoAsignado" name="grupoAsignado" class="form-select form-control-figma w-100 fs-6" required>
-                                    <c:if test="${asignaciones.size() > 1}">
+                                <select id="grupoAsignado" name="idGrupo" class="form-select form-control-figma w-100 fs-6" required>
+                                    <c:if test="${gruposAsignados.size() > 1}">
                                         <option value="" selected>Seleccione el grupo</option>
                                     </c:if>
-                                    <c:forEach var="asignacion" items="${asignaciones}">
-                                        <option value="${asignacion.valorOption}">${asignacion.etiqueta}</option>
+                                    <c:forEach var="grupo" items="${gruposAsignados}">
+                                        <option value="${grupo.idGrupo}">${grupo.nombreGrupo}</option>
                                     </c:forEach>
                                 </select>
                                 <div class="invalid-feedback">Selecciona un grupo.</div>
