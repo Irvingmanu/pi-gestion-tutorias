@@ -17,6 +17,10 @@ public class FiltroAutenticacion extends HttpFilter {
     protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws IOException, ServletException {
 
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        response.setHeader("Pragma", "no-cache");
+        response.setDateHeader("Expires", 0);
+
         String requestURI = request.getRequestURI();
         HttpSession session = request.getSession(false);
 
@@ -31,22 +35,16 @@ public class FiltroAutenticacion extends HttpFilter {
 
         boolean isResource = requestURI.contains("/assets/") || requestURI.contains("/includes/");
 
-        // El encargado de un area no tiene cuenta en el sistema: llega a esta ruta desde el
-        // link del correo de confirmacion de canalizacion, sin sesion iniciada. No se agrega
-        // a loginRequest a proposito: si un usuario SI tiene sesion activa y da clic en el link,
-        // debe poder ver igual la pagina de confirmacion, no que lo redirijamos a su panel.
         boolean rutaConfirmacionCanalizacion = requestURI.endsWith("/confirmar-canalizacion")
                 || requestURI.endsWith("/confirmar-canalizacion.jsp");
 
         if (loggedIn) {
-            // También agregamos index.jsp y la raíz "/" a las rutas que no deberían ver si ya tienen sesión
             boolean tryingToAccessLogin = loginRequest || requestURI.endsWith("/index.jsp") || requestURI.equals(request.getContextPath() + "/");
 
             if (tryingToAccessLogin && !requestURI.endsWith("/logout")) {
 
-                // Leemos qué rol tiene el usuario actualmente
                 String rol = (String) session.getAttribute("rol");
-                String destino = "/"; // Destino por defecto
+                String destino = "/";
 
                 if ("Coordinador".equalsIgnoreCase(rol)) {
                     destino = "/gestion-tutores";
@@ -56,7 +54,6 @@ public class FiltroAutenticacion extends HttpFilter {
                     destino = "/agenda";
                 }
 
-                // Lo mandamos a su panel correspondiente
                 response.sendRedirect(request.getContextPath() + destino);
                 return;
             } else {

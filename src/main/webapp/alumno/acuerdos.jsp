@@ -29,7 +29,7 @@
         <div class="form-wrap-figma" style="max-width: 100%;">
 
             <c:choose>
-                <c:when test="${empty listaIndividuales and empty listaGrupales}">
+                <c:when test="${empty listaAcuerdos}">
                     <div class="p-4 text-center bg-white rounded shadow-sm border">
                         <p class="fs-5 text-muted mb-0">No hay acuerdos registrados.</p>
                     </div>
@@ -37,24 +37,13 @@
                 <c:otherwise>
                     <div class="d-flex flex-column gap-3">
 
-                        <c:forEach items="${listaIndividuales}" var="individual">
+                        <c:forEach items="${listaAcuerdos}" var="acuerdo">
                             <div class="d-flex align-items-center gap-4 p-4 bg-white rounded-figma shadow-sm border">
-                                <img src="${pageContext.request.contextPath}/assets/img/alumno/acuerdos.png" alt="Acuerdo Individual" style="width: 40px;">
+                                <img src="${pageContext.request.contextPath}/assets/img/alumno/acuerdos.png" alt="Acuerdo ${acuerdo.tipo}" style="width: 40px;">
                                 <div>
-                                    <div class="fw-bold fs-6">Acuerdo Individual</div>
-                                    <div class="text-muted">${individual.fecha}</div>
-                                    <p class="mb-0 mt-2">${individual.acuerdos}</p>
-                                </div>
-                            </div>
-                        </c:forEach>
-
-                        <c:forEach items="${listaGrupales}" var="grupal">
-                            <div class="d-flex align-items-center gap-4 p-4 bg-white rounded-figma shadow-sm border">
-                                <img src="${pageContext.request.contextPath}/assets/img/alumno/acuerdos.png" alt="Acuerdo Grupal" style="width: 40px;">
-                                <div>
-                                    <div class="fw-bold fs-6">Acuerdo Grupal</div>
-                                    <div class="text-muted">${grupal.fecha}</div>
-                                    <p class="mb-0 mt-2">${grupal.acuerdos}</p>
+                                    <div class="fw-bold fs-6">Acuerdo ${acuerdo.tipo}</div>
+                                    <div class="text-muted">${acuerdo.fecha}</div>
+                                    <p class="mb-0 mt-2">${acuerdo.acuerdos}</p>
                                 </div>
                             </div>
                         </c:forEach>

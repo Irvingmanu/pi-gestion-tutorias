@@ -53,7 +53,9 @@
             </ul>
 
             <div class="d-flex justify-content-end mt-4">
-                <button type="button" class="btn btn-cancelar-figma rounded-figma px-4" id="btnCerrarSesion">
+                <button type="button" class="btn btn-cancelar-figma rounded-figma px-4"
+                        id="btnCerrarSesion"
+                        data-context-path="${pageContext.request.contextPath}">
                     Cerrar sesión
                 </button>
             </div>
@@ -65,18 +67,6 @@
 
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
-<script>
-    document.getElementById('btnCerrarSesion').addEventListener('click', function () {
-        mostrarConfirmacion(
-            'advertencia',
-            '¿Cerrar sesión?',
-            'Tendrás que iniciar sesión de nuevo para continuar.',
-            'Cerrar sesión',
-            function () {
-                window.location.href = '${pageContext.request.contextPath}/logout';
-            }
-        );
-    });
-</script>
+<script src="${pageContext.request.contextPath}/assets/js/logout.js"></script>
 </body>
 </html>

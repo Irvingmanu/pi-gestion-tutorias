@@ -14,6 +14,13 @@ function confirmarCancelacionArea() {
     );
 }
 
+/**
+ *
+ * @param evento
+ * @returns {boolean}
+ *
+ */
+
 // Intercepta el submit del formulario principal del area (nueva o edicion)
 function confirmarGuardarArea(evento) {
     evento.preventDefault();

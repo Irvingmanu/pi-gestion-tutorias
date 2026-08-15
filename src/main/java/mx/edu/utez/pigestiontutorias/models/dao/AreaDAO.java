@@ -83,8 +83,7 @@ public class AreaDAO implements Dao<Area, Integer> {
     @Override
     public List<Area> getAll() {
         List<Area> listaAreas = new ArrayList<>();
-        String sql = "SELECT * FROM AREA_APOYO";
-
+        String sql = "SELECT * FROM AREA_APOYO ORDER BY ID_AREA DESC";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql);
              ResultSet rs = ps.executeQuery()) {
