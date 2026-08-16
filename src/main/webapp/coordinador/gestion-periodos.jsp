@@ -82,6 +82,7 @@
                                 <th>Nombre</th>
                                 <th>Fecha Inicio</th>
                                 <th>Fecha Fin</th>
+                                <th>Objetivo Grupales</th>
                                 <th>Estado</th>
                                 <th>Acciones</th>
                             </tr>
@@ -92,6 +93,7 @@
                                     <td>${periodo.nombre}</td>
                                     <td><fmt:formatDate value="${periodo.fechaInicio}" pattern="dd/MM/yyyy" /></td>
                                     <td><fmt:formatDate value="${periodo.fechaFin}" pattern="dd/MM/yyyy" /></td>
+                                    <td>${periodo.asistenciasGrupales}</td>
                                     <td>
                                         <c:choose>
                                             <c:when test="${periodo.estado == 'N'}"><span class="badge-inactivo">Baja</span></c:when>
@@ -100,6 +102,15 @@
                                     </td>
                                     <td>
                                         <div class="d-flex justify-content-center gap-2">
+                                            <button type="button" class="btn-accion btn-editar"
+                                                    onclick="prepararEdicionPeriodo(this)"
+                                                    data-id="${periodo.idPeriodo}"
+                                                    data-nombre="${periodo.nombre}"
+                                                    data-fecha-inicio="<fmt:formatDate value='${periodo.fechaInicio}' pattern='yyyy-MM-dd'/>"
+                                                    data-fecha-fin="<fmt:formatDate value='${periodo.fechaFin}' pattern='yyyy-MM-dd'/>"
+                                                    data-objetivo="${periodo.asistenciasGrupales}">
+                                                <img src="${pageContext.request.contextPath}/assets/img/coordinador/editar.png" width="16" alt="Editar">
+                                            </button>
                                             <c:if test="${periodo.estado != 'N'}">
                                                 <button type="button" class="btn-accion btn-eliminar" onclick="prepararEliminacionPeriodo('${periodo.idPeriodo}')">
                                                     <img src="${pageContext.request.contextPath}/assets/img/coordinador/eliminar.png" width="16" alt="Eliminar">
@@ -126,6 +137,14 @@
 
                 <form id="formGuardar" action="${pageContext.request.contextPath}/gestion-periodos" method="POST" class="asignacion-form-wrap mt-3 needs-validation" novalidate>
 
+                    <input type="hidden" id="accionPeriodo" name="accion" value="">
+                    <input type="hidden" id="idPeriodoEdit" name="idPeriodo" value="">
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0" id="tituloFormularioPeriodo">Registrar nuevo periodo</h5>
+                        <button type="button" id="btnCancelarEdicionPeriodo" class="btn btn-link d-none" onclick="cancelarEdicionPeriodo()">Cancelar edición</button>
+                    </div>
+
                     <div class="mb-4">
                         <label class="campo-label fs-6 fw-bold" for="nombre">Nombre del periodo</label>
                         <input type="text" id="nombre" name="nombre" class="form-control form-control-figma w-100 fs-6"
@@ -146,6 +165,14 @@
                                    style="cursor: pointer;" onclick="this.showPicker()" required>
                             <div class="invalid-feedback">La fecha de fin debe ser posterior a la de inicio.</div>
                         </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="campo-label fs-6 fw-bold" for="asistenciasGrupales">Objetivo de tutorías grupales por tutor</label>
+                        <input type="number" id="asistenciasGrupales" name="asistenciasGrupales" class="form-control form-control-figma w-100 fs-6"
+                               placeholder="Ej. 15" min="0" step="1" required>
+                        <div class="invalid-feedback">Indica cuántas tutorías grupales debe impartir cada tutor en este periodo.</div>
+                        <div class="form-text">Se usará para medir el avance de cada tutor en el reporte de Tutorías Grupales.</div>
                     </div>
 
                     <div class="text-center mt-4">

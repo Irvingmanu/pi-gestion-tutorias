@@ -27,19 +27,27 @@ public class ReportesDao {
 
     public ReporteResumen generarReporte(Integer idTutor, Integer idCarrera, Integer cuatrimestre,
                                          String letra, LocalDate desde, LocalDate hasta) {
+        return generarReporte(idTutor, idCarrera, cuatrimestre, letra, desde, hasta, null);
+    }
+
+    // Sobrecarga con matricula: cuando el buscador de alumnos del dashboard selecciona un
+    // alumno, las mismas tarjetas/graficas se recalculan acotadas a ESE alumno en vez del
+    // agregado general, reutilizando exactamente las mismas consultas.
+    public ReporteResumen generarReporte(Integer idTutor, Integer idCarrera, Integer cuatrimestre,
+                                         String letra, LocalDate desde, LocalDate hasta, String matricula) {
         ReporteResumen reporte = new ReporteResumen();
         Date sqlDesde = Date.valueOf(desde);
         Date sqlHasta = Date.valueOf(hasta);
 
         try (Connection con = SQLConnector.getConnection()) {
-            reporte.totalAtendidos = contarAlumnosAtendidos(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra);
-            reporte.totalPidieronTutorias = contarPidieronTutorias(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra);
-            reporte.totalCanalizados = contarCanalizados(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra);
-            reporte.totalPendientes = contarPendientes(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra);
-            reporte.totalGruposAtendidos = contarGruposAtendidos(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra);
-            reporte.totalAsistencias = contarAsistencias(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra);
-            reporte.distribucionCanalizados = distribucionPorArea(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra);
-            reporte.canalizaciones = listarCanalizaciones(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra);
+            reporte.totalAtendidos = contarAlumnosAtendidos(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra, matricula);
+            reporte.totalPidieronTutorias = contarPidieronTutorias(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra, matricula);
+            reporte.totalCanalizados = contarCanalizados(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra, matricula);
+            reporte.totalPendientes = contarPendientes(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra, matricula);
+            reporte.totalGruposAtendidos = contarGruposAtendidos(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra, matricula);
+            reporte.totalAsistencias = contarAsistencias(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra, matricula);
+            reporte.distribucionCanalizados = distribucionPorArea(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra, matricula);
+            reporte.canalizaciones = listarCanalizaciones(con, sqlDesde, sqlHasta, idTutor, idCarrera, cuatrimestre, letra, matricula);
         } catch (SQLException e) {
             System.err.println("Error al generar el reporte: " + e.getMessage());
             e.printStackTrace();
@@ -48,11 +56,12 @@ public class ReportesDao {
         return reporte;
     }
 
-    // Agrega los filtros opcionales de tutor/carrera/cuatrimestre/letra sobre un alias de
-    // ALUMNO que ya trae ID_GRUPO. El filtro de tutor exige una asignacion activa sobre
-    // ese mismo grupo; carrera/cuatrimestre/letra se validan contra GRUPO.
+    // Agrega los filtros opcionales de tutor/carrera/cuatrimestre/letra/matricula sobre un alias
+    // de ALUMNO que ya trae ID_GRUPO. El filtro de tutor exige una asignacion activa sobre
+    // ese mismo grupo; carrera/cuatrimestre/letra se validan contra GRUPO; matricula acota
+    // el reporte a un solo alumno (buscador de alumnos del dashboard).
     private void agregarFiltrosAlumno(StringBuilder sql, List<Object> params, String aliasAlumno,
-                                      Integer idTutor, Integer idCarrera, Integer cuatrimestre, String letra) {
+                                      Integer idTutor, Integer idCarrera, Integer cuatrimestre, String letra, String matricula) {
         if (idTutor != null) {
             sql.append(" AND EXISTS (SELECT 1 FROM ASIGNACION_TUTOR asg " +
                     "WHERE asg.ID_TUTOR = ? AND asg.ESTADO = 'S' AND asg.ID_GRUPO = ").append(aliasAlumno).append(".ID_GRUPO) ");
@@ -73,6 +82,10 @@ public class ReportesDao {
                 params.add(letra);
             }
             sql.append(") ");
+        }
+        if (matricula != null && !matricula.isBlank()) {
+            sql.append(" AND ").append(aliasAlumno).append(".MATRICULA = ? ");
+            params.add(matricula);
         }
     }
 
@@ -100,7 +113,7 @@ public class ReportesDao {
 
     // 1. Alumnos atendidos: al menos una sesión individual "Completado"
     private int contarAlumnosAtendidos(Connection con, Date desde, Date hasta, Integer idTutor,
-                                       Integer idCarrera, Integer cuatrimestre, String letra) throws SQLException {
+                                       Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(DISTINCT a.MATRICULA) AS TOTAL " +
                         "FROM ALUMNO a " +
@@ -110,14 +123,14 @@ public class ReportesDao {
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra);
+        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra, matricula);
 
         return ejecutarConteo(con, sql.toString(), params);
     }
 
     // 2. Alumnos que pidieron tutoría: al menos una solicitud registrada
     private int contarPidieronTutorias(Connection con, Date desde, Date hasta, Integer idTutor,
-                                       Integer idCarrera, Integer cuatrimestre, String letra) throws SQLException {
+                                       Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(DISTINCT a.MATRICULA) AS TOTAL " +
                         "FROM ALUMNO a " +
@@ -127,31 +140,31 @@ public class ReportesDao {
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra);
+        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra, matricula);
 
         return ejecutarConteo(con, sql.toString(), params);
     }
 
     // 3. Alumnos canalizados a algún área de apoyo
     private int contarCanalizados(Connection con, Date desde, Date hasta, Integer idTutor,
-                                  Integer idCarrera, Integer cuatrimestre, String letra) throws SQLException {
+                                  Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(DISTINCT a.MATRICULA) AS TOTAL " +
                         "FROM ALUMNO a " +
                         "JOIN CANALIZACION c ON c.MATRICULA = a.MATRICULA " +
-                        "WHERE c.FECHA_CANALIZACION BETWEEN ? AND ? ");
+                        "WHERE TRUNC(c.FECHA_CANALIZACION) BETWEEN ? AND ? ");
 
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra);
+        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra, matricula);
 
         return ejecutarConteo(con, sql.toString(), params);
     }
 
     // 4. Solicitudes pendientes de responder
     private int contarPendientes(Connection con, Date desde, Date hasta, Integer idTutor,
-                                 Integer idCarrera, Integer cuatrimestre, String letra) throws SQLException {
+                                 Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(*) AS TOTAL " +
                         "FROM ALUMNO a " +
@@ -161,14 +174,14 @@ public class ReportesDao {
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra);
+        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra, matricula);
 
         return ejecutarConteo(con, sql.toString(), params);
     }
 
-    // 5. Sesiones grupales completadas
+    // 5. Sesiones grupales completadas (si viene matricula, solo las del grupo de ese alumno)
     private int contarGruposAtendidos(Connection con, Date desde, Date hasta, Integer idTutor,
-                                      Integer idCarrera, Integer cuatrimestre, String letra) throws SQLException {
+                                      Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(*) AS TOTAL FROM SESION_GRUPAL sg " +
                         "WHERE sg.ESTADO = 'Completado' AND sg.FECHA BETWEEN ? AND ? ");
@@ -196,13 +209,18 @@ public class ReportesDao {
             }
             sql.append(") ");
         }
+        if (matricula != null && !matricula.isBlank()) {
+            sql.append(" AND EXISTS (SELECT 1 FROM ALUMNO au WHERE au.ID_GRUPO = sg.ID_GRUPO AND au.MATRICULA = ?) ");
+            params.add(matricula);
+        }
 
         return ejecutarConteo(con, sql.toString(), params);
     }
 
-    // 6. Asistencias 'Presente' registradas en sesiones grupales
+    // 6. Asistencias 'Presente' registradas en sesiones grupales (si viene matricula, solo las
+    // de ese alumno especifico, no las de todo su grupo)
     private int contarAsistencias(Connection con, Date desde, Date hasta, Integer idTutor,
-                                  Integer idCarrera, Integer cuatrimestre, String letra) throws SQLException {
+                                  Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
                 "SELECT COUNT(*) AS TOTAL " +
                         "FROM ASISTENCIA asi " +
@@ -232,13 +250,17 @@ public class ReportesDao {
             }
             sql.append(") ");
         }
+        if (matricula != null && !matricula.isBlank()) {
+            sql.append(" AND asi.MATRICULA = ? ");
+            params.add(matricula);
+        }
 
         return ejecutarConteo(con, sql.toString(), params);
     }
 
     // 7. Distribución de canalizados por área de apoyo (gráfica de pastel)
     private Map<String, Integer> distribucionPorArea(Connection con, Date desde, Date hasta, Integer idTutor,
-                                                     Integer idCarrera, Integer cuatrimestre, String letra) throws SQLException {
+                                                     Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         Map<String, Integer> distribucion = new LinkedHashMap<>();
 
         StringBuilder sql = new StringBuilder(
@@ -246,12 +268,12 @@ public class ReportesDao {
                         "FROM ALUMNO a " +
                         "JOIN CANALIZACION c ON c.MATRICULA = a.MATRICULA " +
                         "JOIN AREA_APOYO ar ON ar.ID_AREA = c.ID_AREA " +
-                        "WHERE c.FECHA_CANALIZACION BETWEEN ? AND ? ");
+                        "WHERE TRUNC(c.FECHA_CANALIZACION) BETWEEN ? AND ? ");
 
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra);
+        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra, matricula);
         sql.append(" GROUP BY ar.NOMBRE ORDER BY TOTAL DESC");
 
         try (PreparedStatement ps = con.prepareStatement(sql.toString())) {
@@ -269,7 +291,7 @@ public class ReportesDao {
     // 8. Listado detallado de canalizaciones (para la tabla de Reportes, no solo el conteo
     // agregado que ya da distribucionPorArea).
     private List<Canalizacion> listarCanalizaciones(Connection con, Date desde, Date hasta, Integer idTutor,
-                                                     Integer idCarrera, Integer cuatrimestre, String letra) throws SQLException {
+                                                    Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         List<Canalizacion> lista = new ArrayList<>();
 
         StringBuilder sql = new StringBuilder(
@@ -279,12 +301,12 @@ public class ReportesDao {
                         "JOIN CANALIZACION c ON c.MATRICULA = a.MATRICULA " +
                         "JOIN AREA_APOYO ar ON ar.ID_AREA = c.ID_AREA " +
                         "LEFT JOIN MOTIVO_AREA m ON m.ID_MOTIVO = c.ID_MOTIVO " +
-                        "WHERE c.FECHA_CANALIZACION BETWEEN ? AND ? ");
+                        "WHERE TRUNC(c.FECHA_CANALIZACION) BETWEEN ? AND ? ");
 
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra);
+        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra, matricula);
         sql.append(" ORDER BY c.FECHA_CANALIZACION DESC");
 
         try (PreparedStatement ps = con.prepareStatement(sql.toString())) {

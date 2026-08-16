@@ -1,6 +1,7 @@
 package mx.edu.utez.pigestiontutorias.models.dao;
 
 import mx.edu.utez.pigestiontutorias.models.Solicitud;
+import mx.edu.utez.pigestiontutorias.models.SolicitudPendienteDTO;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
 import java.sql.*;
@@ -27,7 +28,7 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
 
     // ---------------------------------------------------------------
     // 1. Insertar una nueva solicitud (la crea el alumno)
-    // ---------------------------------------------------------------
+
     @Override
     public boolean create(Solicitud solicitud) {
         String sql = "INSERT INTO SOLICITUD_TUTORIA " +
@@ -286,6 +287,158 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         }
 
         return lista;
+    }
+
+    // ---------------------------------------------------------------
+    // 8. Modal "Solicitudes Pendientes" del reporte del coordinador: solicitudes con
+    // ESTATUS = 'Pendiente', con el alumno/grupo que la creo y el tutor al que va dirigida
+    // (para poder mandarle un recordatorio por correo desde el detalle). Reutiliza los mismos
+    // filtros opcionales de tutor/carrera/cuatrimestre/letra/fechas que el resto de los modales
+    // de Reportes Globales, para que el desglose sea coherente con el KPI de la tarjeta.
+    // ---------------------------------------------------------------
+    public List<SolicitudPendienteDTO> getSolicitudesPendientesGlobal(Integer idTutor, Integer idCarrera,
+                                                                      Integer cuatrimestre, String letra,
+                                                                      Date desde, Date hasta) {
+        return getSolicitudesPendientesGlobal(idTutor, idCarrera, cuatrimestre, letra, desde, hasta, null);
+    }
+
+    // Sobrecarga con matricula: cuando el buscador de alumnos del dashboard selecciona un
+    // alumno, el modal "Pendientes" se acota a ese alumno en vez del filtro/tutor general.
+    public List<SolicitudPendienteDTO> getSolicitudesPendientesGlobal(Integer idTutor, Integer idCarrera,
+                                                                      Integer cuatrimestre, String letra,
+                                                                      Date desde, Date hasta, String matricula) {
+        List<SolicitudPendienteDTO> lista = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT s.ID_SOLICITUD, s.MATRICULA, s.ASUNTO, s.DESCRIPCION, s.ESTATUS, " +
+                        "s.FECHA_PROPUESTA, s.HORA_PROPUESTA, s.DURACION, " +
+                        "a.NOMBRES AS NOMBRES_ALUMNO, a.APELLIDO_PATERNO AS AP_ALUMNO, a.APELLIDO_MATERNO AS AM_ALUMNO, " +
+                        "car.NOMBRE AS NOMBRE_CARRERA, g.CUATRIMESTRE, g.LETRA, " +
+                        "t.NUMERO_EMPLEADO AS ID_TUTOR, t.NOMBRES AS NOMBRES_TUTOR, " +
+                        "t.APELLIDO_PATERNO AS AP_TUTOR, t.APELLIDO_MATERNO AS AM_TUTOR, " +
+                        "t.CORREO_INSTITUCIONAL AS CORREO_TUTOR " +
+                        "FROM SOLICITUD_TUTORIA s " +
+                        "JOIN ALUMNO a ON a.MATRICULA = s.MATRICULA " +
+                        "JOIN GRUPO g ON g.ID_GRUPO = a.ID_GRUPO " +
+                        "JOIN CARRERA car ON car.ID_CARRERA = g.ID_CARRERA " +
+                        "JOIN TUTOR t ON t.NUMERO_EMPLEADO = s.ID_TUTOR " +
+                        "WHERE s.ESTATUS = 'Pendiente' AND TRUNC(s.FECHA_REGISTRO) BETWEEN ? AND ? ");
+
+        List<Object> params = new ArrayList<>();
+        params.add(desde);
+        params.add(hasta);
+
+        if (idTutor != null) {
+            sql.append(" AND s.ID_TUTOR = ? ");
+            params.add(idTutor);
+        }
+        if (idCarrera != null) {
+            sql.append(" AND g.ID_CARRERA = ? ");
+            params.add(idCarrera);
+        }
+        if (cuatrimestre != null) {
+            sql.append(" AND g.CUATRIMESTRE = ? ");
+            params.add(cuatrimestre);
+        }
+        if (letra != null && !letra.isBlank()) {
+            sql.append(" AND g.LETRA = ? ");
+            params.add(letra);
+        }
+        if (matricula != null && !matricula.isBlank()) {
+            sql.append(" AND s.MATRICULA = ? ");
+            params.add(matricula);
+        }
+        sql.append(" ORDER BY s.FECHA_PROPUESTA ASC");
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++) {
+                Object valor = params.get(i);
+                if (valor instanceof Date) {
+                    ps.setDate(i + 1, (Date) valor);
+                } else if (valor instanceof String) {
+                    ps.setString(i + 1, (String) valor);
+                } else {
+                    ps.setInt(i + 1, (Integer) valor);
+                }
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapearSolicitudPendiente(rs));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener las solicitudes pendientes: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return lista;
+    }
+
+    // Detalle de una sola solicitud pendiente (pantalla de "Ver detalles" + boton de
+    // recordatorio por correo al tutor): mismo mapeo que getSolicitudesPendientesGlobal
+    // pero filtrado por ID_SOLICITUD, sin exigir ESTATUS = 'Pendiente' (por si ya fue
+    // atendida entre que se cargo la lista y se dio clic en el boton).
+    public SolicitudPendienteDTO getDetalleParaRecordatorio(int idSolicitud) {
+        String sql = "SELECT s.ID_SOLICITUD, s.MATRICULA, s.ASUNTO, s.DESCRIPCION, s.ESTATUS, " +
+                "s.FECHA_PROPUESTA, s.HORA_PROPUESTA, s.DURACION, " +
+                "a.NOMBRES AS NOMBRES_ALUMNO, a.APELLIDO_PATERNO AS AP_ALUMNO, a.APELLIDO_MATERNO AS AM_ALUMNO, " +
+                "car.NOMBRE AS NOMBRE_CARRERA, g.CUATRIMESTRE, g.LETRA, " +
+                "t.NUMERO_EMPLEADO AS ID_TUTOR, t.NOMBRES AS NOMBRES_TUTOR, " +
+                "t.APELLIDO_PATERNO AS AP_TUTOR, t.APELLIDO_MATERNO AS AM_TUTOR, " +
+                "t.CORREO_INSTITUCIONAL AS CORREO_TUTOR " +
+                "FROM SOLICITUD_TUTORIA s " +
+                "JOIN ALUMNO a ON a.MATRICULA = s.MATRICULA " +
+                "JOIN GRUPO g ON g.ID_GRUPO = a.ID_GRUPO " +
+                "JOIN CARRERA car ON car.ID_CARRERA = g.ID_CARRERA " +
+                "JOIN TUTOR t ON t.NUMERO_EMPLEADO = s.ID_TUTOR " +
+                "WHERE s.ID_SOLICITUD = ?";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, idSolicitud);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapearSolicitudPendiente(rs);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener el detalle de la solicitud: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private SolicitudPendienteDTO mapearSolicitudPendiente(ResultSet rs) throws SQLException {
+        SolicitudPendienteDTO dto = new SolicitudPendienteDTO();
+        dto.setIdSolicitud(rs.getInt("ID_SOLICITUD"));
+        dto.setMatricula(rs.getString("MATRICULA"));
+        dto.setAsunto(rs.getString("ASUNTO"));
+        dto.setDescripcion(rs.getString("DESCRIPCION"));
+        dto.setEstatus(rs.getString("ESTATUS"));
+        dto.setFechaPropuesta(rs.getDate("FECHA_PROPUESTA"));
+        dto.setHoraPropuesta(rs.getString("HORA_PROPUESTA"));
+        int duracion = rs.getInt("DURACION");
+        dto.setDuracion(rs.wasNull() ? null : duracion);
+
+        String apMaternoAlumno = rs.getString("AM_ALUMNO");
+        String apellidosAlumno = rs.getString("AP_ALUMNO")
+                + (apMaternoAlumno != null && !apMaternoAlumno.isBlank() ? " " + apMaternoAlumno : "");
+        dto.setNombreAlumno(rs.getString("NOMBRES_ALUMNO") + " " + apellidosAlumno);
+        dto.setGrupoAsignado(rs.getString("NOMBRE_CARRERA") + " " + rs.getInt("CUATRIMESTRE") + "°" + rs.getString("LETRA"));
+
+        dto.setIdTutor(rs.getInt("ID_TUTOR"));
+        String apMaternoTutor = rs.getString("AM_TUTOR");
+        String apellidosTutor = rs.getString("AP_TUTOR")
+                + (apMaternoTutor != null && !apMaternoTutor.isBlank() ? " " + apMaternoTutor : "");
+        dto.setNombreTutor(rs.getString("NOMBRES_TUTOR") + " " + apellidosTutor);
+        dto.setCorreoTutor(rs.getString("CORREO_TUTOR"));
+
+        return dto;
     }
 
     // ---------------------------------------------------------------

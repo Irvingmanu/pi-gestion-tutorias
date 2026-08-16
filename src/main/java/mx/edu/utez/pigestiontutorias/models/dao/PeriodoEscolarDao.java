@@ -14,7 +14,7 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
 
     @Override
     public boolean create(PeriodoEscolar p) {
-        String sql = "INSERT INTO PERIODO_ESCOLAR (NOMBRE, FECHA_INICIO, FECHA_FIN, ESTADO) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO PERIODO_ESCOLAR (NOMBRE, FECHA_INICIO, FECHA_FIN, ESTADO, ASISTENCIASGRUPALES) VALUES (?, ?, ?, ?, ?)";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
@@ -22,6 +22,7 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
             ps.setDate(2, p.getFechaInicio());
             ps.setDate(3, p.getFechaFin());
             ps.setString(4, p.getEstado() != null ? p.getEstado() : "S");
+            ps.setInt(5, p.getAsistenciasGrupales());
 
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -71,14 +72,15 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
 
     @Override
     public boolean update(PeriodoEscolar p) {
-        String sql = "UPDATE PERIODO_ESCOLAR SET NOMBRE = ?, FECHA_INICIO = ?, FECHA_FIN = ? WHERE ID_PERIODO = ?";
+        String sql = "UPDATE PERIODO_ESCOLAR SET NOMBRE = ?, FECHA_INICIO = ?, FECHA_FIN = ?, ASISTENCIASGRUPALES = ? WHERE ID_PERIODO = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 
             ps.setString(1, p.getNombre());
             ps.setDate(2, p.getFechaInicio());
             ps.setDate(3, p.getFechaFin());
-            ps.setInt(4, p.getIdPeriodo());
+            ps.setInt(4, p.getAsistenciasGrupales());
+            ps.setInt(5, p.getIdPeriodo());
 
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -163,6 +165,27 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         return null;
     }
 
+    // Igual que existeNombre, pero excluyendo el propio registro: se usa al editar un periodo
+    // para no rechazar el nombre contra si mismo cuando no cambio.
+    public boolean existeNombreParaOtro(String nombre, int idPeriodoExcluir) {
+        String sql = "SELECT COUNT(*) FROM PERIODO_ESCOLAR WHERE UPPER(NOMBRE) = UPPER(?) AND ID_PERIODO <> ?";
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, nombre);
+            ps.setInt(2, idPeriodoExcluir);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al validar el nombre del periodo: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public boolean existeNombre(String nombre) {
         String sql = "SELECT COUNT(*) FROM PERIODO_ESCOLAR WHERE UPPER(NOMBRE) = UPPER(?)";
         try (Connection con = SQLConnector.getConnection();
@@ -188,6 +211,7 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         p.setFechaInicio(rs.getDate("FECHA_INICIO"));
         p.setFechaFin(rs.getDate("FECHA_FIN"));
         p.setEstado(rs.getString("ESTADO"));
+        p.setAsistenciasGrupales(rs.getInt("ASISTENCIASGRUPALES"));
         return p;
     }
 }

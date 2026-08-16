@@ -164,8 +164,18 @@ body {
     border-radius: var(--radius-figma) !important;
 }
 .form-control-figma:focus {
-    border-color: var(--borde-campo);
-    box-shadow: none;
+    border-color: var(--utez-green);
+    box-shadow: 0 0 0 0.2rem rgba(0, 139, 116, 0.25);
+}
+
+/* Ajuste global: cualquier <input>/<select>/checkbox de Bootstrap puro (sin la clase
+   -figma) tambien debe usar el foco verde institucional en vez del azul por defecto de
+   Bootstrap (--bs-primary), para mantener coherencia en toda la app. */
+.form-control:focus,
+.form-select:focus,
+.form-check-input:focus {
+    border-color: var(--utez-green);
+    box-shadow: 0 0 0 0.2rem rgba(0, 139, 116, 0.25);
 }
 .form-control-figma::placeholder {
     color: var(--placeholder-color);
@@ -206,8 +216,8 @@ body {
 .select2-container--bootstrap-5.select2-container--open .select2-selection,
 .select2-container--bootstrap-5.select2-container--focus .select2-selection--single,
 .select2-container--bootstrap-5.select2-container--open .select2-selection--single {
-    border-color: var(--borde-campo) !important;
-    box-shadow: none !important;
+    border-color: var(--utez-green) !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 139, 116, 0.25) !important;
 }
 
 /* Select2 inyecta el menu flotante (.select2-dropdown) como hijo directo de <body>,
@@ -224,8 +234,8 @@ body {
 }
 .select2-search--dropdown .select2-search__field:focus {
     outline: none !important;
-    box-shadow: none !important;
-    border-color: var(--borde-campo) !important;
+    box-shadow: 0 0 0 0.2rem rgba(0, 139, 116, 0.25) !important;
+    border-color: var(--utez-green) !important;
 }
 .select2-results__option--highlighted[aria-selected] {
     background-color: var(--utez-green) !important;

@@ -1,5 +1,6 @@
 package mx.edu.utez.pigestiontutorias.models.dao;
 
+import mx.edu.utez.pigestiontutorias.models.AtencionAlumnoDTO;
 import mx.edu.utez.pigestiontutorias.models.Canalizacion;
 import mx.edu.utez.pigestiontutorias.models.SesionIndividual;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
@@ -258,6 +259,111 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
                 try { con.close(); } catch (SQLException ex) { ex.printStackTrace(); }
             }
         }
+    }
+
+    // Modal "Alumnos Atendidos" del reporte del coordinador: una fila por cada sesion
+    // individual/espontanea COMPLETADA, excluyendo estrictamente las grupales (viven en
+    // SESION_GRUPAL, tabla distinta). Reutiliza los mismos filtros opcionales que
+    // ReportesDao (idTutor/idCarrera/cuatrimestre/letra/rango de fechas) para que el
+    // desglose sea coherente con el KPI de la tarjeta.
+    public List<AtencionAlumnoDTO> getAtencionesIndividuales(Integer idTutor, Integer idCarrera, Integer cuatrimestre,
+                                                             String letra, Date desde, Date hasta) {
+        return getAtencionesIndividuales(idTutor, idCarrera, cuatrimestre, letra, desde, hasta, null);
+    }
+
+    // Sobrecarga con matricula: cuando el buscador de alumnos del dashboard selecciona un
+    // alumno, el modal "Alumnos Atendidos" se acota a ese alumno en vez del filtro/tutor general.
+    public List<AtencionAlumnoDTO> getAtencionesIndividuales(Integer idTutor, Integer idCarrera, Integer cuatrimestre,
+                                                             String letra, Date desde, Date hasta, String matricula) {
+        List<AtencionAlumnoDTO> lista = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT si.ID_SESION_INDIVIDUAL, si.ORIGEN, si.FECHA, si.HORA, si.ESTADO, " +
+                        "si.TEMAS_TRATADOS, si.ACUERDOS, si.MATRICULA, " +
+                        "a.NOMBRES AS NOMBRES_ALUMNO, a.APELLIDO_PATERNO AS AP_ALUMNO, a.APELLIDO_MATERNO AS AM_ALUMNO, " +
+                        "car.NOMBRE AS NOMBRE_CARRERA, g.CUATRIMESTRE, g.LETRA, " +
+                        "ar.NOMBRE AS NOMBRE_AREA, m.NOMBRE AS NOMBRE_MOTIVO " +
+                        "FROM SESION_INDIVIDUAL si " +
+                        "JOIN ALUMNO a ON a.MATRICULA = si.MATRICULA " +
+                        "JOIN GRUPO g ON g.ID_GRUPO = a.ID_GRUPO " +
+                        "JOIN CARRERA car ON car.ID_CARRERA = g.ID_CARRERA " +
+                        "LEFT JOIN CANALIZACION c ON c.ID_CANALIZACION = si.ID_CANALIZACION " +
+                        "LEFT JOIN AREA_APOYO ar ON ar.ID_AREA = c.ID_AREA " +
+                        "LEFT JOIN MOTIVO_AREA m ON m.ID_MOTIVO = c.ID_MOTIVO " +
+                        "WHERE si.ESTADO = 'Completado' AND si.FECHA BETWEEN ? AND ? ");
+
+        List<Object> params = new ArrayList<>();
+        params.add(desde);
+        params.add(hasta);
+
+        if (idTutor != null) {
+            sql.append(" AND si.ID_TUTOR = ? ");
+            params.add(idTutor);
+        }
+        if (idCarrera != null) {
+            sql.append(" AND g.ID_CARRERA = ? ");
+            params.add(idCarrera);
+        }
+        if (cuatrimestre != null) {
+            sql.append(" AND g.CUATRIMESTRE = ? ");
+            params.add(cuatrimestre);
+        }
+        if (letra != null && !letra.isBlank()) {
+            sql.append(" AND g.LETRA = ? ");
+            params.add(letra);
+        }
+        if (matricula != null && !matricula.isBlank()) {
+            sql.append(" AND si.MATRICULA = ? ");
+            params.add(matricula);
+        }
+        sql.append(" ORDER BY si.FECHA DESC, si.HORA DESC");
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+
+            for (int i = 0; i < params.size(); i++) {
+                Object valor = params.get(i);
+                if (valor instanceof Date) {
+                    ps.setDate(i + 1, (Date) valor);
+                } else if (valor instanceof String) {
+                    ps.setString(i + 1, (String) valor);
+                } else {
+                    ps.setInt(i + 1, (Integer) valor);
+                }
+            }
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    AtencionAlumnoDTO dto = new AtencionAlumnoDTO();
+                    dto.setIdSesion(rs.getInt("ID_SESION_INDIVIDUAL"));
+                    dto.setTipo("Programada".equals(rs.getString("ORIGEN")) ? "Individual" : "Espontánea");
+                    dto.setFecha(rs.getDate("FECHA"));
+                    dto.setHora(rs.getString("HORA"));
+                    dto.setEstado(rs.getString("ESTADO"));
+                    dto.setTemasTratados(rs.getString("TEMAS_TRATADOS"));
+                    dto.setAcuerdos(rs.getString("ACUERDOS"));
+
+                    dto.setGrupoAsignado(rs.getString("NOMBRE_CARRERA") + " " + rs.getInt("CUATRIMESTRE") + "°" + rs.getString("LETRA"));
+
+                    dto.setMatricula(rs.getString("MATRICULA"));
+                    String apellidoMaterno = rs.getString("AM_ALUMNO");
+                    String apellidos = rs.getString("AP_ALUMNO")
+                            + (apellidoMaterno != null && !apellidoMaterno.isBlank() ? " " + apellidoMaterno : "");
+                    dto.setNombreAlumno(rs.getString("NOMBRES_ALUMNO") + " " + apellidos);
+
+                    String nombreArea = rs.getString("NOMBRE_AREA");
+                    if (nombreArea != null) {
+                        String nombreMotivo = rs.getString("NOMBRE_MOTIVO");
+                        dto.setVinculoDirecto(nombreArea + (nombreMotivo != null && !nombreMotivo.isBlank() ? " — " + nombreMotivo : ""));
+                    }
+
+                    lista.add(dto);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener las atenciones individuales: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return lista;
     }
 
     private SesionIndividual mapearSesion(ResultSet rs) throws SQLException {

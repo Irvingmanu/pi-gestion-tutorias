@@ -46,6 +46,32 @@
     --toast-barra-alto: 4px;
 }
 
+/* Avisos/banners en linea (dentro de tarjetas, modales o formularios) que reutilizan
+   ESTRICTAMENTE los mismos tokens de color ya definidos arriba para exito/error/advertencia
+   (--alerta-color-*), en vez de los alert-warning/alert-info azulados/amarillentos por
+   defecto de Bootstrap. No se define ningun color nuevo aqui. */
+.aviso-inline {
+    border: 1px solid transparent;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+}
+.aviso-inline-exito {
+    background-color: var(--alerta-color-exito-borde);
+    border-color: var(--alerta-color-exito-borde);
+    color: var(--alerta-color-exito);
+}
+.aviso-inline-error {
+    background-color: var(--alerta-color-error-borde);
+    border-color: var(--alerta-color-error-borde);
+    color: var(--alerta-color-error);
+}
+.aviso-inline-advertencia {
+    background-color: var(--alerta-color-advertencia-borde);
+    border-color: var(--alerta-color-advertencia-borde);
+    color: var(--alerta-color-advertencia);
+}
+
 .alerta-card {
     background-color: var(--alerta-bg) !important;
     border: none !important;

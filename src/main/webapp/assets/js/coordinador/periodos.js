@@ -24,6 +24,36 @@ function prepararReactivacionPeriodo(idPeriodo) {
     );
 }
 
+function prepararEdicionPeriodo(boton) {
+    document.getElementById('accionPeriodo').value = 'editar';
+    document.getElementById('idPeriodoEdit').value = boton.dataset.id;
+    document.getElementById('nombre').value = boton.dataset.nombre;
+    document.getElementById('fechaInicio').value = boton.dataset.fechaInicio;
+    document.getElementById('fechaFin').value = boton.dataset.fechaFin;
+    document.getElementById('asistenciasGrupales').value = boton.dataset.objetivo;
+
+    document.getElementById('tituloFormularioPeriodo').textContent = 'Editar periodo';
+    document.getElementById('btnGuardar').textContent = 'Guardar Cambios';
+    document.getElementById('btnCancelarEdicionPeriodo').classList.remove('d-none');
+
+    const tabNuevo = document.getElementById('tab-nuevo-periodo-btn');
+    if (tabNuevo && window.bootstrap) new bootstrap.Tab(tabNuevo).show();
+
+    document.getElementById('asistenciasGrupales').dispatchEvent(new Event('input'));
+}
+
+function cancelarEdicionPeriodo() {
+    document.getElementById('accionPeriodo').value = '';
+    document.getElementById('idPeriodoEdit').value = '';
+    document.getElementById('formGuardar').reset();
+
+    document.getElementById('tituloFormularioPeriodo').textContent = 'Registrar nuevo periodo';
+    document.getElementById('btnGuardar').textContent = 'Guardar';
+    document.getElementById('btnCancelarEdicionPeriodo').classList.add('d-none');
+
+    document.getElementById('asistenciasGrupales').dispatchEvent(new Event('input'));
+}
+
 function filtrarPeriodos() {
     const mostrarInactivos = document.getElementById('mostrarInactivos');
     const incluirInactivos = mostrarInactivos ? mostrarInactivos.checked : false;
@@ -46,9 +76,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const inputNombre = document.getElementById('nombre');
         const inputInicio = document.getElementById('fechaInicio');
         const inputFin = document.getElementById('fechaFin');
+        const inputObjetivo = document.getElementById('asistenciasGrupales');
 
         function verificarFormulario() {
-            let esValido = inputNombre.value.trim() !== '' && inputInicio.value !== '' && inputFin.value !== '';
+            let esValido = inputNombre.value.trim() !== '' && inputInicio.value !== '' && inputFin.value !== ''
+                && inputObjetivo.value !== '' && Number(inputObjetivo.value) >= 0;
 
             if (inputInicio.value && inputFin.value && inputFin.value <= inputInicio.value) {
                 esValido = false;
@@ -60,7 +92,7 @@ document.addEventListener('DOMContentLoaded', function () {
             btnGuardar.disabled = !esValido;
         }
 
-        [inputNombre, inputInicio, inputFin].forEach(function (input) {
+        [inputNombre, inputInicio, inputFin, inputObjetivo].forEach(function (input) {
             input.addEventListener('input', verificarFormulario);
             input.addEventListener('change', verificarFormulario);
         });
@@ -77,6 +109,8 @@ document.addEventListener('DOMContentLoaded', function () {
         mostrarToast('exito', '¡Éxito!', 'El periodo fue eliminado correctamente');
     } else if (exito === 'reactivado') {
         mostrarToast('exito', '¡Éxito!', 'El periodo fue reactivado correctamente');
+    } else if (exito === 'editado') {
+        mostrarToast('exito', '¡Éxito!', 'El periodo escolar fue actualizado correctamente');
     }
 
     const error = parametros.get('error');
@@ -93,6 +127,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
             case 'nombre_duplicado':
                 mostrarAlerta('error', 'Nombre repetido', 'Ya existe un periodo registrado con ese nombre.');
+                break;
+            case 'objetivo_invalido':
+                mostrarAlerta('error', 'Objetivo inválido', 'El objetivo de tutorías grupales debe ser un número igual o mayor a 0.');
                 break;
             case 'periodo_en_uso':
                 mostrarAlerta('error', 'No se puede eliminar', 'Este periodo ya tiene asignaciones vinculadas.');

@@ -1,6 +1,7 @@
 package mx.edu.utez.pigestiontutorias.models.dao;
 
 import mx.edu.utez.pigestiontutorias.models.Alumno;
+import mx.edu.utez.pigestiontutorias.models.AlumnoBusquedaDTO;
 import mx.edu.utez.pigestiontutorias.models.Carrera;
 import mx.edu.utez.pigestiontutorias.models.EventoAgenda;
 import mx.edu.utez.pigestiontutorias.models.Genero;
@@ -263,6 +264,55 @@ public class AlumnoDAO implements Dao<Alumno, String> {
 
     public List<Carrera> getAllCarreras() {
         return new CarreraDao().getAll();
+    }
+
+    // Buscador de alumnos del dashboard de Reportes (por nombre completo o matricula).
+    // idTutor == null -> busqueda global (vista Coordinador, ve a todos los alumnos).
+    // idTutor != null -> solo alumnos cuyo grupo esta asignado a ese tutor (via
+    // ASIGNACION_TUTOR), para que un tutor jamas pueda ver/buscar alumnos ajenos.
+    public List<AlumnoBusquedaDTO> buscarAlumnos(String texto, Integer idTutor) {
+        List<AlumnoBusquedaDTO> lista = new ArrayList<>();
+        if (texto == null || texto.isBlank()) return lista;
+
+        StringBuilder sql = new StringBuilder(
+                "SELECT DISTINCT al.MATRICULA, al.NOMBRES, al.APELLIDO_PATERNO, al.APELLIDO_MATERNO, " +
+                        "car.NOMBRE AS NOMBRE_CARRERA, g.CUATRIMESTRE, g.LETRA " +
+                        "FROM ALUMNO al " +
+                        "JOIN GRUPO g ON g.ID_GRUPO = al.ID_GRUPO " +
+                        "JOIN CARRERA car ON car.ID_CARRERA = g.ID_CARRERA ");
+        if (idTutor != null) {
+            sql.append("JOIN ASIGNACION_TUTOR asg ON asg.ID_GRUPO = al.ID_GRUPO AND asg.ESTADO = 'S' AND asg.ID_TUTOR = ? ");
+        }
+        sql.append("WHERE al.ESTADO = 'S' AND (UPPER(al.MATRICULA) LIKE UPPER(?) " +
+                "OR UPPER(al.NOMBRES || ' ' || al.APELLIDO_PATERNO || ' ' || al.APELLIDO_MATERNO) LIKE UPPER(?)) " +
+                "ORDER BY al.APELLIDO_PATERNO, al.APELLIDO_MATERNO, al.NOMBRES " +
+                "FETCH FIRST 20 ROWS ONLY");
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql.toString())) {
+
+            int idx = 1;
+            if (idTutor != null) {
+                ps.setInt(idx++, idTutor);
+            }
+            String comodin = "%" + texto.trim() + "%";
+            ps.setString(idx++, comodin);
+            ps.setString(idx, comodin);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String apellidoM = rs.getString("APELLIDO_MATERNO");
+                    String nombreCompleto = rs.getString("NOMBRES") + " " + rs.getString("APELLIDO_PATERNO")
+                            + (apellidoM != null && !apellidoM.isBlank() ? " " + apellidoM : "");
+                    String grupoAsignado = rs.getString("NOMBRE_CARRERA") + " " + rs.getInt("CUATRIMESTRE") + "°" + rs.getString("LETRA");
+                    lista.add(new AlumnoBusquedaDTO(rs.getString("MATRICULA"), nombreCompleto, grupoAsignado));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al buscar alumnos: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return lista;
     }
 
     private Alumno mapearAlumno(ResultSet rs) throws SQLException {

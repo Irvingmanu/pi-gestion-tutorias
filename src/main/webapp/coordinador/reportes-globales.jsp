@@ -16,6 +16,91 @@
         #filtroDesde, #filtroHasta {
             cursor: pointer;
         }
+        .tarjeta-kpi-clickeable {
+            cursor: pointer;
+            transition: box-shadow .15s ease, transform .15s ease;
+        }
+        .tarjeta-kpi-clickeable:hover, .tarjeta-kpi-clickeable:focus-visible {
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.1) !important;
+            transform: translateY(-2px);
+        }
+        .badge-al-dia {
+            background-color: #E1F3E9;
+            color: #008B74;
+        }
+        .badge-en-riesgo {
+            background-color: #FBE2E1;
+            color: #DC2626;
+        }
+        .badge-sin-objetivo {
+            background-color: #E5E7EB;
+            color: #374151;
+        }
+        .btn-alertar-tutor {
+            border: none;
+            background: transparent;
+            color: #6B7280;
+            padding: .25rem .4rem;
+            border-radius: 8px;
+        }
+        .btn-alertar-tutor:hover {
+            background-color: #ECF3FA;
+        }
+        .btn-alertar-tutor.riesgo {
+            color: #DC2626;
+        }
+        .btn-alertar-tutor.riesgo:hover {
+            background-color: #FBE2E1;
+        }
+        /* Reutilizadas por todos los modales de "Ver detalles" (Tutorías Grupales,
+           Alumnos Atendidos, ...) para partir la ficha en secciones y evitar aglomeración. */
+        .seccion-detalle-titulo {
+            font-weight: 600;
+            color: #0B1C30;
+            font-size: .95rem;
+            margin-bottom: .75rem;
+        }
+        .seccion-detalle-card {
+            background-color: #F8FAFC;
+            border-radius: var(--radius-figma, 12px);
+            padding: 1rem 1.25rem;
+        }
+        .seccion-detalle-card + .seccion-detalle-card {
+            margin-top: 1rem;
+        }
+        .campo-detalle-label {
+            color: #6B7280;
+            font-size: .8rem;
+            margin-bottom: .15rem;
+        }
+        .campo-detalle-valor {
+            margin-bottom: .85rem;
+            white-space: pre-wrap;
+        }
+        /* Boton "Volver" de los modales de detalle: verde institucional en vez del azul
+           por defecto de .btn-link de Bootstrap. */
+        .btn-volver-figma {
+            color: var(--utez-green) !important;
+            text-decoration: none;
+        }
+        .btn-volver-figma:hover, .btn-volver-figma:focus {
+            color: var(--utez-green) !important;
+            text-decoration: underline;
+        }
+        .buscador-alumno-wrap {
+            position: relative;
+        }
+        #resultadosBuscadorAlumno {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            z-index: 1050;
+            max-height: 280px;
+            overflow-y: auto;
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15);
+            border-radius: var(--radius-figma, 12px);
+        }
     </style>
 </head>
 <body>
@@ -88,11 +173,28 @@
             </div>
         </div>
 
-        <div id="avisoReporte" class="alert alert-warning d-none" role="alert"></div>
+        <div id="avisoReporte" class="aviso-inline aviso-inline-advertencia d-none" role="alert"></div>
+
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <label for="buscadorAlumno" class="form-label fw-bold">Buscar alumno (nombre o matrícula)</label>
+                <div class="buscador-alumno-wrap">
+                    <input type="text" id="buscadorAlumno" class="form-control form-control-figma"
+                           placeholder="Ej. Juan Pérez o EN2312345" autocomplete="off">
+                    <div id="resultadosBuscadorAlumno" class="list-group d-none"></div>
+                </div>
+                <input type="hidden" id="filtroMatricula" value="">
+                <div id="filtroAlumnoActivo" class="alert alert-info d-none d-flex justify-content-between align-items-center py-2 px-3 mt-2 mb-0">
+                    <span>Mostrando el reporte de: <strong id="nombreAlumnoFiltro"></strong> (<span id="matriculaAlumnoFiltro"></span>)</span>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" id="btnQuitarFiltroAlumno">Quitar filtro</button>
+                </div>
+            </div>
+        </div>
 
         <div class="row g-3 mb-4">
             <div class="col-md-3">
-                <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3">
+                <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3 tarjeta-kpi-clickeable"
+                     id="cardAlumnosAtendidos" role="button" tabindex="0">
                     <i class="bi bi-person-check fs-2" style="color:#008B74;"></i>
                     <div>
                         <div class="text-muted small">Alumnos Atendidos</div>
@@ -101,16 +203,18 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3">
-                    <i class="bi bi-person-plus fs-2" style="color:#008B74;"></i>
+                <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3 tarjeta-kpi-clickeable"
+                     id="cardTutoriasGrupales" role="button" tabindex="0">
+                    <i class="bi bi-people fs-2" style="color:#008B74;"></i>
                     <div>
-                        <div class="text-muted small">Pidieron Tutorías</div>
-                        <div class="fw-bold fs-4" id="kpiPidieron">--</div>
+                        <div class="text-muted small">Tutorías Grupales</div>
+                        <div class="fw-bold fs-4" id="kpiTutoriasGrupales">--</div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3">
+                <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3 tarjeta-kpi-clickeable"
+                     id="cardCanalizados" role="button" tabindex="0">
                     <i class="bi bi-signpost-split fs-2" style="color:#008B74;"></i>
                     <div>
                         <div class="text-muted small">Canalizados</div>
@@ -119,7 +223,8 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3">
+                <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3 tarjeta-kpi-clickeable"
+                     id="cardPendientes" role="button" tabindex="0">
                     <i class="bi bi-hourglass-split fs-2" style="color:#008B74;"></i>
                     <div>
                         <div class="text-muted small">Pendientes</div>
@@ -148,29 +253,6 @@
             </div>
         </div>
 
-        <div class="row g-3 mt-1">
-            <div class="col-12">
-                <div class="p-3 bg-white rounded-figma shadow-sm border">
-                    <div class="fw-bold mb-2">Canalizaciones Detalladas</div>
-                    <div class="table-responsive" style="max-height: 320px; overflow-y: auto;">
-                        <table class="table table-sm align-middle mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Área</th>
-                                    <th>Motivo</th>
-                                    <th>Estatus</th>
-                                    <th>Fecha</th>
-                                </tr>
-                            </thead>
-                            <tbody id="tablaCanalizacionesBody">
-                                <tr><td colspan="4" class="text-center text-muted">--</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="d-flex justify-content-end mt-4 gap-2">
             <button type="button" id="btnExportarExcel" class="btn btn-figma">
                 <i class="bi bi-file-earmark-excel"></i> Exportar Excel
@@ -182,6 +264,362 @@
 
     </div>
 
+</div>
+
+<div class="modal fade" id="modalTutoriasGrupales" tabindex="-1" aria-labelledby="tituloModalTutoriasGrupales" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: var(--radius-figma, 16px); border: none;">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title fw-bold" id="tituloModalTutoriasGrupales">Seguimiento de Tutorías Grupales</h5>
+                    <div class="text-muted small" id="subtituloModalTutoriasGrupales">Avance de cada tutor frente al objetivo del periodo vigente.</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="avisoSinPeriodoGrupal" class="aviso-inline aviso-inline-advertencia d-none" role="alert">
+                    No hay un periodo escolar vigente, por lo que no es posible calcular el avance de tutorías grupales.
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>Nombre del Tutor</th>
+                            <th>Grupo Asignado</th>
+                            <th>Tutorías Impartidas</th>
+                            <th>Estatus</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaTutoriasGrupalesBody">
+                        <tr><td colspan="5" class="text-center text-muted">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalleSesionGrupal" tabindex="-1" aria-labelledby="tituloModalDetalleSesionGrupal" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: var(--radius-figma, 16px); border: none;">
+            <div class="modal-header">
+                <div>
+                    <button type="button" class="btn btn-sm btn-volver-figma ps-0" id="btnVolverListaTutorias">
+                        <i class="bi bi-arrow-left"></i> Volver al seguimiento
+                    </button>
+                    <h5 class="modal-title fw-bold mb-0" id="tituloModalDetalleSesionGrupal">Detalle de sesiones</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+
+                <!-- Seccion 2: resumen del tutor/grupo/avance (misma info que la tarjeta de seguimiento) -->
+                <div class="seccion-detalle-card mb-4">
+                    <div class="seccion-detalle-titulo">Tutor y avance</div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="campo-detalle-label">Nombre del Tutor</div>
+                            <div class="campo-detalle-valor fw-semibold" id="detalleNombreTutor">--</div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="campo-detalle-label">Grupo Asignado</div>
+                            <div class="campo-detalle-valor fw-semibold" id="detalleGrupoAsignado">--</div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="campo-detalle-label">Tutorías Impartidas</div>
+                            <div class="campo-detalle-valor fw-semibold" id="detalleAvance">--</div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="campo-detalle-label">Estatus</div>
+                            <div class="campo-detalle-valor" id="detalleEstatus">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Seccion 1: detalle de cada sesion registrada, con la misma distribucion de
+                     tarjetas blancas ("Detalles de la Sesión" / "Asesorías Grupales") que usa
+                     el modal de detalle de Alumnos Atendidos, una tarjeta por sesion. -->
+                <div id="avisoSinSesiones" class="aviso-inline aviso-inline-advertencia d-none" role="alert">
+                    Este tutor todavía no ha registrado sesiones grupales para este grupo en el periodo vigente.
+                </div>
+                <div id="listaSesionesGrupales"></div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAlumnosAtendidos" tabindex="-1" aria-labelledby="tituloModalAlumnosAtendidos" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: var(--radius-figma, 16px); border: none;">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title fw-bold" id="tituloModalAlumnosAtendidos">Alumnos Atendidos</h5>
+                    <div class="text-muted small">Tutorías Individuales y Espontáneas completadas (no incluye tutorías grupales).</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="avisoSinAtenciones" class="aviso-inline aviso-inline-advertencia d-none" role="alert">
+                    No hay tutorías individuales o espontáneas registradas con los filtros seleccionados.
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Fecha y Hora</th>
+                            <th>Grupo</th>
+                            <th>Alumno</th>
+                            <th>Estado</th>
+                            <th class="text-center">Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaAlumnosAtendidosBody">
+                        <tr><td colspan="6" class="text-center text-muted">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalleAtencion" tabindex="-1" aria-labelledby="tituloModalDetalleAtencion" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: var(--radius-figma, 16px); border: none;">
+            <div class="modal-header">
+                <div>
+                    <button type="button" class="btn btn-sm btn-volver-figma ps-0" id="btnVolverListaAtenciones">
+                        <i class="bi bi-arrow-left"></i> Volver al listado
+                    </button>
+                    <h5 class="modal-title fw-bold mb-0" id="tituloModalDetalleAtencion">Detalle de la tutoría</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="seccion-detalle-card">
+                    <div class="seccion-detalle-titulo">Detalles de la Sesión</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Grupo</div>
+                            <div class="campo-detalle-valor fw-semibold" id="atencionDetalleGrupo">--</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Alumno</div>
+                            <div class="campo-detalle-valor fw-semibold" id="atencionDetalleAlumno">--</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Fecha</div>
+                            <div class="campo-detalle-valor fw-semibold" id="atencionDetalleFecha">--</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Hora</div>
+                            <div class="campo-detalle-valor fw-semibold" id="atencionDetalleHora">--</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="campo-detalle-label">Temas Tratados</div>
+                            <div class="campo-detalle-valor" id="atencionDetalleTemas">--</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="campo-detalle-label">Acuerdos</div>
+                            <div class="campo-detalle-valor mb-0" id="atencionDetalleAcuerdos">--</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="seccion-detalle-card">
+                    <div class="seccion-detalle-titulo">Vínculo Directo</div>
+                    <div class="campo-detalle-valor mb-0" id="atencionDetalleVinculo">--</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCanalizados" tabindex="-1" aria-labelledby="tituloModalCanalizados" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: var(--radius-figma, 16px); border: none;">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title fw-bold" id="tituloModalCanalizados">Alumnos Canalizados</h5>
+                    <div class="text-muted small">Alumnos derivados a algún área de apoyo (Psicología, Servicio Médico, Becas, etc.).</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="avisoSinCanalizaciones" class="aviso-inline aviso-inline-advertencia d-none" role="alert">
+                    No hay canalizaciones registradas con los filtros seleccionados.
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>Alumno</th>
+                            <th>Grupo</th>
+                            <th>Fecha de Canalización</th>
+                            <th>Tutor</th>
+                            <th>Área de Canalización</th>
+                            <th>Estatus</th>
+                            <th class="text-center">Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaCanalizadosBody">
+                        <tr><td colspan="7" class="text-center text-muted">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalleCanalizacion" tabindex="-1" aria-labelledby="tituloModalDetalleCanalizacion" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: var(--radius-figma, 16px); border: none;">
+            <div class="modal-header">
+                <div>
+                    <button type="button" class="btn btn-sm btn-volver-figma ps-0" id="btnVolverListaCanalizados">
+                        <i class="bi bi-arrow-left"></i> Volver al listado
+                    </button>
+                    <h5 class="modal-title fw-bold mb-0" id="tituloModalDetalleCanalizacion">Detalle de la canalización</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="seccion-detalle-card">
+                    <div class="seccion-detalle-titulo">Datos del Alumno</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Alumno</div>
+                            <div class="campo-detalle-valor fw-semibold" id="canalizacionDetalleAlumno">--</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Grupo</div>
+                            <div class="campo-detalle-valor fw-semibold" id="canalizacionDetalleGrupo">--</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Fecha de Canalización</div>
+                            <div class="campo-detalle-valor fw-semibold" id="canalizacionDetalleFecha">--</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Tutor</div>
+                            <div class="campo-detalle-valor fw-semibold" id="canalizacionDetalleTutor">--</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="seccion-detalle-card">
+                    <div class="seccion-detalle-titulo">Datos de la Canalización</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Área de Canalización</div>
+                            <div class="campo-detalle-valor fw-semibold" id="canalizacionDetalleArea">--</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Estatus</div>
+                            <div class="campo-detalle-valor fw-semibold" id="canalizacionDetalleEstatus">--</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Motivo</div>
+                            <div class="campo-detalle-valor fw-semibold" id="canalizacionDetalleMotivo">--</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="campo-detalle-label">Observaciones</div>
+                            <div class="campo-detalle-valor mb-0" id="canalizacionDetalleObservaciones">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalSolicitudesPendientes" tabindex="-1" aria-labelledby="tituloModalSolicitudesPendientes" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: var(--radius-figma, 16px); border: none;">
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title fw-bold" id="tituloModalSolicitudesPendientes">Solicitudes Pendientes</h5>
+                    <div class="text-muted small">Solicitudes de tutoría creadas por los alumnos que aún no han sido procesadas.</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div id="avisoSinPendientes" class="aviso-inline aviso-inline-advertencia d-none" role="alert">
+                    No hay solicitudes pendientes con los filtros seleccionados.
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                        <tr>
+                            <th>Alumno</th>
+                            <th>Asunto</th>
+                            <th>Fecha Propuesta</th>
+                            <th>Estatus</th>
+                            <th class="text-center">Acción</th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaPendientesBody">
+                        <tr><td colspan="5" class="text-center text-muted">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalleSolicitudPendiente" tabindex="-1" aria-labelledby="tituloModalDetalleSolicitudPendiente" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content" style="border-radius: var(--radius-figma, 16px); border: none;">
+            <div class="modal-header">
+                <div>
+                    <button type="button" class="btn btn-sm btn-volver-figma ps-0" id="btnVolverListaPendientes">
+                        <i class="bi bi-arrow-left"></i> Volver al listado
+                    </button>
+                    <h5 class="modal-title fw-bold mb-0" id="tituloModalDetalleSolicitudPendiente">Detalle de la solicitud</h5>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <div class="seccion-detalle-card">
+                    <div class="seccion-detalle-titulo">Datos de la Solicitud</div>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Nombre del Alumno</div>
+                            <div class="campo-detalle-valor fw-semibold" id="pendienteDetalleAlumno">--</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Matrícula</div>
+                            <div class="campo-detalle-valor fw-semibold" id="pendienteDetalleMatricula">--</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Asunto</div>
+                            <div class="campo-detalle-valor fw-semibold" id="pendienteDetalleAsunto">--</div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="campo-detalle-label">Fecha Propuesta</div>
+                            <div class="campo-detalle-valor fw-semibold" id="pendienteDetalleFecha">--</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="campo-detalle-label">Descripción</div>
+                            <div class="campo-detalle-valor mb-0" id="pendienteDetalleDescripcion">--</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="seccion-detalle-card d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <div>
+                        <div class="seccion-detalle-titulo mb-1">Tutor Asignado</div>
+                        <div class="campo-detalle-valor mb-0 fw-semibold" id="pendienteDetalleTutor">--</div>
+                    </div>
+                    <button type="button" class="btn btn-figma" id="btnRecordarTutor">
+                        <i class="bi bi-envelope"></i> Enviar recordatorio por correo
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <div class="modal fade" id="modalAlerta" tabindex="-1" aria-labelledby="alertaTitulo" aria-hidden="true" data-bs-backdrop="static">
@@ -245,6 +683,11 @@
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/tutor/reportes.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/coordinador/tutorias-grupales-modal.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/coordinador/alumnos-atendidos-modal.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/coordinador/canalizados-modal.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/coordinador/pendientes-modal.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/coordinador/buscador-alumno.js"></script>
 <script>
     const CONTEXT_PATH = "${pageContext.request.contextPath}";
     let graficaBarrasCoordinador = null;
@@ -274,13 +717,72 @@
     function buscarReporteCoordinador() {
         cargarReporte({
             contextPath: CONTEXT_PATH,
-            filtros: ['filtroCarrera', 'filtroCuatrimestre', 'filtroGrupo', 'filtroTutor', 'filtroDesde', 'filtroHasta'],
-            onDatos: pintarBarrasCoordinador
+            filtros: ['filtroCarrera', 'filtroCuatrimestre', 'filtroGrupo', 'filtroTutor', 'filtroDesde', 'filtroHasta', 'filtroMatricula'],
+            onDatos: function (data) {
+                pintarBarrasCoordinador(data);
+                pintarKpi('kpiTutoriasGrupales', data.totalGruposAtendidos);
+            }
         });
     }
 
     document.getElementById('btnBuscar').addEventListener('click', buscarReporteCoordinador);
     document.addEventListener('DOMContentLoaded', buscarReporteCoordinador);
+
+    document.getElementById('cardTutoriasGrupales').addEventListener('click', abrirModalTutoriasGrupales);
+    document.getElementById('cardTutoriasGrupales').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            abrirModalTutoriasGrupales();
+        }
+    });
+
+    function filtrosReporteActuales() {
+        return {
+            idCarrera: document.getElementById('filtroCarrera').value,
+            cuatrimestre: document.getElementById('filtroCuatrimestre').value,
+            letra: document.getElementById('filtroGrupo').value,
+            idTutor: document.getElementById('filtroTutor').value,
+            desde: document.getElementById('filtroDesde').value,
+            hasta: document.getElementById('filtroHasta').value,
+            matricula: document.getElementById('filtroMatricula').value
+        };
+    }
+
+    function abrirModalAlumnosAtendidosConFiltros() {
+        abrirModalAlumnosAtendidos(filtrosReporteActuales());
+    }
+
+    document.getElementById('cardAlumnosAtendidos').addEventListener('click', abrirModalAlumnosAtendidosConFiltros);
+    document.getElementById('cardAlumnosAtendidos').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            abrirModalAlumnosAtendidosConFiltros();
+        }
+    });
+
+    function abrirModalCanalizadosConFiltros() {
+        abrirModalCanalizados(filtrosReporteActuales());
+    }
+
+    document.getElementById('cardCanalizados').addEventListener('click', abrirModalCanalizadosConFiltros);
+    document.getElementById('cardCanalizados').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            abrirModalCanalizadosConFiltros();
+        }
+    });
+
+    function abrirModalPendientesConFiltros() {
+        abrirModalPendientes(filtrosReporteActuales());
+    }
+
+    document.getElementById('cardPendientes').addEventListener('click', abrirModalPendientesConFiltros);
+    document.getElementById('cardPendientes').addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            abrirModalPendientesConFiltros();
+        }
+    });
 
     function habilitarClickCompletoFecha(id) {
         const input = document.getElementById(id);
@@ -293,7 +795,7 @@
     habilitarClickCompletoFecha('filtroDesde');
     habilitarClickCompletoFecha('filtroHasta');
 
-    function construirUrlExport(formato) {
+    function construirParamsExport(formato) {
         const params = new URLSearchParams();
 
         const selectCarrera = document.getElementById('filtroCarrera');
@@ -321,15 +823,32 @@
         }
         if (desde) params.append('desde', desde);
         if (hasta) params.append('hasta', hasta);
-        params.append('formato', formato);
 
-        return CONTEXT_PATH + '/ReportesServlet?' + params.toString();
+        const matriculaFiltro = document.getElementById('filtroMatricula').value;
+        if (matriculaFiltro) {
+            params.append('matricula', matriculaFiltro);
+            params.append('nombreAlumno', document.getElementById('nombreAlumnoFiltro').textContent);
+        }
+
+        // Las graficas solo existen como <canvas> en el navegador: se capturan como PNG
+        // (misma imagen que ve el coordinador) para que el Excel/PDF las incluya tal cual.
+        if (graficaPastelReporte) params.append('imagenPastel', graficaPastelReporte.toBase64Image());
+        if (graficaBarrasCoordinador) params.append('imagenBarras', graficaBarrasCoordinador.toBase64Image());
+
+        const accion = formato === 'excel' ? 'exportarExcel' : 'exportarPdf';
+        params.append('accion', accion);
+
+        return params;
     }
 
     async function descargarReporte(formato) {
-        const url = construirUrlExport(formato);
+        const params = construirParamsExport(formato);
         try {
-            const resp = await fetch(url);
+            const resp = await fetch(CONTEXT_PATH + '/reportes-globales', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: params.toString()
+            });
             if (!resp.ok) throw new Error('Respuesta no válida del servidor');
 
             const blob = await resp.blob();
@@ -376,34 +895,6 @@
             }
         );
     });
-
-    async function descargarReporteCsv() {
-        const url = construirUrlExport();
-        try {
-            const resp = await fetch(url);
-            if (!resp.ok) throw new Error('Respuesta no válida del servidor');
-
-            const blob = await resp.blob();
-            const disposition = resp.headers.get('Content-Disposition') || '';
-            const match = disposition.match(/filename="?([^"]+)"?/);
-            const nombreArchivo = match ? match[1] : 'reporte_tutorias.csv';
-
-            const linkUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = linkUrl;
-            a.download = nombreArchivo;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(linkUrl);
-
-            mostrarToast('exito', 'Éxito', 'El reporte se descargó correctamente');
-        } catch (err) {
-            console.error(err);
-            mostrarToast('error', 'Error', 'Ocurrió un error al exportar el reporte');
-        }
-    }
-
 
 </script>
 </body>

@@ -7,7 +7,8 @@ function cargarReporte(opciones) {
         filtroGrupo: 'letra',
         filtroTutor: 'idTutor',
         filtroDesde: 'desde',
-        filtroHasta: 'hasta'
+        filtroHasta: 'hasta',
+        filtroMatricula: 'matricula'
     };
 
     const params = new URLSearchParams();

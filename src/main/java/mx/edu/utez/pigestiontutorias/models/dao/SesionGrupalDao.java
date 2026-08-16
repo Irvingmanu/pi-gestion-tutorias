@@ -1,5 +1,6 @@
 package mx.edu.utez.pigestiontutorias.models.dao;
 
+import mx.edu.utez.pigestiontutorias.models.AvanceTutorGrupal;
 import mx.edu.utez.pigestiontutorias.models.SesionGrupal;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
@@ -175,7 +176,96 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
         s.setHora(rs.getString("HORA"));
         s.setTemasTratados(rs.getString("TEMAS_TRATADOS"));
         s.setAcuerdos(rs.getString("ACUERDOS"));
+        s.setAsesoriasGrupales(rs.getString("ASESORIAS_GRUPALES"));
         s.setEstado(rs.getString("ESTADO"));
         return s;
+    }
+
+    // Modal "Seguimiento de Tutorias Grupales" del reporte del coordinador: una fila por
+    // cada asignacion tutor-grupo activa dentro del periodo, con el conteo de sesiones
+    // "Completado" que ese tutor ya registro en ese grupo durante el rango del periodo.
+    // Ordenado de MENOR a MAYOR avance, tal como lo pide el reporte.
+    public List<AvanceTutorGrupal> getAvancePorPeriodo(int idPeriodo, Date fechaInicio, Date fechaFin, int objetivo) {
+        List<AvanceTutorGrupal> lista = new ArrayList<>();
+        String sql = "SELECT asg.ID_TUTOR, t.NOMBRES, t.APELLIDO_PATERNO, t.APELLIDO_MATERNO, t.CORREO_INSTITUCIONAL, " +
+                "asg.ID_GRUPO, car.NOMBRE AS NOMBRE_CARRERA, g.CUATRIMESTRE, g.LETRA, " +
+                "(SELECT COUNT(*) FROM SESION_GRUPAL sg WHERE sg.ID_TUTOR = asg.ID_TUTOR AND sg.ID_GRUPO = asg.ID_GRUPO " +
+                "AND sg.ESTADO = 'Completado' AND sg.FECHA BETWEEN ? AND ?) AS REALIZADAS " +
+                "FROM ASIGNACION_TUTOR asg " +
+                "JOIN TUTOR t ON t.NUMERO_EMPLEADO = asg.ID_TUTOR " +
+                "JOIN GRUPO g ON g.ID_GRUPO = asg.ID_GRUPO " +
+                "JOIN CARRERA car ON car.ID_CARRERA = g.ID_CARRERA " +
+                "WHERE asg.ESTADO = 'S' AND g.ID_PERIODO = ? " +
+                "ORDER BY REALIZADAS ASC, t.APELLIDO_PATERNO ASC";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setDate(1, fechaInicio);
+            ps.setDate(2, fechaFin);
+            ps.setInt(3, idPeriodo);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    AvanceTutorGrupal a = new AvanceTutorGrupal();
+                    a.setIdTutor(rs.getInt("ID_TUTOR"));
+
+                    String apellidoMaterno = rs.getString("APELLIDO_MATERNO");
+                    String apellidos = rs.getString("APELLIDO_PATERNO")
+                            + (apellidoMaterno != null && !apellidoMaterno.isBlank() ? " " + apellidoMaterno : "");
+                    a.setNombreTutor(rs.getString("NOMBRES") + " " + apellidos);
+                    a.setCorreoTutor(rs.getString("CORREO_INSTITUCIONAL"));
+
+                    a.setIdGrupo(rs.getInt("ID_GRUPO"));
+                    a.setGrupoAsignado(rs.getString("NOMBRE_CARRERA") + " " + rs.getInt("CUATRIMESTRE") + "°" + rs.getString("LETRA"));
+
+                    int realizadas = rs.getInt("REALIZADAS");
+                    a.setRealizadas(realizadas);
+                    a.setObjetivo(objetivo);
+                    a.setEstatus(calcularEstatus(realizadas, objetivo));
+
+                    lista.add(a);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener el avance de tutorias grupales: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return lista;
+    }
+
+    // Umbral de negocio: sin avance o por debajo de la mitad del objetivo se marca
+    // "En Riesgo" para que el coordinador priorice el envio de alertas a esos tutores.
+    private String calcularEstatus(int realizadas, int objetivo) {
+        if (objetivo <= 0) return "SIN_OBJETIVO";
+        if (realizadas == 0 || realizadas < objetivo / 2.0) return "RIESGO";
+        return "AL_DIA";
+    }
+
+    // "Ver detalles" del modal de seguimiento: sesiones que un tutor especifico registro
+    // en un grupo especifico, dentro del rango de fechas del periodo.
+    public List<SesionGrupal> getSesionesPorTutorYGrupo(int idTutor, int idGrupo, Date fechaInicio, Date fechaFin) {
+        List<SesionGrupal> lista = new ArrayList<>();
+        String sql = "SELECT * FROM SESION_GRUPAL WHERE ID_TUTOR = ? AND ID_GRUPO = ? AND ESTADO = 'Completado' " +
+                "AND FECHA BETWEEN ? AND ? ORDER BY FECHA DESC, HORA DESC";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, idTutor);
+            ps.setInt(2, idGrupo);
+            ps.setDate(3, fechaInicio);
+            ps.setDate(4, fechaFin);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    lista.add(mapearSesion(rs));
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener las sesiones del tutor: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return lista;
     }
 }

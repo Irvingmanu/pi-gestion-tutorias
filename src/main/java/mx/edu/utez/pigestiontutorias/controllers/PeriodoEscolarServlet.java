@@ -48,15 +48,33 @@ public class PeriodoEscolarServlet extends HttpServlet {
             procesarReactivacion(request, response);
             return;
         }
+        if ("editar".equals(accion)) {
+            procesarEdicion(request, response);
+            return;
+        }
 
         String nombre = request.getParameter("nombre");
         String fechaInicioStr = request.getParameter("fechaInicio");
         String fechaFinStr = request.getParameter("fechaFin");
+        String asistenciasGrupalesStr = request.getParameter("asistenciasGrupales");
 
         if (nombre == null || nombre.isBlank()
                 || fechaInicioStr == null || fechaInicioStr.isBlank()
-                || fechaFinStr == null || fechaFinStr.isBlank()) {
+                || fechaFinStr == null || fechaFinStr.isBlank()
+                || asistenciasGrupalesStr == null || asistenciasGrupalesStr.isBlank()) {
             response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=campos_incompletos");
+            return;
+        }
+
+        int asistenciasGrupales;
+        try {
+            asistenciasGrupales = Integer.parseInt(asistenciasGrupalesStr.trim());
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=objetivo_invalido");
+            return;
+        }
+        if (asistenciasGrupales < 0) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=objetivo_invalido");
             return;
         }
 
@@ -87,11 +105,91 @@ public class PeriodoEscolarServlet extends HttpServlet {
         periodo.setFechaInicio(Date.valueOf(fechaInicio));
         periodo.setFechaFin(Date.valueOf(fechaFin));
         periodo.setEstado("S");
+        periodo.setAsistenciasGrupales(asistenciasGrupales);
 
         boolean guardado = periodoDao.create(periodo);
 
         if (guardado) {
             response.sendRedirect(request.getContextPath() + "/gestion-periodos?exito=guardado");
+        } else {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=registro_fallido");
+        }
+    }
+
+    // Edicion de un periodo ya existente (nombre/fechas/objetivo de tutorías grupales), incluida
+    // la unica forma soportada de corregir ASISTENCIASGRUPALES desde la interfaz: el DAO ya tenia
+    // el metodo update() listo, solo faltaba esta ruta para invocarlo desde el formulario.
+    private void procesarEdicion(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        Integer idPeriodo = null;
+        try {
+            String idStr = request.getParameter("idPeriodo");
+            if (idStr != null && !idStr.isBlank()) {
+                idPeriodo = Integer.parseInt(idStr.trim());
+            }
+        } catch (NumberFormatException ignored) {
+        }
+
+        if (idPeriodo == null || periodoDao.getById(idPeriodo) == null) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=periodo_no_encontrado");
+            return;
+        }
+
+        String nombre = request.getParameter("nombre");
+        String fechaInicioStr = request.getParameter("fechaInicio");
+        String fechaFinStr = request.getParameter("fechaFin");
+        String asistenciasGrupalesStr = request.getParameter("asistenciasGrupales");
+
+        if (nombre == null || nombre.isBlank()
+                || fechaInicioStr == null || fechaInicioStr.isBlank()
+                || fechaFinStr == null || fechaFinStr.isBlank()
+                || asistenciasGrupalesStr == null || asistenciasGrupalesStr.isBlank()) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=campos_incompletos");
+            return;
+        }
+
+        int asistenciasGrupales;
+        try {
+            asistenciasGrupales = Integer.parseInt(asistenciasGrupalesStr.trim());
+        } catch (NumberFormatException e) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=objetivo_invalido");
+            return;
+        }
+        if (asistenciasGrupales < 0) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=objetivo_invalido");
+            return;
+        }
+
+        LocalDate fechaInicio;
+        LocalDate fechaFin;
+        try {
+            fechaInicio = LocalDate.parse(fechaInicioStr.trim());
+            fechaFin = LocalDate.parse(fechaFinStr.trim());
+        } catch (DateTimeParseException e) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=fechas_invalidas");
+            return;
+        }
+
+        if (!fechaFin.isAfter(fechaInicio)) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=rango_invalido");
+            return;
+        }
+
+        if (periodoDao.existeNombreParaOtro(nombre.trim(), idPeriodo)) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=nombre_duplicado");
+            return;
+        }
+
+        PeriodoEscolar periodo = new PeriodoEscolar();
+        periodo.setIdPeriodo(idPeriodo);
+        periodo.setNombre(nombre.trim());
+        periodo.setFechaInicio(Date.valueOf(fechaInicio));
+        periodo.setFechaFin(Date.valueOf(fechaFin));
+        periodo.setAsistenciasGrupales(asistenciasGrupales);
+
+        boolean actualizado = periodoDao.update(periodo);
+
+        if (actualizado) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?exito=editado");
         } else {
             response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=registro_fallido");
         }
