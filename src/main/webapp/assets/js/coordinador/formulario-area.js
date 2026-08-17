@@ -6,6 +6,14 @@
 // DOM no disparan 'input'/'focusout' por si solos, por eso se expone
 // window.verificarFormularioArea para que motivos.js pueda pedir una
 // revalidacion manual despues de mutar el DOM.
+//
+// Tambien soporta autocompletado del navegador: Chrome/Edge rellenan los
+// campos (ej. con contraseñas guardadas o sugerencias) sin disparar 'input'
+// de forma confiable, asi que el marcado visual (borde rojo + mensaje) no
+// aparecia aunque el valor fuera invalido. Se agrega el evento 'change'
+// (mas confiable con autofill) y una deteccion via CSS animation-name
+// ('onAutoFillStart', ver el <style> de formulario-area.jsp) para cubrir
+// ese caso tambien.
 
 document.addEventListener('DOMContentLoaded', function () {
     const forms = document.querySelectorAll('.needs-validation');
@@ -36,19 +44,26 @@ document.addEventListener('DOMContentLoaded', function () {
             btnGuardar.disabled = !esValido;
         }
 
+        // Marca (o desmarca) un input individual como invalido: borde rojo +
+        // mensaje de error visible. Reutilizada por 'input', 'focusout',
+        // 'change' y la deteccion de autofill, para no repetir la logica.
+        function marcarValidez(input) {
+            if (input.checkValidity()) {
+                input.classList.remove('is-invalid');
+                let feedback = input.closest('.motivo-row')?.querySelector('.invalid-feedback');
+                if (feedback) feedback.style.display = 'none';
+            } else {
+                input.classList.add('is-invalid');
+                let feedback = input.closest('.motivo-row')?.querySelector('.invalid-feedback');
+                if (feedback) feedback.style.display = 'block';
+            }
+        }
+
         // Delegación de eventos a nivel formulario para detectar inputs
         // dinámicos recién agregados.
         form.addEventListener('input', function (e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
-                if (e.target.checkValidity()) {
-                    e.target.classList.remove('is-invalid');
-                    let feedback = e.target.closest('.motivo-row')?.querySelector('.invalid-feedback');
-                    if (feedback) feedback.style.display = 'none';
-                } else {
-                    e.target.classList.add('is-invalid');
-                    let feedback = e.target.closest('.motivo-row')?.querySelector('.invalid-feedback');
-                    if (feedback) feedback.style.display = 'block';
-                }
+                marcarValidez(e.target);
                 verificarFormulario();
             }
         });
@@ -64,22 +79,57 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
+        // 'change' cubre casos que 'input' no siempre dispara de forma
+        // confiable: autocompletado del navegador, pegar texto y salir del
+        // campo sin escribir, o cambios via teclado en algunos navegadores.
+        form.addEventListener('change', function (e) {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                marcarValidez(e.target);
+                verificarFormulario();
+            }
+        });
+
+        // Deteccion de autofill en Chrome/Edge: estos navegadores no
+        // disparan 'input' al autocompletar, pero si aplican una animacion
+        // CSS que se puede "escuchar" (ver @keyframes onAutoFillStart y la
+        // regla input:-webkit-autofill en el <style> del JSP). En cuanto el
+        // navegador rellena un campo, esto revalida ese campo al instante.
+        form.addEventListener('animationstart', function (e) {
+            if (e.animationName === 'onAutoFillStart' &&
+                (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) {
+                marcarValidez(e.target);
+                verificarFormulario();
+            }
+        });
+
         if (form.id === 'formNuevaArea') {
             window.verificarFormularioArea = verificarFormulario;
         }
 
+        // Revisa todos los campos del form y marca los invalidos. Se usa en
+        // la verificacion inicial y en el polling de abajo.
+        function marcarValidezFormularioCompleto() {
+            form.querySelectorAll('input, select').forEach(function (input) {
+                marcarValidez(input);
+            });
+            verificarFormulario();
+        }
+
         // Verificación inicial: si un campo ya viene invalido desde que carga
         // la pantalla (ej. un valor guardado en BD que ya no cumple el patron
-        // actual), se marca de una vez en rojo.
-        form.querySelectorAll('input, select').forEach(function (input) {
-            if (!input.checkValidity()) {
-                input.classList.add('is-invalid');
-                let feedback = input.closest('.motivo-row')?.querySelector('.invalid-feedback');
-                if (feedback) feedback.style.display = 'block';
-            }
-        });
+        // actual, o el navegador autocompleto algo invalido antes de que este
+        // script corriera), se marca de una vez en rojo.
+        marcarValidezFormularioCompleto();
 
-        verificarFormulario();
+        // Revision periodica (polling): cubre el caso de scripts o extensiones
+        // (ej. herramientas de "form filler" para pruebas) que asignan el valor
+        // de un input directamente por JS (input.value = "..."). Esa asignacion
+        // NO dispara 'input', 'change' ni la animacion de autofill, asi que
+        // ningun listener se entera. Revisar cada 500ms es barato para un
+        // formulario de este tamaño y garantiza que el marcado visual (rojo +
+        // mensaje) siempre refleje el valor real, sin importar como haya
+        // cambiado.
+        setInterval(marcarValidezFormularioCompleto, 500);
     });
 
     // Muestra el mensaje de error (si el servidor lo mandó) usando el mismo

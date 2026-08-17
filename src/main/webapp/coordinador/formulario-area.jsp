@@ -44,6 +44,18 @@
             box-shadow: none;
             border: none;
         }
+
+        /* Truco para detectar el autocompletado del navegador (Chrome/Edge)
+           desde JS: al autocompletar un input, el navegador dispara esta
+           animacion (vacia, no se ve nada) y formulario-area.js la escucha
+           via el evento 'animationstart' para revalidar el campo al instante. */
+        @keyframes onAutoFillStart {
+            from {}
+            to {}
+        }
+        input:-webkit-autofill {
+            animation-name: onAutoFillStart;
+        }
     </style>
 </head>
 <body data-mensaje-error="${mensajeError}">
@@ -79,7 +91,7 @@
                                 <label for="nombreArea" class="form-label fs-6 fw-bold">Nombre Área</label>
                                 <input type="text" id="nombreArea" name="nombreArea" class="form-control form-control-figma w-100 fs-6"
                                        value="${area.nombre}" placeholder="Escribe nombre"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -87,7 +99,7 @@
                                 <label for="nombresEncargado" class="form-label fs-6 fw-bold">Nombres del encargado</label>
                                 <input type="text" id="nombresEncargado" name="nombresEncargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${area.nombresEncargado}" placeholder="Escribe los nombres del encargado"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -95,7 +107,7 @@
                                 <label for="apellidoPaternoEncargado" class="form-label fs-6 fw-bold">Apellido paterno del encargado</label>
                                 <input type="text" id="apellidoPaternoEncargado" name="apellidoPaternoEncargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${area.apellidoPaternoEncargado}" placeholder="Escribe el apellido paterno del encargado"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -103,7 +115,7 @@
                                 <label for="apellidoMaternoEncargado" class="form-label fs-6 fw-bold">Apellido materno del encargado</label>
                                 <input type="text" id="apellidoMaternoEncargado" name="apellidoMaternoEncargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${area.apellidoMaternoEncargado}" placeholder="Escribe el apellido materno del encargado"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]*$" title="Solo se permiten letras, números, espacios y . , ( ) / -">
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]*$" title="Solo se permiten letras, números, espacios y . , ( ) / -">
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -111,7 +123,7 @@
                                 <label for="correo" class="form-label fs-6 fw-bold">Correo</label>
                                 <input type="email" id="correo" name="correo" class="form-control form-control-figma w-100 fs-6"
                                        value="${area.correoContacto}" placeholder="Escribe el correo del encargado"
-                                       pattern="^[a-zA-Z0-9._-]+@utez\.edu\.mx$" title="El correo debe terminar en @utez.edu.mx" required>
+                                       pattern="^[a-zA-Z0-9._\-]+@utez\.edu\.mx$" title="El correo debe terminar en @utez.edu.mx" required>
                                 <div class="invalid-feedback">El correo debe tener un formato válido y terminar en @utez.edu.mx.</div>
                             </div>
 
@@ -165,7 +177,7 @@
                                 <label for="nombreArea" class="form-label fs-6 fw-bold">Nombre Área</label>
                                 <input type="text" id="nombreArea" name="nombreArea" class="form-control form-control-figma w-100 fs-6"
                                        value="${areaEdit.nombre}" placeholder="Escribe nombre"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -173,7 +185,7 @@
                                 <label for="nombresEncargado" class="form-label fs-6 fw-bold">Nombres del encargado</label>
                                 <input type="text" id="nombresEncargado" name="nombresEncargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${areaEdit.nombresEncargado}" placeholder="Escribe los nombres del encargado"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -181,7 +193,7 @@
                                 <label for="apellidoPaternoEncargado" class="form-label fs-6 fw-bold">Apellido paterno del encargado</label>
                                 <input type="text" id="apellidoPaternoEncargado" name="apellidoPaternoEncargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${areaEdit.apellidoPaternoEncargado}" placeholder="Escribe el apellido paterno del encargado"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -189,7 +201,7 @@
                                 <label for="apellidoMaternoEncargado" class="form-label fs-6 fw-bold">Apellido materno del encargado</label>
                                 <input type="text" id="apellidoMaternoEncargado" name="apellidoMaternoEncargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${areaEdit.apellidoMaternoEncargado}" placeholder="Escribe el apellido materno del encargado"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]*$" title="Solo se permiten letras, números, espacios y . , ( ) / -">
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]*$" title="Solo se permiten letras, números, espacios y . , ( ) / -">
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -197,7 +209,7 @@
                                 <label for="correo" class="form-label fs-6 fw-bold">Correo</label>
                                 <input type="email" id="correo" name="correo" class="form-control form-control-figma w-100 fs-6"
                                        value="${areaEdit.correoContacto}" placeholder="Escribe el correo del encargado"
-                                       pattern="^[a-zA-Z0-9._-]+@utez\.edu\.mx$" title="El correo debe terminar en @utez.edu.mx" required>
+                                       pattern="^[a-zA-Z0-9._\-]+@utez\.edu\.mx$" title="El correo debe terminar en @utez.edu.mx" required>
                                 <div class="invalid-feedback">El correo debe tener un formato válido y terminar en @utez.edu.mx.</div>
                             </div>
 
@@ -217,7 +229,7 @@
                             <div class="w-100 position-relative">
                                 <input type="text" name="nuevoMotivo" class="form-control form-control-figma w-100 fs-6"
                                        placeholder="Escribe el motivo de atención"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -">
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -">
                             </div>
                             <button type="submit" id="btnAgregarMotivo" class="btn-figma btn-figma-sm flex-shrink-0">+</button>
                         </form>
@@ -238,7 +250,7 @@
                                         <div class="w-100 position-relative">
                                             <input type="text" name="nombreMotivo" value="${motivo.nombreMotivo}"
                                                    class="form-control form-control-figma w-100 fs-6"
-                                                   pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,()/-]+$"
+                                                   pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$"
                                                    title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
                                         </div>
                                         <button type="submit" class="btn-figma btn-figma-sm flex-shrink-0" title="Guardar motivo" disabled>
@@ -294,93 +306,7 @@
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/motivos.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/areas.js"></script>
-
-<!-- Script para validar los formularios en tiempo real (Soporta elementos dinámicos) -->
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const forms = document.querySelectorAll('.needs-validation');
-
-        forms.forEach(form => {
-            // Busca el botón de submit dentro del form, o si está fuera usando el atributo form="id"
-            let btnGuardar = form.querySelector('button[type="submit"]');
-            if (!btnGuardar && form.id) {
-                // OJO: no usar template literals de JS aqui (comillas invertidas con signo
-                // de dolar y llaves), porque este archivo es un JSP y ese mismo simbolo lo
-                // evalua el motor de JSP (Expression Language) antes de mandar la pagina al
-                // navegador. Se concatena con "+" para evitar el choque de sintaxis.
-                btnGuardar = document.querySelector('button[type="submit"][form="' + form.id + '"]');
-            }
-
-            function verificarFormulario() {
-                if (!btnGuardar) {
-                    return;
-                }
-
-                let esValido = form.checkValidity();
-
-                // "Nueva Área" ya no tiene un <input required> estatico para motivos (ahora
-                // son hidden inputs que agrega motivos.js), asi que aqui se exige aparte.
-                if (form.id === 'formNuevaArea') {
-                    const contenedorMotivos = document.getElementById('motivosContainer');
-                    const tieneMotivos = !!contenedorMotivos && contenedorMotivos.querySelectorAll('input[name="motivos[]"]').length > 0;
-                    esValido = esValido && tieneMotivos;
-                }
-
-                btnGuardar.disabled = !esValido;
-            }
-
-            // Usamos delegación de eventos (focusout, input) a nivel formulario
-            // para que detecte inputs dinámicos recién agregados.
-            form.addEventListener('input', function (e) {
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
-                    if (e.target.checkValidity()) {
-                        e.target.classList.remove('is-invalid');
-                        // Lógica extra si los motivos dinámicos usan un div de invalid-feedback que no es sibling directo
-                        let feedback = e.target.closest('.motivo-row')?.querySelector('.invalid-feedback');
-                        if(feedback) feedback.style.display = 'none';
-                    } else {
-                        e.target.classList.add('is-invalid');
-                        let feedback = e.target.closest('.motivo-row')?.querySelector('.invalid-feedback');
-                        if(feedback) feedback.style.display = 'block';
-                    }
-                    verificarFormulario();
-                }
-            });
-
-            form.addEventListener('focusout', function (e) {
-                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
-                    if (!e.target.checkValidity()) {
-                        e.target.classList.add('is-invalid');
-                        let feedback = e.target.closest('.motivo-row')?.querySelector('.invalid-feedback');
-                        if(feedback) feedback.style.display = 'block';
-                    }
-                    verificarFormulario();
-                }
-            });
-
-            // Expuesta para que motivos.js pueda re-evaluar "Guardar" al agregar/quitar
-            // filas de motivo dinamicas, ya que esas mutaciones del DOM no disparan
-            // los eventos 'input'/'focusout' que este listener escucha.
-            if (form.id === 'formNuevaArea') {
-                window.verificarFormularioArea = verificarFormulario;
-            }
-
-            // Verificación inicial: si un campo ya viene invalido desde que carga la pantalla
-            // (ej. un valor guardado en BD que ya no cumple el patron actual), se marca de
-            // una vez en rojo. Sin esto, "Guardar" se ve apagado sin ninguna pista de cual
-            // campo es el problema.
-            form.querySelectorAll('input, select').forEach(function (input) {
-                if (!input.checkValidity()) {
-                    input.classList.add('is-invalid');
-                    let feedback = input.closest('.motivo-row')?.querySelector('.invalid-feedback');
-                    if (feedback) feedback.style.display = 'block';
-                }
-            });
-
-            verificarFormulario();
-        });
-    });
-</script>
+<script src="${pageContext.request.contextPath}/assets/js/coordinador/formulario-area.js"></script>
 
 </body>
 </html>
