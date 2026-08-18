@@ -1,11 +1,11 @@
-<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Gestión de Tutorías - Reportes Globales</title>
+    <title>Sistema de Gestión de Tutorías - Reportes</title>
     <link href="${pageContext.request.contextPath}/assets/css/bootstrap.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/bi/bootstrap-icons.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/global.css" rel="stylesheet">
@@ -13,9 +13,38 @@
     <link href="${pageContext.request.contextPath}/assets/css/alertas.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
     <style>
+        .card-grafica {
+            min-height: 340px;
+            display: flex;
+            flex-direction: column;
+        }
+        .card-grafica .grafica-contenido {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .card-grafica canvas {
+            max-height: 260px;
+        }
+        .grafica-vacio {
+            color: #9ca3af;
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
         #filtroDesde, #filtroHasta {
             cursor: pointer;
         }
+        #filtroDesde:hover, #filtroHasta:hover {
+            border-color: var(--borde-campo);
+        }
+        #filtroDesde:focus, #filtroHasta:focus {
+            border-color: var(--utez-green);
+            box-shadow: 0 0 0 0.15rem rgba(0, 139, 116, 0.25);
+        }
+
         .tarjeta-kpi-clickeable {
             cursor: pointer;
             transition: box-shadow .15s ease, transform .15s ease;
@@ -36,24 +65,8 @@
             background-color: #E5E7EB;
             color: #374151;
         }
-        .btn-alertar-tutor {
-            border: none;
-            background: transparent;
-            color: #6B7280;
-            padding: .25rem .4rem;
-            border-radius: 8px;
-        }
-        .btn-alertar-tutor:hover {
-            background-color: #ECF3FA;
-        }
-        .btn-alertar-tutor.riesgo {
-            color: #DC2626;
-        }
-        .btn-alertar-tutor.riesgo:hover {
-            background-color: #FBE2E1;
-        }
         /* Reutilizadas por todos los modales de "Ver detalles" (Tutorías Grupales,
-           Alumnos Atendidos, ...) para partir la ficha en secciones y evitar aglomeración. */
+           Alumnos Atendidos, Canalizados...) para partir la ficha en secciones. */
         .seccion-detalle-titulo {
             font-weight: 600;
             color: #0B1C30;
@@ -77,8 +90,6 @@
             margin-bottom: .85rem;
             white-space: pre-wrap;
         }
-        /* Boton "Volver" de los modales de detalle: verde institucional en vez del azul
-           por defecto de .btn-link de Bootstrap. */
         .btn-volver-figma {
             color: var(--utez-green) !important;
             text-decoration: none;
@@ -107,27 +118,18 @@
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
-    <jsp:include page="../includes/navbar-coordinador.jsp" />
+    <jsp:include page="../includes/navbar-tutor.jsp" />
 
     <div class="flex-grow-1 px-4 py-2 d-flex flex-column">
 
         <h2 class="titulo-principal h5 mb-3 mt-2">Sistema de Gestión de Tutorías</h2>
 
         <div class="banner-grupos h5 mb-4">
-            Reportes Globales
+            Reportes
         </div>
 
         <div class="row g-3 mb-2">
-            <div class="col-md-3">
-                <label for="filtroCarrera" class="form-label fw-bold">Carrera</label>
-                <select id="filtroCarrera" class="form-select form-control-figma">
-                    <option value="">Seleccione la carrera</option>
-                    <c:forEach var="c" items="${listaCarreras}">
-                        <option value="${c.idCarrera}">${c.nombre}</option>
-                    </c:forEach>
-                </select>
-            </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label for="filtroCuatrimestre" class="form-label fw-bold">Cuatrimestre</label>
                 <select id="filtroCuatrimestre" class="form-select form-control-figma">
                     <option value="">Seleccione el cuatrimestre</option>
@@ -136,7 +138,7 @@
                     </c:forEach>
                 </select>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-4">
                 <label for="filtroGrupo" class="form-label fw-bold">Grupo</label>
                 <select id="filtroGrupo" class="form-select form-control-figma">
                     <option value="">Seleccione el grupo</option>
@@ -148,12 +150,12 @@
                     <option value="F">F</option>
                 </select>
             </div>
-            <div class="col-md-3">
-                <label for="filtroTutor" class="form-label fw-bold">Tutor</label>
-                <select id="filtroTutor" class="form-select form-control-figma">
-                    <option value="">Todos los tutores</option>
-                    <c:forEach var="t" items="${listaTutores}">
-                        <option value="${t.numeroEmpleado}">${t.nombres} ${t.apellidos}</option>
+            <div class="col-md-4">
+                <label for="filtroCarrera" class="form-label fw-bold">Carrera</label>
+                <select id="filtroCarrera" class="form-select form-control-figma">
+                    <option value="">Seleccione la carrera</option>
+                    <c:forEach var="carrera" items="${listaCarreras}">
+                        <option value="${carrera.idCarrera}">${carrera.nombre}</option>
                     </c:forEach>
                 </select>
             </div>
@@ -173,7 +175,7 @@
             </div>
         </div>
 
-        <div id="avisoReporte" class="aviso-inline aviso-inline-advertencia d-none" role="alert"></div>
+        <div id="avisoReporte" class="alert alert-warning d-none" role="alert"></div>
 
         <div class="row g-3 mb-3">
             <div class="col-md-6">
@@ -191,13 +193,16 @@
             </div>
         </div>
 
-        <div class="row g-3 mb-4">
+        <div class="row g-3 mb-3">
             <div class="col-md-3">
                 <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3 tarjeta-kpi-clickeable"
                      id="cardAlumnosAtendidos" role="button" tabindex="0">
-                    <i class="bi bi-person-check fs-2" style="color:#008B74;"></i>
+                    <div class="rounded-circle d-flex justify-content-center align-items-center"
+                         style="width:44px; height:44px; background-color:#008B74;">
+                        <i class="bi bi-person-check text-white fs-5"></i>
+                    </div>
                     <div>
-                        <div class="text-muted small">Alumnos Atendidos</div>
+                        <div class="text-muted small">Tutorías Individuales</div>
                         <div class="fw-bold fs-4" id="kpiAtendidos">--</div>
                     </div>
                 </div>
@@ -205,19 +210,25 @@
             <div class="col-md-3">
                 <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3 tarjeta-kpi-clickeable"
                      id="cardTutoriasGrupales" role="button" tabindex="0">
-                    <i class="bi bi-people fs-2" style="color:#008B74;"></i>
+                    <div class="rounded-circle d-flex justify-content-center align-items-center"
+                         style="width:44px; height:44px; background-color:#008B74;">
+                        <i class="bi bi-people text-white fs-5"></i>
+                    </div>
                     <div>
                         <div class="text-muted small">Tutorías Grupales</div>
-                        <div class="fw-bold fs-4" id="kpiTutoriasGrupales">--</div>
+                        <div class="fw-bold fs-4" id="kpiGruposAtendidos">--</div>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3 tarjeta-kpi-clickeable"
                      id="cardCanalizados" role="button" tabindex="0">
-                    <i class="bi bi-signpost-split fs-2" style="color:#008B74;"></i>
+                    <div class="rounded-circle d-flex justify-content-center align-items-center"
+                         style="width:44px; height:44px; background-color:#008B74;">
+                        <i class="bi bi-signpost-split text-white fs-5"></i>
+                    </div>
                     <div>
-                        <div class="text-muted small">Canalizados</div>
+                        <div class="text-muted small">Canalizaciones</div>
                         <div class="fw-bold fs-4" id="kpiCanalizados">--</div>
                     </div>
                 </div>
@@ -225,7 +236,10 @@
             <div class="col-md-3">
                 <div class="p-3 bg-white rounded-figma shadow-sm border d-flex align-items-center gap-3 tarjeta-kpi-clickeable"
                      id="cardPendientes" role="button" tabindex="0">
-                    <i class="bi bi-hourglass-split fs-2" style="color:#008B74;"></i>
+                    <div class="rounded-circle d-flex justify-content-center align-items-center"
+                         style="width:44px; height:44px; background-color:#008B74;">
+                        <i class="bi bi-hourglass-split text-white fs-5"></i>
+                    </div>
                     <div>
                         <div class="text-muted small">Pendientes</div>
                         <div class="fw-bold fs-4" id="kpiPendientes">--</div>
@@ -236,17 +250,20 @@
 
         <div class="row g-3">
             <div class="col-md-6">
-                <div class="p-3 bg-white rounded-figma shadow-sm border">
+                <div class="p-3 bg-white rounded-figma shadow-sm border card-grafica">
                     <div class="fw-bold mb-2">Distribución de Alumnos Canalizados</div>
-                    <div style="height: 320px;">
+                    <div class="grafica-contenido">
                         <canvas id="graficaPastel"></canvas>
+                        <div id="pastelVacio" class="grafica-vacio d-none">
+                            No hay canalizaciones registradas en este periodo.
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
-                <div class="p-3 bg-white rounded-figma shadow-sm border">
-                    <div class="fw-bold mb-2">Estado de Solicitudes de Asesoría (General)</div>
-                    <div style="height: 320px;">
+                <div class="p-3 bg-white rounded-figma shadow-sm border card-grafica">
+                    <div class="fw-bold mb-2">Estado de Reportes (General)</div>
+                    <div class="grafica-contenido">
                         <canvas id="graficaBarras"></canvas>
                     </div>
                 </div>
@@ -266,25 +283,30 @@
 
 </div>
 
+<!-- ==================== MODAL: Tutorías Grupales ==================== -->
 <div class="modal fade" id="modalTutoriasGrupales" tabindex="-1" aria-labelledby="tituloModalTutoriasGrupales" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: var(--radius-figma, 16px); border: none;">
             <div class="modal-header">
                 <div>
-                    <h5 class="modal-title fw-bold" id="tituloModalTutoriasGrupales">Seguimiento de Tutorías Grupales</h5>
-                    <div class="text-muted small" id="subtituloModalTutoriasGrupales">Avance de cada tutor frente al objetivo del periodo vigente.</div>
+                    <h5 class="modal-title fw-bold" id="tituloModalTutoriasGrupales">Tutorías Grupales</h5>
+                    <div class="text-muted small" id="subtituloModalTutoriasGrupales">Avance de tus grupos frente al objetivo del periodo vigente.</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
                 <div id="avisoSinPeriodoGrupal" class="aviso-inline aviso-inline-advertencia d-none" role="alert">
-                    No hay un periodo escolar vigente, por lo que no es posible calcular el avance de tutorías grupales.
+                    No hay un periodo escolar vigente, por lo que no es posible calcular tu avance de tutorías grupales.
+                </div>
+                <div class="d-flex justify-content-end mb-3">
+                    <a href="${pageContext.request.contextPath}/tutoria-grupal" class="btn btn-figma">
+                        <i class="bi bi-journal-plus"></i> Registrar Tutoría Grupal
+                    </a>
                 </div>
                 <div class="table-responsive">
                     <table class="table table-sm align-middle mb-0">
                         <thead>
                         <tr>
-                            <th>Nombre del Tutor</th>
                             <th>Grupo Asignado</th>
                             <th>Tutorías Impartidas</th>
                             <th>Estatus</th>
@@ -292,7 +314,7 @@
                         </tr>
                         </thead>
                         <tbody id="tablaTutoriasGrupalesBody">
-                        <tr><td colspan="5" class="text-center text-muted">Cargando...</td></tr>
+                        <tr><td colspan="4" class="text-center text-muted">Cargando...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -315,34 +337,26 @@
             </div>
             <div class="modal-body">
 
-                <!-- Seccion 2: resumen del tutor/grupo/avance (misma info que la tarjeta de seguimiento) -->
                 <div class="seccion-detalle-card mb-4">
-                    <div class="seccion-detalle-titulo">Tutor y avance</div>
+                    <div class="seccion-detalle-titulo">Grupo y avance</div>
                     <div class="row g-3">
-                        <div class="col-md-4">
-                            <div class="campo-detalle-label">Nombre del Tutor</div>
-                            <div class="campo-detalle-valor fw-semibold" id="detalleNombreTutor">--</div>
-                        </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="campo-detalle-label">Grupo Asignado</div>
                             <div class="campo-detalle-valor fw-semibold" id="detalleGrupoAsignado">--</div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="campo-detalle-label">Tutorías Impartidas</div>
                             <div class="campo-detalle-valor fw-semibold" id="detalleAvance">--</div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <div class="campo-detalle-label">Estatus</div>
                             <div class="campo-detalle-valor" id="detalleEstatus">--</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Seccion 1: detalle de cada sesion registrada, con la misma distribucion de
-                     tarjetas blancas ("Detalles de la Sesión" / "Asesorías Grupales") que usa
-                     el modal de detalle de Alumnos Atendidos, una tarjeta por sesion. -->
                 <div id="avisoSinSesiones" class="aviso-inline aviso-inline-advertencia d-none" role="alert">
-                    Este tutor todavía no ha registrado sesiones grupales para este grupo en el periodo vigente.
+                    Todavía no has registrado sesiones grupales para este grupo en el periodo vigente.
                 </div>
                 <div id="listaSesionesGrupales"></div>
 
@@ -351,6 +365,7 @@
     </div>
 </div>
 
+<!-- ==================== MODAL: Alumnos Atendidos ==================== -->
 <div class="modal fade" id="modalAlumnosAtendidos" tabindex="-1" aria-labelledby="tituloModalAlumnosAtendidos" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: var(--radius-figma, 16px); border: none;">
@@ -438,13 +453,14 @@
     </div>
 </div>
 
+<!-- ==================== MODAL: Canalizados ==================== -->
 <div class="modal fade" id="modalCanalizados" tabindex="-1" aria-labelledby="tituloModalCanalizados" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: var(--radius-figma, 16px); border: none;">
             <div class="modal-header">
                 <div>
-                    <h5 class="modal-title fw-bold" id="tituloModalCanalizados">Alumnos Canalizados</h5>
-                    <div class="text-muted small">Alumnos derivados a algún área de apoyo (Psicología, Servicio Médico, Becas, etc.).</div>
+                    <h5 class="modal-title fw-bold" id="tituloModalCanalizados">Canalizados</h5>
+                    <div class="text-muted small">Alumnos que has derivado a algún área de apoyo (Psicología, Servicio Médico, Becas, etc.).</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
@@ -459,14 +475,13 @@
                             <th>Alumno</th>
                             <th>Grupo</th>
                             <th>Fecha de Canalización</th>
-                            <th>Tutor</th>
                             <th>Área de Canalización</th>
                             <th>Estatus</th>
                             <th class="text-center">Acción</th>
                         </tr>
                         </thead>
                         <tbody id="tablaCanalizadosBody">
-                        <tr><td colspan="7" class="text-center text-muted">Cargando...</td></tr>
+                        <tr><td colspan="6" class="text-center text-muted">Cargando...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -503,10 +518,6 @@
                             <div class="campo-detalle-label">Fecha de Canalización</div>
                             <div class="campo-detalle-valor fw-semibold" id="canalizacionDetalleFecha">--</div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="campo-detalle-label">Tutor</div>
-                            <div class="campo-detalle-valor fw-semibold" id="canalizacionDetalleTutor">--</div>
-                        </div>
                     </div>
                 </div>
                 <div class="seccion-detalle-card">
@@ -529,23 +540,34 @@
                             <div class="campo-detalle-valor mb-0" id="canalizacionDetalleObservaciones">--</div>
                         </div>
                     </div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-figma d-none" id="btnRecordarAreaApoyo">
+                            Enviar correo de recordatorio
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- ==================== MODAL: Pendientes ==================== -->
 <div class="modal fade" id="modalSolicitudesPendientes" tabindex="-1" aria-labelledby="tituloModalSolicitudesPendientes" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content" style="border-radius: var(--radius-figma, 16px); border: none;">
             <div class="modal-header">
                 <div>
                     <h5 class="modal-title fw-bold" id="tituloModalSolicitudesPendientes">Solicitudes Pendientes</h5>
-                    <div class="text-muted small">Solicitudes de tutoría creadas por los alumnos que aún no han sido procesadas.</div>
+                    <div class="text-muted small">Solicitudes de tutoría de tus alumnos que aún no han sido procesadas.</div>
                 </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
             </div>
             <div class="modal-body">
+                <div class="d-flex justify-content-end mb-3">
+                    <a href="${pageContext.request.contextPath}/solicitudes" class="btn btn-figma">
+                        Ir a Solicitudes
+                    </a>
+                </div>
                 <div id="avisoSinPendientes" class="aviso-inline aviso-inline-advertencia d-none" role="alert">
                     No hay solicitudes pendientes con los filtros seleccionados.
                 </div>
@@ -608,100 +630,41 @@
                         </div>
                     </div>
                 </div>
-                <div class="seccion-detalle-card d-flex justify-content-between align-items-center flex-wrap gap-2">
-                    <div>
-                        <div class="seccion-detalle-titulo mb-1">Tutor Asignado</div>
-                        <div class="campo-detalle-valor mb-0 fw-semibold" id="pendienteDetalleTutor">--</div>
-                    </div>
-                    <button type="button" class="btn btn-figma" id="btnRecordarTutor">
-                        <i class="bi bi-envelope"></i> Enviar recordatorio por correo
-                    </button>
+                <div class="text-end">
+                    <a href="${pageContext.request.contextPath}/solicitudes" class="btn btn-figma">
+                        Ir a Solicitudes
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="modalAlerta" tabindex="-1" aria-labelledby="alertaTitulo" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content alerta-card">
-            <div class="modal-body alerta-body">
-                <div class="alerta-icono-wrap">
-                    <div class="alerta-icono" id="alertaIconoCirculo">
-                        <img id="alertaIcono" src="" alt="" data-base-path="${pageContext.request.contextPath}/assets/img/alertas/">
-                    </div>
-                </div>
-                <div class="alerta-texto">
-                    <h2 class="alerta-titulo" id="alertaTitulo"></h2>
-                    <p class="alerta-mensaje" id="alertaMensaje"></p>
-                </div>
-                <div class="alerta-botones" id="alertaBotones">
-                    <button type="button" class="alerta-btn alerta-btn-secundario" id="alertaBtnCancelar" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="alerta-btn alerta-btn-exito" id="alertaBtnAceptar" data-bs-dismiss="modal">Aceptar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-labelledby="confirmacionTitulo" aria-hidden="true" data-bs-backdrop="static">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content alerta-card">
-            <div class="modal-body alerta-body">
-                <div class="confirmacion-icono-wrap">
-                    <div class="confirmacion-icono" id="confirmacionIconoCirculo">
-                        <img id="confirmacionIcono" src="" alt="" data-base-path="${pageContext.request.contextPath}/assets/img/alertas/">
-                    </div>
-                </div>
-                <h2 class="confirmacion-titulo" id="confirmacionTitulo"></h2>
-                <p class="confirmacion-mensaje" id="confirmacionMensaje"></p>
-                <div class="confirmacion-botones">
-                    <button type="button" class="btn-confirmar-cancelar" id="btnConfirmacionCancelar" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="button" class="btn-confirmar" id="btnConfirmacionAceptar">Aceptar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="toast-container position-fixed top-0 end-0 p-3">
-    <div id="toastNotificacion" class="toast toast-alerta" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-alerta-cuerpo">
-            <div class="toast-alerta-icono" id="toastIconoCirculo">
-                <img id="toastIcono" src="" alt="" data-base-path="${pageContext.request.contextPath}/assets/img/alertas/">
-            </div>
-            <div class="toast-alerta-contenido">
-                <p class="toast-alerta-titulo" id="toastTitulo"></p>
-                <p class="toast-alerta-mensaje" id="toastMensaje"></p>
-            </div>
-            <button type="button" class="btn-close toast-alerta-cerrar" data-bs-dismiss="toast" aria-label="Cerrar"></button>
-        </div>
-        <div class="toast-progress-bar" id="toastBarra"></div>
-    </div>
-</div>
+<!-- Inclusión de los modales unificados -->
+<jsp:include page="../includes/alertas.jsp" />
 
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/tutor/reportes.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/coordinador/tutorias-grupales-modal.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/coordinador/alumnos-atendidos-modal.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/coordinador/canalizados-modal.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/coordinador/pendientes-modal.js"></script>
-<script src="${pageContext.request.contextPath}/assets/js/coordinador/buscador-alumno.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/tutor/tutorias-grupales-modal.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/tutor/alumnos-atendidos-modal.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/tutor/canalizados-modal.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/tutor/pendientes-modal.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/tutor/buscador-alumno.js"></script>
 <script>
     const CONTEXT_PATH = "${pageContext.request.contextPath}";
-    let graficaBarrasCoordinador = null;
+    let graficaBarrasTutor = null;
 
-    function pintarBarrasCoordinador(data) {
+    function pintarBarrasTutor(data) {
         const ctx = document.getElementById('graficaBarras');
 
-        if (graficaBarrasCoordinador) graficaBarrasCoordinador.destroy();
-        graficaBarrasCoordinador = new Chart(ctx, {
+        if (graficaBarrasTutor) graficaBarrasTutor.destroy();
+        graficaBarrasTutor = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Pendientes', 'Atendidas', 'Canalizadas'],
+                labels: ['Atendidos', 'Canalizaciones', 'Asistencias'],
                 datasets: [{
-                    data: [data.totalPendientes, data.totalAtendidos, data.totalCanalizados],
+                    data: [data.totalAtendidos, data.totalCanalizados, data.totalAsistencias],
                     backgroundColor: ['#8FD9C4', '#7FA8C9', '#0B2544']
                 }]
             },
@@ -714,19 +677,56 @@
         });
     }
 
-    function buscarReporteCoordinador() {
+    function actualizarEstadoPastel(data) {
+        const canvas = document.getElementById('graficaPastel');
+        const aviso = document.getElementById('pastelVacio');
+        const distribucion = data.distribucionCanalizados || [];
+
+        if (distribucion.length === 0) {
+            canvas.classList.add('d-none');
+            aviso.classList.remove('d-none');
+        } else {
+            canvas.classList.remove('d-none');
+            aviso.classList.add('d-none');
+        }
+    }
+
+    function buscarReporteTutor() {
         cargarReporte({
             contextPath: CONTEXT_PATH,
-            filtros: ['filtroCarrera', 'filtroCuatrimestre', 'filtroGrupo', 'filtroTutor', 'filtroDesde', 'filtroHasta', 'filtroMatricula'],
+            filtros: ['filtroCarrera', 'filtroCuatrimestre', 'filtroGrupo', 'filtroDesde', 'filtroHasta', 'filtroMatricula'],
             onDatos: function (data) {
-                pintarBarrasCoordinador(data);
-                pintarKpi('kpiTutoriasGrupales', data.totalGruposAtendidos);
+                pintarBarrasTutor(data);
+                actualizarEstadoPastel(data);
             }
         });
     }
 
-    document.getElementById('btnBuscar').addEventListener('click', buscarReporteCoordinador);
-    document.addEventListener('DOMContentLoaded', buscarReporteCoordinador);
+    document.getElementById('btnBuscar').addEventListener('click', buscarReporteTutor);
+    document.addEventListener('DOMContentLoaded', buscarReporteTutor);
+
+    function habilitarClickCompletoFecha(id) {
+        const input = document.getElementById(id);
+        input.addEventListener('click', function () {
+            if (typeof input.showPicker === 'function') {
+                input.showPicker();
+            }
+        });
+    }
+
+    habilitarClickCompletoFecha('filtroDesde');
+    habilitarClickCompletoFecha('filtroHasta');
+
+    function filtrosReporteActuales() {
+        return {
+            idCarrera: document.getElementById('filtroCarrera').value,
+            cuatrimestre: document.getElementById('filtroCuatrimestre').value,
+            letra: document.getElementById('filtroGrupo').value,
+            desde: document.getElementById('filtroDesde').value,
+            hasta: document.getElementById('filtroHasta').value,
+            matricula: document.getElementById('filtroMatricula').value
+        };
+    }
 
     document.getElementById('cardTutoriasGrupales').addEventListener('click', abrirModalTutoriasGrupales);
     document.getElementById('cardTutoriasGrupales').addEventListener('keydown', function (e) {
@@ -736,22 +736,9 @@
         }
     });
 
-    function filtrosReporteActuales() {
-        return {
-            idCarrera: document.getElementById('filtroCarrera').value,
-            cuatrimestre: document.getElementById('filtroCuatrimestre').value,
-            letra: document.getElementById('filtroGrupo').value,
-            idTutor: document.getElementById('filtroTutor').value,
-            desde: document.getElementById('filtroDesde').value,
-            hasta: document.getElementById('filtroHasta').value,
-            matricula: document.getElementById('filtroMatricula').value
-        };
-    }
-
     function abrirModalAlumnosAtendidosConFiltros() {
         abrirModalAlumnosAtendidos(filtrosReporteActuales());
     }
-
     document.getElementById('cardAlumnosAtendidos').addEventListener('click', abrirModalAlumnosAtendidosConFiltros);
     document.getElementById('cardAlumnosAtendidos').addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -763,7 +750,6 @@
     function abrirModalCanalizadosConFiltros() {
         abrirModalCanalizados(filtrosReporteActuales());
     }
-
     document.getElementById('cardCanalizados').addEventListener('click', abrirModalCanalizadosConFiltros);
     document.getElementById('cardCanalizados').addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -775,7 +761,6 @@
     function abrirModalPendientesConFiltros() {
         abrirModalPendientes(filtrosReporteActuales());
     }
-
     document.getElementById('cardPendientes').addEventListener('click', abrirModalPendientesConFiltros);
     document.getElementById('cardPendientes').addEventListener('keydown', function (e) {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -784,24 +769,12 @@
         }
     });
 
-    function habilitarClickCompletoFecha(id) {
-        const input = document.getElementById(id);
-        input.addEventListener('click', function () {
-            if (typeof input.showPicker === 'function') {
-                input.showPicker();
-            }
-        });
-    }
-    habilitarClickCompletoFecha('filtroDesde');
-    habilitarClickCompletoFecha('filtroHasta');
-
     function construirParamsExport(formato) {
         const params = new URLSearchParams();
 
         const selectCarrera = document.getElementById('filtroCarrera');
         const selectCuatrimestre = document.getElementById('filtroCuatrimestre');
         const selectGrupo = document.getElementById('filtroGrupo');
-        const selectTutor = document.getElementById('filtroTutor');
         const desde = document.getElementById('filtroDesde').value;
         const hasta = document.getElementById('filtroHasta').value;
 
@@ -817,10 +790,6 @@
             params.append('letra', selectGrupo.value);
             params.append('nombreGrupo', selectGrupo.options[selectGrupo.selectedIndex].text);
         }
-        if (selectTutor.value) {
-            params.append('idTutor', selectTutor.value);
-            params.append('nombreTutor', selectTutor.options[selectTutor.selectedIndex].text);
-        }
         if (desde) params.append('desde', desde);
         if (hasta) params.append('hasta', hasta);
 
@@ -831,9 +800,9 @@
         }
 
         // Las graficas solo existen como <canvas> en el navegador: se capturan como PNG
-        // (misma imagen que ve el coordinador) para que el Excel/PDF las incluya tal cual.
+        // (misma imagen que ve el tutor) para que el Excel/PDF las incluya tal cual.
         if (graficaPastelReporte) params.append('imagenPastel', graficaPastelReporte.toBase64Image());
-        if (graficaBarrasCoordinador) params.append('imagenBarras', graficaBarrasCoordinador.toBase64Image());
+        if (graficaBarrasTutor) params.append('imagenBarras', graficaBarrasTutor.toBase64Image());
 
         const accion = formato === 'excel' ? 'exportarExcel' : 'exportarPdf';
         params.append('accion', accion);
@@ -844,7 +813,7 @@
     async function descargarReporte(formato) {
         const params = construirParamsExport(formato);
         try {
-            const resp = await fetch(CONTEXT_PATH + '/reportes-globales', {
+            const resp = await fetch(CONTEXT_PATH + '/ReportesServlet', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: params.toString()
@@ -895,7 +864,6 @@
             }
         );
     });
-
 </script>
 </body>
 </html>

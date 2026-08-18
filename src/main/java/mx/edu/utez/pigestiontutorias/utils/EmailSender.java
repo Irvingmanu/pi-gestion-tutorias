@@ -70,8 +70,8 @@ public class EmailSender {
     }
 
     public boolean enviarConfirmacionCanalizacion(String destEmail, String nombreEncargado, String nombreArea,
-                                                   String nombreAlumno, String matricula, String motivoODetalle,
-                                                   String linkConfirmacion) {
+                                                  String nombreAlumno, String matricula, String motivoODetalle,
+                                                  String linkConfirmacion) {
         try {
             Message message = new MimeMessage(getSession());
             message.setFrom(new InternetAddress(user));
@@ -84,6 +84,82 @@ public class EmailSender {
                     + "<p><strong>Alumno:</strong> " + nombreAlumno + " (matrícula " + matricula + ")<br>"
                     + "<strong>Motivo:</strong> " + motivoODetalle + "</p>"
                     + "<p>Cuando hayas atendido al alumno, confirma la canalización dando clic aquí:</p>"
+                    + "<p><a href='" + linkConfirmacion + "' style='color:#00847b;'>Confirmar canalización atendida</a></p>"
+                    + "<p>Si el link no funciona, copia y pega esta dirección en tu navegador:<br>" + linkConfirmacion + "</p>";
+
+            message.setContent(htmlContent, "text/html; charset=utf-8");
+            Transport.send(message);
+            return true;
+        } catch (MessagingException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean enviarAlertaTutoriasGrupales(String destEmail, String nombreTutor, String grupoAsignado,
+                                                int realizadas, int objetivo) {
+        try {
+            Message message = new MimeMessage(getSession());
+            message.setFrom(new InternetAddress(user));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(destEmail));
+            message.setSubject("Recordatorio: tutorías grupales pendientes - UTEZ");
+
+            String htmlContent = "<h2>Seguimiento de tutorías grupales</h2>"
+                    + "<p>Hola " + nombreTutor + ",</p>"
+                    + "<p>Tu avance de tutorías grupales en el grupo <strong>" + grupoAsignado + "</strong> es de "
+                    + "<strong>" + realizadas + " de " + objetivo + "</strong> sesiones registradas en este periodo.</p>"
+                    + "<p>Por favor ponte al corriente registrando tus próximas sesiones en el módulo de "
+                    + "\"Registro de Tutoría Grupal\".</p>";
+
+            message.setContent(htmlContent, "text/html; charset=utf-8");
+            Transport.send(message);
+            return true;
+        } catch (MessagingException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean enviarRecordatorioSolicitud(String destEmail, String nombreTutor, String nombreAlumno, String asunto) {
+        try {
+            Message message = new MimeMessage(getSession());
+            message.setFrom(new InternetAddress(user));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(destEmail));
+            message.setSubject("Recordatorio: solicitud de tutoría pendiente - UTEZ");
+
+            String htmlContent = "<h2>Solicitud de tutoría pendiente</h2>"
+                    + "<p>Estimado(a) " + nombreTutor + ", se le solicita amablemente que atienda la solicitud de su alumno "
+                    + "<strong>" + nombreAlumno + "</strong> en la brevedad posible.</p>"
+                    + "<p><strong>Asunto de la solicitud:</strong> " + asunto + "</p>"
+                    + "<p>Puedes revisarla y responderla desde el módulo de \"Solicitudes de Tutoría\".</p>";
+
+            message.setContent(htmlContent, "text/html; charset=utf-8");
+            Transport.send(message);
+            return true;
+        } catch (MessagingException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Boton "Enviar correo de recordatorio" del modal "Canalizados" del tutor: la canalizacion
+    // sigue en 'En proceso' (el encargado del area aun no confirma que atendio al alumno), asi
+    // que se le reenvia el mismo link de confirmacion del correo original.
+    public boolean enviarRecordatorioCanalizacion(String destEmail, String nombreEncargado, String nombreArea,
+                                                  String nombreAlumno, String matricula, String motivoODetalle,
+                                                  String linkConfirmacion) {
+        try {
+            Message message = new MimeMessage(getSession());
+            message.setFrom(new InternetAddress(user));
+            message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(destEmail));
+            message.setSubject("Recordatorio: canalización pendiente - " + nombreArea + " - UTEZ");
+
+            String htmlContent = "<h2>Recordatorio de canalización pendiente</h2>"
+                    + "<p>Hola " + nombreEncargado + ",</p>"
+                    + "<p>Un alumno sigue esperando ser atendido en <strong>" + nombreArea + "</strong>:</p>"
+                    + "<p><strong>Alumno:</strong> " + nombreAlumno + " (matrícula " + matricula + ")<br>"
+                    + "<strong>Motivo:</strong> " + motivoODetalle + "</p>"
+                    + "<p>Por favor dale seguimiento a la brevedad. Cuando lo hayas atendido, confirma la canalización aquí:</p>"
                     + "<p><a href='" + linkConfirmacion + "' style='color:#00847b;'>Confirmar canalización atendida</a></p>"
                     + "<p>Si el link no funciona, copia y pega esta dirección en tu navegador:<br>" + linkConfirmacion + "</p>";
 
