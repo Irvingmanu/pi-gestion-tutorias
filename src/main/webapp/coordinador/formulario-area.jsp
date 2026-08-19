@@ -91,7 +91,7 @@
                                 <label for="nombreArea" class="form-label fs-6 fw-bold">Nombre Área</label>
                                 <input type="text" id="nombreArea" name="nombreArea" class="form-control form-control-figma w-100 fs-6"
                                        value="${area.nombre}" placeholder="Escribe nombre"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" data-msg-requerido="El nombre del área es obligatorio." required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -99,7 +99,7 @@
                                 <label for="nombresEncargado" class="form-label fs-6 fw-bold">Nombres del encargado</label>
                                 <input type="text" id="nombresEncargado" name="nombresEncargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${area.nombresEncargado}" placeholder="Escribe los nombres del encargado"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" data-msg-requerido="El nombre del encargado es obligatorio." required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -107,7 +107,7 @@
                                 <label for="apellidoPaternoEncargado" class="form-label fs-6 fw-bold">Apellido paterno del encargado</label>
                                 <input type="text" id="apellidoPaternoEncargado" name="apellidoPaternoEncargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${area.apellidoPaternoEncargado}" placeholder="Escribe el apellido paterno del encargado"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" data-msg-requerido="El apellido paterno del encargado es obligatorio." required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -123,7 +123,7 @@
                                 <label for="correo" class="form-label fs-6 fw-bold">Correo</label>
                                 <input type="email" id="correo" name="correo" class="form-control form-control-figma w-100 fs-6"
                                        value="${area.correoContacto}" placeholder="Escribe el correo del encargado"
-                                       pattern="^[a-zA-Z0-9._\-]+@utez\.edu\.mx$" title="El correo debe terminar en @utez.edu.mx" required>
+                                       pattern="^[a-zA-Z0-9._\-]+@utez\.edu\.mx$" title="El correo debe terminar en @utez.edu.mx" data-msg-requerido="El correo es obligatorio." required>
                                 <div class="invalid-feedback">El correo debe tener un formato válido y terminar en @utez.edu.mx.</div>
                             </div>
 
@@ -177,7 +177,7 @@
                                 <label for="nombreArea" class="form-label fs-6 fw-bold">Nombre Área</label>
                                 <input type="text" id="nombreArea" name="nombreArea" class="form-control form-control-figma w-100 fs-6"
                                        value="${areaEdit.nombre}" placeholder="Escribe nombre"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" data-msg-requerido="El nombre del área es obligatorio." required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -185,7 +185,7 @@
                                 <label for="nombresEncargado" class="form-label fs-6 fw-bold">Nombres del encargado</label>
                                 <input type="text" id="nombresEncargado" name="nombresEncargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${areaEdit.nombresEncargado}" placeholder="Escribe los nombres del encargado"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" data-msg-requerido="El nombre del encargado es obligatorio." required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -193,7 +193,7 @@
                                 <label for="apellidoPaternoEncargado" class="form-label fs-6 fw-bold">Apellido paterno del encargado</label>
                                 <input type="text" id="apellidoPaternoEncargado" name="apellidoPaternoEncargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${areaEdit.apellidoPaternoEncargado}" placeholder="Escribe el apellido paterno del encargado"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" data-msg-requerido="El apellido paterno del encargado es obligatorio." required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -209,7 +209,7 @@
                                 <label for="correo" class="form-label fs-6 fw-bold">Correo</label>
                                 <input type="email" id="correo" name="correo" class="form-control form-control-figma w-100 fs-6"
                                        value="${areaEdit.correoContacto}" placeholder="Escribe el correo del encargado"
-                                       pattern="^[a-zA-Z0-9._\-]+@utez\.edu\.mx$" title="El correo debe terminar en @utez.edu.mx" required>
+                                       pattern="^[a-zA-Z0-9._\-]+@utez\.edu\.mx$" title="El correo debe terminar en @utez.edu.mx" data-msg-requerido="El correo es obligatorio." required>
                                 <div class="invalid-feedback">El correo debe tener un formato válido y terminar en @utez.edu.mx.</div>
                             </div>
 
@@ -251,7 +251,7 @@
                                             <input type="text" name="nombreMotivo" value="${motivo.nombreMotivo}"
                                                    class="form-control form-control-figma w-100 fs-6"
                                                    pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$"
-                                                   title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
+                                                   title="Solo se permiten letras, números, espacios y . , ( ) / -" data-msg-requerido="El nombre del motivo es obligatorio." required>
                                         </div>
                                         <button type="submit" class="btn-figma btn-figma-sm flex-shrink-0" title="Guardar motivo" disabled>
                                             <img src="${pageContext.request.contextPath}/assets/img/coordinador/check.png" width="16" alt="Guardar">

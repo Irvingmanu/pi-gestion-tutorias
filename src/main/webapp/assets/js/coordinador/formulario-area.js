@@ -44,19 +44,66 @@ document.addEventListener('DOMContentLoaded', function () {
             btnGuardar.disabled = !esValido;
         }
 
+        // Mensaje generico de respaldo, solo se usa si un input required NO
+        // tiene su propio atributo data-msg-requerido en el HTML.
+        const MENSAJE_CAMPO_OBLIGATORIO = 'Este campo es obligatorio.';
+
+        // Encuentra el <div class="invalid-feedback"> asociado a un input.
+        // Cubre los 3 casos que existen en la vista:
+        //  1) Campos principales: el feedback es el hermano siguiente directo
+        //     del input (ej. Nombre Área, Correo).
+        //  2) Motivos dinamicos que agrega motivos.js: pueden venir envueltos
+        //     en un contenedor con clase '.motivo-row'.
+        //  3) Fallback: buscar dentro del contenedor padre inmediato.
+        function obtenerFeedback(input) {
+            if (input.nextElementSibling && input.nextElementSibling.classList.contains('invalid-feedback')) {
+                return input.nextElementSibling;
+            }
+            const motivoRow = input.closest('.motivo-row');
+            if (motivoRow) {
+                const fb = motivoRow.querySelector('.invalid-feedback');
+                if (fb) return fb;
+            }
+            return input.parentElement?.querySelector('.invalid-feedback') || null;
+        }
+
         // Marca (o desmarca) un input individual como invalido: borde rojo +
         // mensaje de error visible. Reutilizada por 'input', 'focusout',
-        // 'change' y la deteccion de autofill, para no repetir la logica.
+        // 'change', la deteccion de autofill y el polling, para no repetir
+        // la logica.
+        //
+        // Si el campo es obligatorio y esta vacio (input.validity.valueMissing)
+        // se muestra el mensaje de data-msg-requerido del input (ej. "El
+        // nombre del área es obligatorio."), o el generico si no tiene ese
+        // atributo. Para cualquier otro tipo de invalidez (ej. no cumple el
+        // pattern, o el correo no tiene formato valido) se muestra el mensaje
+        // original que ya venia escrito en el HTML (el de "Solo se permiten
+        // letras...", "El correo debe terminar en...", etc.), guardado la
+        // primera vez en el propio elemento para no perderlo al sobreescribir
+        // el texto.
         function marcarValidez(input) {
+            const feedback = obtenerFeedback(input);
+
             if (input.checkValidity()) {
                 input.classList.remove('is-invalid');
-                let feedback = input.closest('.motivo-row')?.querySelector('.invalid-feedback');
                 if (feedback) feedback.style.display = 'none';
-            } else {
-                input.classList.add('is-invalid');
-                let feedback = input.closest('.motivo-row')?.querySelector('.invalid-feedback');
-                if (feedback) feedback.style.display = 'block';
+                return;
             }
+
+            input.classList.add('is-invalid');
+            if (!feedback) {
+                return;
+            }
+
+            if (feedback.dataset.msgPatron === undefined) {
+                feedback.dataset.msgPatron = feedback.textContent.trim();
+            }
+
+            feedback.textContent = input.validity.valueMissing
+                ? (input.dataset.msgRequerido || MENSAJE_CAMPO_OBLIGATORIO)
+                : feedback.dataset.msgPatron;
+
+            feedback.style.display = 'block';
         }
 
         // Delegación de eventos a nivel formulario para detectar inputs
@@ -71,9 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
         form.addEventListener('focusout', function (e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
                 if (!e.target.checkValidity()) {
-                    e.target.classList.add('is-invalid');
-                    let feedback = e.target.closest('.motivo-row')?.querySelector('.invalid-feedback');
-                    if (feedback) feedback.style.display = 'block';
+                    marcarValidez(e.target);
                 }
                 verificarFormulario();
             }
