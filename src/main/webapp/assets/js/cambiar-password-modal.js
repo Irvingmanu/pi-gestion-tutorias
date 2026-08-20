@@ -63,8 +63,12 @@ function validarPasoNuevaPassword() {
     limpiarInvalido(inputNueva);
     limpiarInvalido(inputConfirmar);
 
-    if (inputNueva.value.length > 0 && inputNueva.value.length < 8) {
-        marcarInvalido(inputNueva, document.getElementById('errorPasswordNueva'), 'Debe tener al menos 8 caracteres.');
+    if (inputNueva.value.length > 0 && !cumpleRequisitosPassword(inputNueva.value)) {
+        marcarInvalido(
+            inputNueva,
+            document.getElementById('errorPasswordNueva'),
+            'Debe tener al menos 8 caracteres, una mayúscula y un número.'
+        );
         esValido = false;
     } else if (inputNueva.value && passwordActualVerificada !== null && inputNueva.value === passwordActualVerificada) {
         marcarInvalido(inputNueva, document.getElementById('errorPasswordNueva'), 'La nueva contraseña no puede ser igual a la actual.');
@@ -82,6 +86,11 @@ function validarPasoNuevaPassword() {
 
     btnGuardar.disabled = !esValido;
     return esValido;
+}
+
+/** Al menos 8 caracteres, una mayúscula y un número (debe coincidir con CambioPasswordUtil.java). */
+function cumpleRequisitosPassword(password) {
+    return password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password);
 }
 
 function verificarPasswordActual() {

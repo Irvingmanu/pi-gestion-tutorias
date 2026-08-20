@@ -97,6 +97,9 @@
                                placeholder="Confirma la nueva contraseña">
                         <div class="invalid-feedback" id="errorPasswordConfirmar">Las contraseñas no coinciden.</div>
                     </div>
+                    <div class="invalid-feedback" id="errorPasswordNueva">
+                        Debe tener al menos 8 caracteres, una mayúscula y un número, y ser distinta a la actual.
+                    </div>
                 </div>
 
             </div>
