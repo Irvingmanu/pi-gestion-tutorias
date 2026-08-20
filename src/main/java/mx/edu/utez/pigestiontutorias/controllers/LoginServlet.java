@@ -12,6 +12,7 @@ import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.CoordinadorDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
+import mx.edu.utez.pigestiontutorias.utils.PasswordUtil;
 
 import java.io.IOException;
 
