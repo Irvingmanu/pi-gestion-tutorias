@@ -8,6 +8,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import mx.edu.utez.pigestiontutorias.models.Coordinador;
 import mx.edu.utez.pigestiontutorias.models.dao.CoordinadorDAO;
+import mx.edu.utez.pigestiontutorias.utils.CambioPasswordUtil;
+import mx.edu.utez.pigestiontutorias.utils.EmailSender;
 
 import java.io.IOException;
 
@@ -23,5 +25,57 @@ public class PerfilServlet extends HttpServlet {
         Coordinador coordinador = numeroEmpleado != null ? coordinadorDAO.getById(numeroEmpleado) : null;
         request.setAttribute("coordinador", coordinador);
         request.getRequestDispatcher("/coordinador/perfil.jsp").forward(request, response);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        response.setContentType("application/json;charset=UTF-8");
+
+        HttpSession session = request.getSession(false);
+        Integer numeroEmpleado = session != null ? (Integer) session.getAttribute("idUsuario") : null;
+
+        if (numeroEmpleado == null) {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.getWriter().write("{\"exito\":false,\"mensaje\":\"Tu sesión expiró, inicia sesión de nuevo.\"}");
+            return;
+        }
+
+        Coordinador coordinador = coordinadorDAO.getById(numeroEmpleado);
+        if (coordinador == null) {
+            response.getWriter().write("{\"exito\":false,\"mensaje\":\"No se encontró la información del coordinador.\"}");
+            return;
+        }
+
+        String accion = request.getParameter("accion");
+
+        if ("verificarPassword".equals(accion)) {
+            String passwordActual = request.getParameter("passwordActual");
+            response.getWriter().write(CambioPasswordUtil.verificarPassword(passwordActual, coordinador.getPass()));
+            return;
+        }
+
+        if ("cambiarPassword".equals(accion)) {
+            String passwordActual = request.getParameter("passwordActual");
+            String passwordNueva = request.getParameter("passwordNueva");
+            String passwordConfirmar = request.getParameter("passwordConfirmar");
+
+            String resultado = CambioPasswordUtil.cambiarPassword(
+                    passwordActual, passwordNueva, passwordConfirmar, coordinador.getPass(),
+                    nuevaPassSinHash -> coordinadorDAO.actualizarPassword(coordinador.getNumeroEmpleado(), nuevaPassSinHash)
+            );
+
+            if (CambioPasswordUtil.fueExitoso(resultado)) {
+                try {
+                    new EmailSender().enviarConfirmacionCambio(coordinador.getCorreoInstitucional());
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+
+            response.getWriter().write(resultado);
+            return;
+        }
+
+        response.getWriter().write("{\"exito\":false,\"mensaje\":\"Acción no reconocida.\"}");
     }
 }

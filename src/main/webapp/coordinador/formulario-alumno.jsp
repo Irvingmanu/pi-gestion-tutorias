@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="paginaActiva" value="grupos" scope="request"/>
 <!-- alumnoFormulario, esEdicion, tituloBanner y mensajeError ya vienen calculados desde
-     AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los consume. -->
+AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los consume. -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -109,7 +109,7 @@
                         <label for="apellidoMaterno" class="form-label fs-6 fw-bold">Apellido materno</label>
                         <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.apellidoMaterno}" placeholder="Escribe el apellido materno"
-                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$">
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" required>
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
@@ -157,7 +157,7 @@
                             <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Escriba para buscar un grupo...</option>
                             <c:forEach var="grupo" items="${listaGrupos}">
                                 <option value="${grupo.idGrupo}" data-cuatri="${grupo.cuatrimestre}"
-                                        ${alumnoFormulario != null && alumnoFormulario.idGrupo == grupo.idGrupo ? 'selected' : ''}>
+                                    ${alumnoFormulario != null && alumnoFormulario.idGrupo == grupo.idGrupo ? 'selected' : ''}>
                                         ${grupo.nombreCarrera} - ${grupo.cuatrimestre}° ${grupo.letra} (Gen ${grupo.generacion})
                                 </option>
                             </c:forEach>
@@ -185,7 +185,7 @@
                              GET /generarCredenciales). -->
                         <input type="email" id="correo" name="correo" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.correoInstitucional}"
-                               placeholder="Se genera automáticamente al elegir el grupo" pattern="^[a-zA-Z0-9._-]+@utez\.edu\.mx$"
+                               placeholder="Se genera automáticamente al elegir el grupo" pattern="^[a-zA-Z0-9._\-]+@utez\.edu\.mx$"
                                oninput="this.value = this.value.replace(/[^a-zA-Z0-9.\-_@]/g, '')" readonly required>
                         <div class="invalid-feedback">El correo debe tener un formato válido y terminar en @utez.edu.mx.</div>
                     </div>

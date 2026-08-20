@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="paginaActiva" value="tutores" scope="request"/>
 <!-- tutorFormulario, esEdicion, tituloBanner y mensajeError ya vienen calculados desde
-     TutoresServlet (forwardAFormulario/resolverMensajeError): esta vista solo los consume. -->
+TutoresServlet (forwardAFormulario/resolverMensajeError): esta vista solo los consume. -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -85,7 +85,8 @@
                         <label for="apellidoMaterno" class="form-label fs-6 fw-bold">Apellido materno</label>
                         <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control form-control-figma w-100 fs-6"
                                value="${tutorFormulario.apellidoMaterno}"
-                               placeholder="Escribe el apellido materno" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$">
+                               placeholder="Escribe el apellido materno" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
+                               required>
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
@@ -118,7 +119,7 @@
                                value="${tutorFormulario != null && tutorFormulario.numeroEmpleado > 0 ? tutorFormulario.numeroEmpleado : ''}"
                                placeholder="Escribe la nómina" maxlength="4" minlength="4" pattern="^[0-9]{4}$"
                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                            ${esEdicion ? 'readonly' : ''} required>
+                        ${esEdicion ? 'readonly' : ''} required>
                         <div class="invalid-feedback">La nómina debe tener exactamente 4 dígitos.</div>
                     </div>
 
@@ -128,7 +129,7 @@
                             <option value="" ${empty tutorFormulario ? 'selected' : ''}>Seleccione la academia</option>
                             <c:forEach var="academia" items="${listaAcademias}">
                                 <option value="${academia.idAcademia}"
-                                        ${tutorFormulario != null && tutorFormulario.idAcademia == academia.idAcademia ? 'selected' : ''}>
+                                    ${tutorFormulario != null && tutorFormulario.idAcademia == academia.idAcademia ? 'selected' : ''}>
                                         ${academia.nombre}
                                 </option>
                             </c:forEach>

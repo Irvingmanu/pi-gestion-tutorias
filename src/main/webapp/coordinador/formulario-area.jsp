@@ -115,7 +115,7 @@
                                 <label for="apellidoMaternoEncargado" class="form-label fs-6 fw-bold">Apellido materno del encargado</label>
                                 <input type="text" id="apellidoMaternoEncargado" name="apellidoMaternoEncargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${area.apellidoMaternoEncargado}" placeholder="Escribe el apellido materno del encargado"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]*$" title="Solo se permiten letras, números, espacios y . , ( ) / -">
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" data-msg-requerido="El apellido materno del encargado es obligatorio." required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
@@ -201,7 +201,7 @@
                                 <label for="apellidoMaternoEncargado" class="form-label fs-6 fw-bold">Apellido materno del encargado</label>
                                 <input type="text" id="apellidoMaternoEncargado" name="apellidoMaternoEncargado" class="form-control form-control-figma w-100 fs-6"
                                        value="${areaEdit.apellidoMaternoEncargado}" placeholder="Escribe el apellido materno del encargado"
-                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]*$" title="Solo se permiten letras, números, espacios y . , ( ) / -">
+                                       pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -" data-msg-requerido="El apellido materno del encargado es obligatorio." required>
                                 <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
 
