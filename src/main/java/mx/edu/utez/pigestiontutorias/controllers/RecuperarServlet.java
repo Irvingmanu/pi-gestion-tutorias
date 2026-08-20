@@ -30,6 +30,12 @@ public class RecuperarServlet extends HttpServlet {
     private final TokenDao tokenDao = new TokenDao();
     private final EmailSender emailSender = new EmailSender();
 
+    // Tope de la clave en TEXTO PLANO que el usuario escribe. La columna PASS en BD
+    // es VARCHAR2(64) (pensada para un hash SHA-256 de 64 hex), pero mientras se
+    // guarde en texto plano debe caber ahi sin truncarse: se rechaza en vez de
+    // recortar para no dejar al usuario con una contraseña distinta a la que escribio.
+    private static final int MAX_PASS_TEXTO_PLANO = 50;
+
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -117,6 +123,13 @@ public class RecuperarServlet extends HttpServlet {
         String pass2 = request.getParameter("pass2");
         pass1 = pass1 != null ? pass1.trim() : null;
         pass2 = pass2 != null ? pass2.trim() : null;
+
+        if (pass1 != null && pass1.length() > MAX_PASS_TEXTO_PLANO) {
+            request.setAttribute("mensajeError", "La contraseña no puede superar los " + MAX_PASS_TEXTO_PLANO + " caracteres.");
+            request.setAttribute("step", "cambiar");
+            request.getRequestDispatcher("recuperar-contra.jsp").forward(request, response);
+            return;
+        }
 
         if (pass1 != null && pass1.equals(pass2) && !pass1.isEmpty()) {
             boolean actualizado = false;

@@ -35,7 +35,7 @@ public class TutorDao implements Dao<Tutor, Integer> {
                 psTutor.setString(5, entidad.getCorreoInstitucional());
                 psTutor.setString(6, entidad.getTelefono());
                 psTutor.setInt(7, entidad.getIdAcademia());
-                psTutor.setString(8, pass);
+                psTutor.setString(8, PasswordUtil.hash(pass));
                 psTutor.executeUpdate();
             }
 
@@ -348,7 +348,7 @@ public class TutorDao implements Dao<Tutor, Integer> {
         String sql = "UPDATE TUTOR SET PASS = ? WHERE NUMERO_EMPLEADO = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, nuevaPassword);
+            ps.setString(1, PasswordUtil.hash(nuevaPassword));
             ps.setInt(2, numeroEmpleado);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {

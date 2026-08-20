@@ -33,19 +33,6 @@ AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los con
             box-shadow: none;
             border: none;
         }
-
-        /* Truco para detectar el autocompletado del navegador (Chrome/Edge)
-           desde JS: al autocompletar un input, el navegador dispara esta
-           animacion (vacia, no se ve nada) y formulario-alumno.js la escucha
-           via el evento 'animationstart' para revalidar el campo al instante.
-           Igual que en formulario-area.jsp. */
-        @keyframes onAutoFillStart {
-            from {}
-            to {}
-        }
-        input:-webkit-autofill {
-            animation-name: onAutoFillStart;
-        }
     </style>
 </head>
 <body data-mensaje-error="${mensajeError}">
@@ -78,7 +65,7 @@ AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los con
                         <label for="nombres" class="form-label fs-6 fw-bold">Nombres</label>
                         <input type="text" id="nombres" name="nombres" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.nombres}" placeholder="Escribe los nombres"
-                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" data-msg-requerido="Los nombres son obligatorios." required>
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" maxlength="100" required>
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
@@ -86,7 +73,7 @@ AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los con
                         <label for="apellidoPaterno" class="form-label fs-6 fw-bold">Apellido paterno</label>
                         <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.apellidoPaterno}" placeholder="Escribe el apellido paterno"
-                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" data-msg-requerido="El apellido paterno es obligatorio." required>
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" maxlength="50" required>
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
@@ -94,7 +81,7 @@ AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los con
                         <label for="apellidoMaterno" class="form-label fs-6 fw-bold">Apellido materno</label>
                         <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.apellidoMaterno}" placeholder="Escribe el apellido materno"
-                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$">
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$" maxlength="50">
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
@@ -102,9 +89,9 @@ AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los con
                         <label for="correo" class="form-label fs-6 fw-bold">Correo</label>
                         <input type="email" id="correo" name="correo" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.correoInstitucional}"
-                               placeholder="Escribe el correo" pattern="^[a-zA-Z0-9._\-]+@utez\.edu\.mx$"
-                               oninput="this.value = this.value.replace(/[^a-zA-Z0-9.\-_@]/g, '')"
-                               data-msg-requerido="El correo es obligatorio." required>
+                               placeholder="Escribe el correo" pattern="^[a-zA-Z0-9._-]+@utez\.edu\.mx$"
+                               maxlength="100"
+                               oninput="this.value = this.value.replace(/[^a-zA-Z0-9.\-_@]/g, '')" required>
                         <div class="invalid-feedback">El correo debe tener un formato válido y terminar en @utez.edu.mx.</div>
                     </div>
 
@@ -115,7 +102,6 @@ AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los con
                                style="text-transform: uppercase;"
                                maxlength="10" minlength="10" pattern="^[a-zA-Z0-9]{10}$"
                                oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()"
-                               data-msg-requerido="La matrícula es obligatoria."
                         ${esEdicion ? 'readonly' : ''} required>
                         <div class="invalid-feedback">La matrícula debe tener exactamente 10 caracteres alfanuméricos.</div>
                     </div>
@@ -125,8 +111,7 @@ AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los con
                         <input type="text" id="telefono" name="telefono" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.telefono}" placeholder="Escribe el teléfono"
                                pattern="^\d{10}$" maxlength="10" minlength="10"
-                               oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                               data-msg-requerido="El teléfono es obligatorio." required>
+                               oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
                         <div class="invalid-feedback">Debe contener exactamente 10 dígitos numéricos.</div>
                     </div>
 
@@ -137,8 +122,7 @@ AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los con
 
                     <div class="mb-4">
                         <label for="genero" class="form-label fs-6 fw-bold">Género</label>
-                        <select id="genero" name="idGenero" class="form-select form-control-figma w-100 fs-6"
-                                data-msg-requerido="Por favor seleccione un género." required>
+                        <select id="genero" name="idGenero" class="form-select form-control-figma w-100 fs-6" required>
                             <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione el género</option>
                             <c:forEach var="genero" items="${listaGeneros}">
                                 <option value="${genero.id}" ${alumnoFormulario != null && alumnoFormulario.idGenero == genero.id ? 'selected' : ''}>
@@ -170,8 +154,7 @@ AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los con
                         <!-- Habilitado desde el inicio, con TODAS las carreras del sistema ya
                              renderizadas; el filtro de Academia (arriba) solo oculta opciones
                              por JS via data-academia-id, nunca bloquea ni recarga este select. -->
-                        <select id="carreraSelect" name="idCarrera" class="form-select form-control-figma w-100 fs-6"
-                                data-msg-requerido="Por favor seleccione una carrera." required>
+                        <select id="carreraSelect" name="idCarrera" class="form-select form-control-figma w-100 fs-6" required>
                             <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione la carrera</option>
                             <c:forEach var="carrera" items="${listaCarreras}">
                                 <option value="${carrera.idCarrera}" data-nivel="${carrera.nivel}" data-academia-id="${carrera.idAcademia}"
@@ -185,8 +168,7 @@ AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los con
 
                     <div class="mb-4">
                         <label for="cuatrimestre" class="form-label fs-6 fw-bold">Cuatrimestre</label>
-                        <select id="cuatrimestre" name="cuatrimestre" class="form-select form-control-figma w-100 fs-6"
-                                data-msg-requerido="Por favor seleccione un cuatrimestre." required disabled
+                        <select id="cuatrimestre" name="cuatrimestre" class="form-select form-control-figma w-100 fs-6" required disabled
                                 data-cuatrimestre-actual="${alumnoFormulario.grupo.cuatrimestre}">
                             <option value="" selected>Seleccione primero la carrera</option>
                         </select>
@@ -195,8 +177,7 @@ AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los con
 
                     <div class="mb-4">
                         <label for="letra" class="form-label fs-6 fw-bold">Grupo</label>
-                        <select id="letra" name="letra" class="form-select form-control-figma w-100 fs-6"
-                                data-msg-requerido="Por favor seleccione un grupo." required>
+                        <select id="letra" name="letra" class="form-select form-control-figma w-100 fs-6" required>
                             <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione el grupo</option>
                             <option value="A" ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.letra == 'A' ? 'selected' : ''}>A</option>
                             <option value="B" ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.letra == 'B' ? 'selected' : ''}>B</option>

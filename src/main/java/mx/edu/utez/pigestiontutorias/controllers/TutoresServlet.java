@@ -23,6 +23,14 @@ public class TutoresServlet extends HttpServlet {
 
     private static final String REGEX_NOMINA = "^[0-9]{4}$";
     private static final String REGEX_CORREO = "^[a-zA-Z0-9._-]+@utez\\.edu\\.mx$";
+    private static final String REGEX_NOMBRE = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$";
+    private static final String REGEX_TELEFONO = "^\\d{10}$";
+
+    // Deben coincidir con VARCHAR2(N) de TUTOR en la BD (ver utils/02_INSERTS...sql)
+    // para nunca dejar pasar al DAO un valor que provoque DataTruncation/SQLException.
+    private static final int MAX_NOMBRES = 100;
+    private static final int MAX_APELLIDO = 50;
+    private static final int MAX_CORREO = 100;
 
     private final TutorDao tutorDAO = new TutorDao();
     private final AsignacionTutorDao asignacionTutorDAO = new AsignacionTutorDao();
@@ -109,11 +117,11 @@ public class TutoresServlet extends HttpServlet {
             }
         }
 
-        tutor.setNombres(request.getParameter("nombres"));
-        tutor.setApellidoPaterno(request.getParameter("apellidoPaterno"));
-        tutor.setApellidoMaterno(request.getParameter("apellidoMaterno"));
-        tutor.setCorreoInstitucional(request.getParameter("correo"));
-        tutor.setTelefono(request.getParameter("telefono"));
+        tutor.setNombres(trimOrNull(request.getParameter("nombres")));
+        tutor.setApellidoPaterno(trimOrNull(request.getParameter("apellidoPaterno")));
+        tutor.setApellidoMaterno(trimOrNull(request.getParameter("apellidoMaterno")));
+        tutor.setCorreoInstitucional(trimOrNull(request.getParameter("correo")));
+        tutor.setTelefono(trimOrNull(request.getParameter("telefono")));
 
         // Capturar la lista de horarios enviados desde el formulario
         String[] horarios = request.getParameterValues("horariosDispo");
@@ -139,11 +147,27 @@ public class TutoresServlet extends HttpServlet {
             return;
         }
 
+        // Blindaje de servidor: nombres/apellidos/telefono solo se validaban con "pattern"
+        // en el HTML (igual que nomina/correo antes de blindarse). Se revalida formato Y
+        // longitud aqui para no depender del navegador y no dejar pasar un valor mas largo
+        // de lo que soporta la columna VARCHAR2 correspondiente en TUTOR.
+        boolean datosPersonalesValidos = tutor.getNombres() != null && tutor.getNombres().matches(REGEX_NOMBRE)
+                && tutor.getNombres().length() <= MAX_NOMBRES
+                && tutor.getApellidoPaterno() != null && tutor.getApellidoPaterno().matches(REGEX_NOMBRE)
+                && tutor.getApellidoPaterno().length() <= MAX_APELLIDO
+                && (tutor.getApellidoMaterno() == null || tutor.getApellidoMaterno().isBlank()
+                || (tutor.getApellidoMaterno().matches(REGEX_NOMBRE) && tutor.getApellidoMaterno().length() <= MAX_APELLIDO))
+                && tutor.getTelefono() != null && tutor.getTelefono().matches(REGEX_TELEFONO);
+        if (!datosPersonalesValidos) {
+            forwardAFormulario(request, response, null, tutor, "formato_invalido");
+            return;
+        }
+
         // Blindaje de servidor: el <input> de correo valida el formato con "pattern" en el
         // HTML, pero eso es solo UX. Se revalida aqui por si el formulario se manipula o se
         // envia sin pasar por la validacion del navegador.
         String correo = tutor.getCorreoInstitucional();
-        boolean correoValido = correo != null && correo.trim().matches(REGEX_CORREO);
+        boolean correoValido = correo != null && correo.matches(REGEX_CORREO) && correo.length() <= MAX_CORREO;
         if (!correoValido) {
             forwardAFormulario(request, response, null, tutor, "correo_invalido");
             return;
@@ -192,7 +216,7 @@ public class TutoresServlet extends HttpServlet {
     // (tutorFormulario, esEdicion, tituloBanner, mensajeError): esa logica no le
     // corresponde a la vista, vive aqui junto con el resto de las reglas del formulario.
     private void forwardAFormulario(HttpServletRequest request, HttpServletResponse response,
-                                     Tutor tutorEdit, Tutor tutorConError, String codigoError)
+                                    Tutor tutorEdit, Tutor tutorConError, String codigoError)
             throws ServletException, IOException {
         Tutor tutorFormulario = tutorEdit != null ? tutorEdit : tutorConError;
         String accionParam = request.getParameter("accion");
@@ -230,6 +254,10 @@ public class TutoresServlet extends HttpServlet {
             return "No se pudo guardar el tutor. Intenta de nuevo.";
         }
         return null;
+    }
+
+    private String trimOrNull(String valor) {
+        return valor != null ? valor.trim() : null;
     }
 
     private void procesarEliminacion(HttpServletRequest request, HttpServletResponse response) throws IOException {

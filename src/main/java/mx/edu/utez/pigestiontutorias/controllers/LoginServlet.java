@@ -12,6 +12,7 @@ import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.CoordinadorDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
+import mx.edu.utez.pigestiontutorias.utils.PasswordUtil;
 
 import java.io.IOException;
 
@@ -87,7 +88,8 @@ public class LoginServlet extends HttpServlet {
     }
 
     private boolean credencialesValidas(String estado, String passAlmacenada, String passIngresada) {
-        return "S".equals(estado) && passAlmacenada != null && passAlmacenada.equals(passIngresada);
+        return "S".equals(estado) && passAlmacenada != null
+                && passAlmacenada.equalsIgnoreCase(PasswordUtil.hash(passIngresada));
     }
 
     private void credencialesInvalidas(HttpServletRequest request, HttpServletResponse response)
