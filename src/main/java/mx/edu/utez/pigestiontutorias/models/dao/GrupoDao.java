@@ -15,13 +15,13 @@ import java.util.List;
 public class GrupoDao implements Dao<Grupo, Integer> {
 
     private static final String SELECT_BASE =
-            "SELECT g.ID_GRUPO, g.ID_CARRERA, g.CUATRIMESTRE, g.LETRA, g.ID_PERIODO, g.ESTADO, " +
+            "SELECT g.ID_GRUPO, g.ID_CARRERA, g.CUATRIMESTRE, g.LETRA, g.ID_PERIODO, g.GENERACION, g.ESTADO, " +
                     "car.NOMBRE AS NOMBRE_CARRERA, car.ID_ACADEMIA " +
                     "FROM GRUPO g JOIN CARRERA car ON car.ID_CARRERA = g.ID_CARRERA ";
 
     @Override
     public boolean create(Grupo entidad) {
-        String sql = "INSERT INTO GRUPO (ID_CARRERA, CUATRIMESTRE, LETRA, ID_PERIODO, ESTADO) VALUES (?, ?, ?, ?, 'S')";
+        String sql = "INSERT INTO GRUPO (ID_CARRERA, CUATRIMESTRE, LETRA, ID_PERIODO, GENERACION, ESTADO) VALUES (?, ?, ?, ?, ?, 'S')";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql, new String[]{"ID_GRUPO"})) {
 
@@ -29,6 +29,7 @@ public class GrupoDao implements Dao<Grupo, Integer> {
             ps.setInt(2, entidad.getCuatrimestre());
             ps.setString(3, entidad.getLetra());
             ps.setInt(4, entidad.getIdPeriodo());
+            ps.setString(5, entidad.getGeneracion());
 
             if (ps.executeUpdate() == 0) return false;
 
@@ -102,10 +103,12 @@ public class GrupoDao implements Dao<Grupo, Integer> {
 
     // Busca el GRUPO (Carrera+Cuatrimestre+Letra+Periodo) que corresponde a esa combinacion
     // exacta; si nadie lo ha usado todavia, lo crea. GRUPO tiene UQ_GRUPO sobre estas 4
-    // columnas, asi que nunca se duplica. La usan los formularios que capturan
-    // Carrera+Cuatrimestre+Letra (alta de alumno, asignacion de tutor) para resolver el
-    // ID_GRUPO real que hay que guardar.
-    public Integer findOrCreate(int idCarrera, int cuatrimestre, String letra, int idPeriodo) {
+    // columnas (GENERACION queda fuera del UNIQUE a proposito), asi que nunca se duplica.
+    // La usan los formularios que capturan Carrera+Cuatrimestre+Letra (alta de alumno,
+    // asignacion de tutor) para resolver el ID_GRUPO real que hay que guardar.
+    // "generacion" solo se usa si hay que CREAR el grupo (si ya existe, se respeta la
+    // generacion que ya tenia, no se sobreescribe con la que llegue esta vez).
+    public Integer findOrCreate(int idCarrera, int cuatrimestre, String letra, int idPeriodo, String generacion) {
         String sqlBuscar = "SELECT ID_GRUPO FROM GRUPO WHERE ID_CARRERA = ? AND CUATRIMESTRE = ? AND LETRA = ? AND ID_PERIODO = ?";
 
         try (Connection con = SQLConnector.getConnection();
@@ -133,15 +136,41 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         nuevo.setCuatrimestre(cuatrimestre);
         nuevo.setLetra(letra);
         nuevo.setIdPeriodo(idPeriodo);
+        nuevo.setGeneracion(generacion);
 
         return create(nuevo) ? nuevo.getIdGrupo() : null;
+    }
+
+    // A diferencia de findOrCreate() (que reutiliza en silencio el grupo si ya existe,
+    // pensado para el alta de alumno), el alta de grupo independiente (gestion-grupos.jsp)
+    // necesita distinguir "ya existe" de "se creo" para no confundir al coordinador.
+    public boolean existeGrupo(int idCarrera, int cuatrimestre, String letra, int idPeriodo) {
+        String sql = "SELECT 1 FROM GRUPO WHERE ID_CARRERA = ? AND CUATRIMESTRE = ? AND LETRA = ? AND ID_PERIODO = ? AND ESTADO = 'S'";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, idCarrera);
+            ps.setInt(2, cuatrimestre);
+            ps.setString(3, letra);
+            ps.setInt(4, idPeriodo);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al verificar el grupo: " + e.getMessage());
+            e.printStackTrace();
+            return true; // ante error de BD, se asume que existe para no arriesgar un duplicado
+        }
     }
 
     // Grupos que un tutor tiene asignados actualmente, con la etiqueta amigable lista
     // para pintar el <select> de "Tutoria Grupal"/"Tutoria Espontanea" (ej. "DSM 3°A").
     public List<Grupo> getGruposByTutor(int idTutor) {
         List<Grupo> lista = new ArrayList<>();
-        String sql = "SELECT g.ID_GRUPO, g.ID_CARRERA, g.CUATRIMESTRE, g.LETRA, g.ID_PERIODO, g.ESTADO, " +
+        String sql = "SELECT g.ID_GRUPO, g.ID_CARRERA, g.CUATRIMESTRE, g.LETRA, g.ID_PERIODO, g.GENERACION, g.ESTADO, " +
                 "car.NOMBRE AS NOMBRE_CARRERA, car.ID_ACADEMIA " +
                 "FROM ASIGNACION_TUTOR a " +
                 "JOIN GRUPO g ON g.ID_GRUPO = a.ID_GRUPO " +
@@ -175,6 +204,7 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         g.setCuatrimestre(rs.getInt("CUATRIMESTRE"));
         g.setLetra(rs.getString("LETRA"));
         g.setIdPeriodo(rs.getInt("ID_PERIODO"));
+        g.setGeneracion(rs.getString("GENERACION"));
         g.setEstado(rs.getString("ESTADO"));
         g.setNombreCarrera(rs.getString("NOMBRE_CARRERA"));
         g.setNombreGrupo(rs.getString("NOMBRE_CARRERA") + " " + rs.getInt("CUATRIMESTRE") + "°" + rs.getString("LETRA"));

@@ -2,6 +2,13 @@
 // formularios ".needs-validation" de la vista (modo "Nueva Área" y modo
 // edición) y controla el estado del boton Guardar de cada uno.
 //
+// El marcado visual (borde rojo + mensaje) es "tradicional": un campo vacio u
+// invalido NO se marca en rojo apenas carga la pantalla, solo despues de que
+// el usuario lo toca (escribe, pega, sale de el) o el navegador lo autocompleta.
+// Ver camposTocados mas abajo. El boton Guardar si evalua la validez real del
+// formulario completo desde el inicio, independientemente de que se muestre o
+// no el marcado en rojo.
+//
 // Soporta elementos dinamicos: los motivos que motivos.js agrega/quita del
 // DOM no disparan 'input'/'focusout' por si solos, por eso se expone
 // window.verificarFormularioArea para que motivos.js pueda pedir una
@@ -44,6 +51,13 @@ document.addEventListener('DOMContentLoaded', function () {
             btnGuardar.disabled = !esValido;
         }
 
+        // Campos que el usuario ya toco (escribio, pego, salio de el, o el navegador
+        // autocompleto): el marcado en rojo (borde + mensaje) solo aparece para campos
+        // que estan en este set, nunca para uno que el usuario aun no ha tocado. Evita
+        // que "Nueva Área" recien abierta se vea todo en rojo antes de que el usuario
+        // haga algo.
+        const camposTocados = new WeakSet();
+
         // Mensaje generico de respaldo, solo se usa si un input required NO
         // tiene su propio atributo data-msg-requerido en el HTML.
         const MENSAJE_CAMPO_OBLIGATORIO = 'Este campo es obligatorio.';
@@ -84,7 +98,10 @@ document.addEventListener('DOMContentLoaded', function () {
         function marcarValidez(input) {
             const feedback = obtenerFeedback(input);
 
-            if (input.checkValidity()) {
+            // Solo se muestra el borde rojo/mensaje si el campo ya fue tocado por el
+            // usuario: uno invalido pero aun no tocado se trata visualmente como si
+            // estuviera bien.
+            if (!camposTocados.has(input) || input.checkValidity()) {
                 input.classList.remove('is-invalid');
                 if (feedback) feedback.style.display = 'none';
                 return;
@@ -110,6 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // dinámicos recién agregados.
         form.addEventListener('input', function (e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                camposTocados.add(e.target);
                 marcarValidez(e.target);
                 verificarFormulario();
             }
@@ -117,9 +135,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         form.addEventListener('focusout', function (e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
-                if (!e.target.checkValidity()) {
-                    marcarValidez(e.target);
-                }
+                camposTocados.add(e.target);
+                marcarValidez(e.target);
                 verificarFormulario();
             }
         });
@@ -129,6 +146,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // campo sin escribir, o cambios via teclado en algunos navegadores.
         form.addEventListener('change', function (e) {
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+                camposTocados.add(e.target);
                 marcarValidez(e.target);
                 verificarFormulario();
             }
@@ -142,6 +160,7 @@ document.addEventListener('DOMContentLoaded', function () {
         form.addEventListener('animationstart', function (e) {
             if (e.animationName === 'onAutoFillStart' &&
                 (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT')) {
+                camposTocados.add(e.target);
                 marcarValidez(e.target);
                 verificarFormulario();
             }
@@ -151,19 +170,30 @@ document.addEventListener('DOMContentLoaded', function () {
             window.verificarFormularioArea = verificarFormulario;
         }
 
-        // Revisa todos los campos del form y marca los invalidos. Se usa en
-        // la verificacion inicial y en el polling de abajo.
+        // Marca como "tocado" (ver camposTocados) cualquier campo que YA traiga un
+        // valor: es la señal de que algo lo lleno (modo edicion con datos guardados,
+        // autofill del navegador, o un script/extension que asigno el value
+        // directamente por JS sin disparar eventos). Un campo vacio nunca se marca
+        // aqui, para no adelantarse a que el usuario lo toque.
+        function marcarSiTieneValor(input) {
+            if (input.value) {
+                camposTocados.add(input);
+            }
+            marcarValidez(input);
+        }
+
+        // Revisa todos los campos del form. Se usa en la verificacion inicial y en
+        // el polling de abajo.
         function marcarValidezFormularioCompleto() {
-            form.querySelectorAll('input, select').forEach(function (input) {
-                marcarValidez(input);
-            });
+            form.querySelectorAll('input, select').forEach(marcarSiTieneValor);
             verificarFormulario();
         }
 
-        // Verificación inicial: si un campo ya viene invalido desde que carga
-        // la pantalla (ej. un valor guardado en BD que ya no cumple el patron
-        // actual, o el navegador autocompleto algo invalido antes de que este
-        // script corriera), se marca de una vez en rojo.
+        // Verificación inicial: si un campo ya viene con un valor invalido desde que
+        // carga la pantalla (ej. en edición, un valor guardado en BD que ya no
+        // cumple el patron actual) se marca de una vez en rojo. Un campo vacio (ej.
+        // "Nueva Área" recien abierta) no se marca todavia, hasta que el coordinador
+        // lo toque.
         marcarValidezFormularioCompleto();
 
         // Revision periodica (polling): cubre el caso de scripts o extensiones
@@ -172,8 +202,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // NO dispara 'input', 'change' ni la animacion de autofill, asi que
         // ningun listener se entera. Revisar cada 500ms es barato para un
         // formulario de este tamaño y garantiza que el marcado visual (rojo +
-        // mensaje) siempre refleje el valor real, sin importar como haya
-        // cambiado.
+        // mensaje) siempre refleje el valor real, sin marcar como "tocado" un
+        // campo que sigue vacio.
         setInterval(marcarValidezFormularioCompleto, 500);
     });
 

@@ -2,6 +2,7 @@ package mx.edu.utez.pigestiontutorias.models.dao;
 
 import mx.edu.utez.pigestiontutorias.models.Academia;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
+import mx.edu.utez.pigestiontutorias.utils.PasswordUtil;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
 import java.sql.Connection;

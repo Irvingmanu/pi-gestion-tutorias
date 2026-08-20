@@ -5,12 +5,10 @@ import mx.edu.utez.pigestiontutorias.models.AlumnoBusquedaDTO;
 import mx.edu.utez.pigestiontutorias.models.Carrera;
 import mx.edu.utez.pigestiontutorias.models.EventoAgenda;
 import mx.edu.utez.pigestiontutorias.models.Genero;
+import mx.edu.utez.pigestiontutorias.utils.PasswordUtil;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -43,6 +41,75 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    // Alta masiva (carga de Excel via AlumnoServlet + Apache POI, accion=cargaMasivaAlumnos):
+    // un solo batch/commit para todos los alumnos ya validados por el servlet, mas un
+    // segundo batch en la MISMA transaccion para dejar registro en ALUMNO_GRUPO_HISTORICO
+    // (alta inicial del alumno en idGrupo). idGrupo es el mismo para todo el lote: la carga
+    // masiva es "un archivo = un grupo", elegido en el modal antes de subir el Excel.
+    // Usa PasswordUtil.hash(...) igual que create(), para que un alumno de carga masiva
+    // pueda iniciar sesion exactamente igual que uno dado de alta a mano.
+    public int crearMasivo(List<Alumno> alumnos, int idGrupo) {
+        if (alumnos == null || alumnos.isEmpty()) return 0;
+
+        String sqlAlumno = "INSERT INTO ALUMNO(MATRICULA, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, CORREO_INSTITUCIONAL, TELEFONO, ID_GENERO, ID_GRUPO, PASS) " +
+                "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sqlHistorico = "INSERT INTO ALUMNO_GRUPO_HISTORICO (MATRICULA, ID_GRUPO, FECHA_INICIO, MOTIVO_CAMBIO) VALUES (?, ?, SYSDATE, ?)";
+
+        Connection con = null;
+        try {
+            con = SQLConnector.getConnection();
+            con.setAutoCommit(false);
+
+            int insertados = 0;
+            try (PreparedStatement ps = con.prepareStatement(sqlAlumno)) {
+                for (Alumno a : alumnos) {
+                    String pass = (a.getPass() != null && !a.getPass().isBlank())
+                            ? a.getPass() : "Tut@" + a.getMatricula();
+
+                    ps.setString(1, a.getMatricula());
+                    ps.setString(2, a.getNombres());
+                    ps.setString(3, a.getApellidoPaterno());
+                    ps.setString(4, a.getApellidoMaterno());
+                    ps.setString(5, a.getCorreoInstitucional());
+                    ps.setString(6, a.getTelefono());
+                    ps.setInt(7, a.getIdGenero());
+                    ps.setInt(8, idGrupo);
+                    ps.setString(9, PasswordUtil.hash(pass));
+                    ps.addBatch();
+                }
+
+                int[] resultados = ps.executeBatch();
+                for (int resultado : resultados) {
+                    if (resultado > 0 || resultado == Statement.SUCCESS_NO_INFO) insertados++;
+                }
+            }
+
+            try (PreparedStatement ps = con.prepareStatement(sqlHistorico)) {
+                for (Alumno a : alumnos) {
+                    ps.setString(1, a.getMatricula());
+                    ps.setInt(2, idGrupo);
+                    ps.setString(3, "Alta por carga masiva");
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+
+            con.commit();
+            return insertados;
+        } catch (SQLException e) {
+            System.err.println("Error en la carga masiva de alumnos: " + e.getMessage());
+            e.printStackTrace();
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            return 0;
+        } finally {
+            if (con != null) {
+                try { con.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
         }
     }
 
@@ -264,6 +331,43 @@ public class AlumnoDAO implements Dao<Alumno, String> {
 
     public List<Carrera> getAllCarreras() {
         return new CarreraDao().getAll();
+    }
+
+    // Siguiente numero de 3 digitos disponible para una MATRICULA nueva (formato
+    // AnioPeriodoSigla + Contador, ver GenerarCredencialesServlet). Revisa las matriculas
+    // que ya empiezan con ese prefijo (Anio+Periodo+Sigla, en MAYUSCULAS porque
+    // AlumnoServlet siempre guarda la matricula en mayusculas), se queda con el sufijo
+    // numerico de cada una y regresa el mayor + 1 (o 1 si todavia no hay ninguna).
+    // Se resuelve en Java (no con TO_NUMBER(SUBSTR(...)) en SQL) para no reventar la
+    // consulta si algun dato viejo/manual no trae un sufijo numerico.
+    public int obtenerSiguienteContador(String prefijo) {
+        String sql = "SELECT MATRICULA FROM ALUMNO WHERE MATRICULA LIKE ?";
+        int mayor = 0;
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, prefijo + "%");
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String matricula = rs.getString("MATRICULA");
+                    if (matricula == null || matricula.length() <= prefijo.length()) continue;
+
+                    try {
+                        mayor = Math.max(mayor, Integer.parseInt(matricula.substring(prefijo.length())));
+                    } catch (NumberFormatException ignorada) {
+                        // Matricula con sufijo no numerico: no cuenta para el correlativo.
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al calcular el siguiente contador de matricula: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return mayor + 1;
     }
 
     // Buscador de alumnos del dashboard de Reportes (por nombre completo o matricula).

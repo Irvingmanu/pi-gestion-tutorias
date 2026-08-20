@@ -9,6 +9,7 @@ public class Grupo {
     private int cuatrimestre;
     private String letra;
     private int idPeriodo;
+    private String generacion;
     private String estado;
 
     // Resueltos via JOIN, no son columnas propias de GRUPO
@@ -38,6 +39,9 @@ public class Grupo {
 
     public int getIdPeriodo() { return idPeriodo; }
     public void setIdPeriodo(int idPeriodo) { this.idPeriodo = idPeriodo; }
+
+    public String getGeneracion() { return generacion; }
+    public void setGeneracion(String generacion) { this.generacion = generacion; }
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }

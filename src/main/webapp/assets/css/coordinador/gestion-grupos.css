@@ -15,16 +15,6 @@
     margin-bottom: 4px;
     display: block;
 }
-.titulo-grupo-tabla {
-    color: #000;
-    font-weight: 600;
-    padding: 6px 4px;
-    border-bottom: 2px solid #dee2e6;
-}
-.tutor-grupo-tabla {
-    color: #6c757d;
-    font-weight: 400;
-}
 
 /* Buscar Alumno — nodo 1061:10118. Alto ya no fijo: lo define el padding,
    igual que un .form-control estandar de Bootstrap */
@@ -153,4 +143,48 @@
     font-size: 0.75em;
     font-weight: 500;
     color: #D15B5B;
+}
+
+/* ==========================================================================
+   ACORDEON DE GRUPOS (#contenedorGruposAlumnos, ver construirAcordeonGrupo()
+   en alumnos.js). Se sobrescribe el tema azul por defecto de Bootstrap para
+   que combine con el resto del diseño Figma (fondo blanco, texto neutro).
+   ========================================================================== */
+.accordion {
+    border-radius: var(--radius-figma); /* 20px */
+    overflow: hidden; /* recorta los accordion-item para que ninguna esquina se desborde */
+}
+
+/* Estado expandido: quita el fondo azul claro, el texto azul y el box-shadow
+   azul que Bootstrap pone por defecto en .accordion-button:not(.collapsed) */
+.accordion-button:not(.collapsed) {
+    background-color: #ffffff;
+    color: var(--texto);
+    box-shadow: none;
+}
+/* Reusa el icono (chevron) ya neutro de --bs-accordion-btn-icon en vez del azul
+   por defecto de --bs-accordion-btn-active-icon, para no tener que reconstruir
+   el SVG a mano. */
+.accordion-button:not(.collapsed)::after {
+    background-image: var(--bs-accordion-btn-icon);
+}
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: var(--borde-campo);
+}
+
+/* ==========================================================================
+   ESTADO VACIO (#tarjetaSinResultados): reemplaza a la tabla completa
+   (encabezados incluidos) cuando ningun alumno coincide con los filtros.
+   ========================================================================== */
+.tarjeta-sin-resultados {
+    max-width: 480px;
+    margin: 24px auto;
+    padding: 32px 24px;
+    border: 1px solid var(--borde-tabla);
+    border-radius: var(--radius-figma); /* 20px */
+    background-color: #ffffff;
+    color: var(--texto);
+    text-align: center;
+    font-weight: 500;
 }

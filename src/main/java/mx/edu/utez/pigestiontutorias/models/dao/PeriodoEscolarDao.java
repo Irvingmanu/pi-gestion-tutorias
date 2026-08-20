@@ -143,6 +143,28 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         return lista;
     }
 
+    // Periodos activos (cualquier año), para el <select> de "Periodo Escolar" del modal
+    // "Nuevo Grupo" en gestion-grupos.jsp: a diferencia de getDelAnioActual(), no se limita
+    // al año en curso, porque un grupo puede crearse para un periodo que ya arranco o que
+    // todavia no empieza.
+    public List<PeriodoEscolar> getActivos() {
+        List<PeriodoEscolar> lista = new ArrayList<>();
+        String sql = "SELECT * FROM PERIODO_ESCOLAR WHERE ESTADO = 'S' ORDER BY FECHA_INICIO DESC";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                lista.add(mapear(rs));
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al obtener los periodos activos: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return lista;
+    }
+
     // Periodo "vigente": el que contiene la fecha de hoy. Se usa para acotar
     // el <input type="date"> al registrar tutorias (grupal/individual) sin
     // hardcodear un rango de dos semanas ni un año fijo.
