@@ -87,7 +87,8 @@ public class LoginServlet extends HttpServlet {
     }
 
     private boolean credencialesValidas(String estado, String passAlmacenada, String passIngresada) {
-        return "S".equals(estado) && passAlmacenada != null && passAlmacenada.equals(passIngresada);
+        return "S".equals(estado) && passAlmacenada != null
+                && passAlmacenada.equalsIgnoreCase(PasswordUtil.hash(passIngresada));
     }
 
     private void credencialesInvalidas(HttpServletRequest request, HttpServletResponse response)

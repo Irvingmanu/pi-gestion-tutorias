@@ -13,10 +13,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// Carrera+Cuatrimestre+Letra ya no se guardan como 3 FKs sueltas en ALUMNO: el formulario
-// las captura (select en cascada: Carrera -> Cuatrimestre segun NIVEL, Letra fija A-F) y
-// el servlet resuelve/crea el GRUPO real correspondiente via GrupoDao, guardando solo
-// ID_GRUPO en ALUMNO.
+
 @WebServlet(name = "AlumnoServlet", value = "/gestion-grupos")
 public class AlumnoServlet extends HttpServlet {
 
@@ -24,6 +21,12 @@ public class AlumnoServlet extends HttpServlet {
     private static final String REGEX_TELEFONO = "^\\d{10}$";
     private static final String REGEX_CORREO = "^[a-zA-Z0-9._-]+@utez\\.edu\\.mx$";
     private static final String REGEX_MATRICULA = "^[a-zA-Z0-9]{10}$";
+
+
+
+    private static final int MAX_NOMBRES = 100;
+    private static final int MAX_APELLIDO = 50;
+    private static final int MAX_CORREO = 100;
 
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();
     private final AsignacionTutorDao asignacionTutorDAO = new AsignacionTutorDao();
@@ -82,17 +85,13 @@ public class AlumnoServlet extends HttpServlet {
             nombresGenero.put(genero.getId(), genero.getNombre());
         }
 
-        // Tutor asignado por grupo, para mostrarlo junto al titulo de cada tabla agrupada
-        // en gestion-grupos.jsp. La clave es el ID_GRUPO directo (ya no hay que armarla
-        // a mano con carrera+cuatrimestre+letra).
+
         Map<Integer, String> tutoresPorGrupo = new HashMap<>();
         for (AsignacionTutor asignacion : asignacionTutorDAO.getAll()) {
             tutoresPorGrupo.put(asignacion.getIdGrupo(), asignacion.getNombresTutor() + " " + asignacion.getApellidosTutor());
         }
 
-        // Grupo (Carrera + Cuatrimestre + Letra) de cada alumno, indexado por ID_GRUPO:
-        // el JSP lo usa para pintar la columna Carrera/Cuatri/Grupo y agrupar la tabla
-        // sin tener que resolver el perfil completo de cada alumno.
+
         List<Grupo> listaGrupos = grupoDao.getAll();
         Map<Integer, Grupo> gruposPorId = new HashMap<>();
         for (Grupo grupo : listaGrupos) {
@@ -134,19 +133,24 @@ public class AlumnoServlet extends HttpServlet {
 
         Alumno alumno = new Alumno();
         alumno.setMatricula(matricula != null ? matricula.trim().toUpperCase() : null);
-        alumno.setNombres(request.getParameter("nombres"));
-        alumno.setApellidoPaterno(request.getParameter("apellidoPaterno"));
-        alumno.setApellidoMaterno(request.getParameter("apellidoMaterno"));
-        alumno.setCorreoInstitucional(request.getParameter("correo"));
-        alumno.setTelefono(request.getParameter("telefono"));
+        alumno.setNombres(trimOrNull(request.getParameter("nombres")));
+        alumno.setApellidoPaterno(trimOrNull(request.getParameter("apellidoPaterno")));
+        alumno.setApellidoMaterno(trimOrNull(request.getParameter("apellidoMaterno")));
+        alumno.setCorreoInstitucional(trimOrNull(request.getParameter("correo")));
+        alumno.setTelefono(trimOrNull(request.getParameter("telefono")));
         alumno.setIdGenero(parseIntOrNull(request.getParameter("idGenero")));
+
 
         boolean formatoValido = alumno.getMatricula() != null && alumno.getMatricula().matches(REGEX_MATRICULA)
                 && alumno.getNombres() != null && alumno.getNombres().matches(REGEX_NOMBRE)
+                && alumno.getNombres().length() <= MAX_NOMBRES
                 && alumno.getApellidoPaterno() != null && alumno.getApellidoPaterno().matches(REGEX_NOMBRE)
-                && (alumno.getApellidoMaterno() == null || alumno.getApellidoMaterno().isBlank() || alumno.getApellidoMaterno().matches(REGEX_NOMBRE))
+                && alumno.getApellidoPaterno().length() <= MAX_APELLIDO
+                && (alumno.getApellidoMaterno() == null || alumno.getApellidoMaterno().isBlank()
+                || (alumno.getApellidoMaterno().matches(REGEX_NOMBRE) && alumno.getApellidoMaterno().length() <= MAX_APELLIDO))
                 && alumno.getTelefono() != null && alumno.getTelefono().matches(REGEX_TELEFONO)
                 && alumno.getCorreoInstitucional() != null && alumno.getCorreoInstitucional().matches(REGEX_CORREO)
+                && alumno.getCorreoInstitucional().length() <= MAX_CORREO
                 && alumno.getIdGenero() != null;
 
         if (!formatoValido) {
@@ -154,10 +158,7 @@ public class AlumnoServlet extends HttpServlet {
             return;
         }
 
-        // Resolucion del grupo: Carrera (select) + Cuatrimestre (select en cascada segun
-        // el NIVEL de la carrera) + Letra (fija A-F en el HTML). Se valida por separado
-        // (con su propio codigo de error) para no confundirlo con un error de formato
-        // en los datos personales: son fallas de naturaleza distinta.
+
         Integer idCarrera = parseIntOrNull(request.getParameter("idCarrera"));
         Integer cuatrimestre = parseIntOrNull(request.getParameter("cuatrimestre"));
         String letra = request.getParameter("letra");
@@ -231,6 +232,10 @@ public class AlumnoServlet extends HttpServlet {
         return false;
     }
 
+    private String trimOrNull(String valor) {
+        return valor != null ? valor.trim() : null;
+    }
+
     private Integer parseIntOrNull(String valor) {
         if (valor == null || valor.isBlank()) return null;
         try {
@@ -240,11 +245,8 @@ public class AlumnoServlet extends HttpServlet {
         }
     }
 
-    // Centraliza lo que antes calculaba el scriptlet de arriba en formulario-alumno.jsp
-    // (alumnoFormulario, esEdicion, tituloBanner, mensajeError): esa logica no le
-    // corresponde a la vista, vive aqui junto con el resto de las reglas del formulario.
     private void forwardAFormulario(HttpServletRequest request, HttpServletResponse response,
-                                     Alumno alumnoEdit, Alumno alumnoConError, String codigoError)
+                                    Alumno alumnoEdit, Alumno alumnoConError, String codigoError)
             throws ServletException, IOException {
         Alumno alumnoFormulario = alumnoEdit != null ? alumnoEdit : alumnoConError;
         boolean esEdicion = alumnoEdit != null || "editar".equals(request.getParameter("accion"));

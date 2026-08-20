@@ -37,7 +37,7 @@ public class AlumnoDAO implements Dao<Alumno, String> {
             ps.setString(6, entidad.getTelefono());
             ps.setInt(7, entidad.getIdGenero());
             ps.setInt(8, entidad.getIdGrupo());
-            ps.setString(9, pass);
+            ps.setString(9, PasswordUtil.hash(pass));
 
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -242,7 +242,7 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         String sql = "UPDATE ALUMNO SET PASS = ? WHERE MATRICULA = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, nuevaPassword);
+            ps.setString(1, PasswordUtil.hash(nuevaPassword));
             ps.setString(2, matricula);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {

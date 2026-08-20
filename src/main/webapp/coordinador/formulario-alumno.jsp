@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="paginaActiva" value="grupos" scope="request"/>
 <!-- alumnoFormulario, esEdicion, tituloBanner y mensajeError ya vienen calculados desde
-     AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los consume. -->
+AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los consume. -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -65,7 +65,7 @@
                         <label for="nombres" class="form-label fs-6 fw-bold">Nombres</label>
                         <input type="text" id="nombres" name="nombres" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.nombres}" placeholder="Escribe los nombres"
-                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" required>
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" maxlength="100" required>
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
@@ -73,7 +73,7 @@
                         <label for="apellidoPaterno" class="form-label fs-6 fw-bold">Apellido paterno</label>
                         <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.apellidoPaterno}" placeholder="Escribe el apellido paterno"
-                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" required>
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" maxlength="50" required>
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
@@ -81,7 +81,7 @@
                         <label for="apellidoMaterno" class="form-label fs-6 fw-bold">Apellido materno</label>
                         <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.apellidoMaterno}" placeholder="Escribe el apellido materno"
-                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$">
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$" maxlength="50">
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
@@ -90,6 +90,7 @@
                         <input type="email" id="correo" name="correo" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.correoInstitucional}"
                                placeholder="Escribe el correo" pattern="^[a-zA-Z0-9._-]+@utez\.edu\.mx$"
+                               maxlength="100"
                                oninput="this.value = this.value.replace(/[^a-zA-Z0-9.\-_@]/g, '')" required>
                         <div class="invalid-feedback">El correo debe tener un formato válido y terminar en @utez.edu.mx.</div>
                     </div>
@@ -140,7 +141,7 @@
                             <option value="">Todas las academias</option>
                             <c:forEach var="academia" items="${listaAcademias}">
                                 <option value="${academia.idAcademia}"
-                                        ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.idAcademia == academia.idAcademia ? 'selected' : ''}>
+                                    ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.idAcademia == academia.idAcademia ? 'selected' : ''}>
                                         ${academia.nombre}
                                 </option>
                             </c:forEach>
@@ -157,7 +158,7 @@
                             <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione la carrera</option>
                             <c:forEach var="carrera" items="${listaCarreras}">
                                 <option value="${carrera.idCarrera}" data-nivel="${carrera.nivel}" data-academia-id="${carrera.idAcademia}"
-                                        ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.idCarrera == carrera.idCarrera ? 'selected' : ''}>
+                                    ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.idCarrera == carrera.idCarrera ? 'selected' : ''}>
                                         ${carrera.nombre}
                                 </option>
                             </c:forEach>

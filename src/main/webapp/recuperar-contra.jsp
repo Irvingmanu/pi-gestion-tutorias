@@ -86,7 +86,7 @@
                         <div class="auth-field auth-field--password">
                             <img src="assets/img/login/candado.png" alt="" class="auth-icon-left">
                             <input type="password" class="form-control auth-input" id="pass1" name="pass1"
-                                   placeholder="Contraseña nueva" required minlength="4">
+                                   placeholder="Contraseña nueva" required minlength="4" maxlength="50">
                             <button type="button" class="auth-toggle-password" id="ojoPass1" aria-label="Mostrar contraseña">
                                 <img src="assets/img/login/ojoOcultar.png" alt="" class="auth-field-icon" id="iconoPass1">
                             </button>
@@ -101,7 +101,7 @@
                         <div class="auth-field auth-field--password">
                             <img src="assets/img/login/candado.png" alt="" class="auth-icon-left">
                             <input type="password" class="form-control auth-input" id="pass2" name="pass2"
-                                   placeholder="Confirmar contraseña" required minlength="4">
+                                   placeholder="Confirmar contraseña" required minlength="4" maxlength="50">
                             <button type="button" class="auth-toggle-password" id="ojoPass2" aria-label="Mostrar contraseña">
                                 <img src="assets/img/login/ojoOcultar.png" alt="" class="auth-field-icon" id="iconoPass2">
                             </button>

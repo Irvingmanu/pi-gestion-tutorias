@@ -28,7 +28,7 @@ public class CoordinadorDAO implements Dao<Coordinador, Integer> {
             ps.setString(4, entidad.getApellidoMaterno());
             ps.setString(5, entidad.getCorreoInstitucional());
             ps.setString(6, entidad.getTelefono());
-            ps.setString(7, pass);
+            ps.setString(7, PasswordUtil.hash(pass));
 
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
@@ -121,7 +121,7 @@ public class CoordinadorDAO implements Dao<Coordinador, Integer> {
         String sql = "UPDATE COORDINADOR SET PASS = ? WHERE NUMERO_EMPLEADO = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, nuevaPassword);
+            ps.setString(1, PasswordUtil.hash(nuevaPassword));
             ps.setInt(2, numeroEmpleado);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
