@@ -39,7 +39,11 @@ function prepararEdicionPeriodo(boton) {
     const tabNuevo = document.getElementById('tab-nuevo-periodo-btn');
     if (tabNuevo && window.bootstrap) new bootstrap.Tab(tabNuevo).show();
 
-    document.getElementById('asistenciasGrupales').dispatchEvent(new Event('input'));
+    // Los campos se llenaron por JS directo (input.value = ...), lo que no
+    // dispara 'input'/'change'; se revalida todo el formulario a mano para
+    // que el marcado visual (rojo/verde) y el estado del boton Guardar
+    // reflejen los valores que se acaban de cargar.
+    if (window.verificarFormularioPeriodo) window.verificarFormularioPeriodo();
 }
 
 function cancelarEdicionPeriodo() {
@@ -51,7 +55,9 @@ function cancelarEdicionPeriodo() {
     document.getElementById('btnGuardar').textContent = 'Guardar';
     document.getElementById('btnCancelarEdicionPeriodo').classList.add('d-none');
 
-    document.getElementById('asistenciasGrupales').dispatchEvent(new Event('input'));
+    // form.reset() tampoco dispara 'input'/'change' en todos los navegadores
+    // de forma confiable; se revalida a mano para limpiar el marcado rojo.
+    if (window.verificarFormularioPeriodo) window.verificarFormularioPeriodo();
 }
 
 function filtrarPeriodos() {
@@ -71,34 +77,96 @@ document.addEventListener('DOMContentLoaded', function () {
     filtrarPeriodos();
 
     const form = document.getElementById('formGuardar');
-    if (form) {
-        const btnGuardar = document.getElementById('btnGuardar');
-        const inputNombre = document.getElementById('nombre');
-        const inputInicio = document.getElementById('fechaInicio');
-        const inputFin = document.getElementById('fechaFin');
-        const inputObjetivo = document.getElementById('asistenciasGrupales');
+    if (!form) {
+        return;
+    }
 
-        function verificarFormulario() {
-            let esValido = inputNombre.value.trim() !== '' && inputInicio.value !== '' && inputFin.value !== ''
-                && inputObjetivo.value !== '' && Number(inputObjetivo.value) >= 0;
+    const btnGuardar = document.getElementById('btnGuardar');
+    const inputNombre = document.getElementById('nombre');
+    const inputInicio = document.getElementById('fechaInicio');
+    const inputFin = document.getElementById('fechaFin');
+    const inputObjetivo = document.getElementById('asistenciasGrupales');
+    const inputsValidables = [inputNombre, inputInicio, inputFin, inputObjetivo];
 
-            if (inputInicio.value && inputFin.value && inputFin.value <= inputInicio.value) {
-                esValido = false;
-                inputFin.classList.add('is-invalid');
-            } else if (inputFin.value) {
-                inputFin.classList.remove('is-invalid');
-            }
+    // ==========================================================================
+    // VALIDACIÓN EN VIVO (misma logica que formulario-area.js / formulario-alumno.js):
+    // marca borde rojo + muestra el <div class="invalid-feedback"> de cada campo.
+    // ==========================================================================
+    const MENSAJE_CAMPO_OBLIGATORIO = 'Este campo es obligatorio.';
 
-            btnGuardar.disabled = !esValido;
+    function obtenerFeedback(input) {
+        if (input.nextElementSibling && input.nextElementSibling.classList.contains('invalid-feedback')) {
+            return input.nextElementSibling;
+        }
+        return input.parentElement?.querySelector('.invalid-feedback') || null;
+    }
+
+    // Fecha fin invalida (anterior o igual a fecha inicio): se integra al
+    // checkValidity() nativo via setCustomValidity, en vez de un classList
+    // suelto, para que entre al mismo flujo de marcarValidez() de abajo.
+    function actualizarValidezRango() {
+        if (inputInicio.value && inputFin.value && inputFin.value <= inputInicio.value) {
+            inputFin.setCustomValidity('rango_invalido');
+        } else {
+            inputFin.setCustomValidity('');
+        }
+    }
+
+    // Marca (o desmarca) un input individual como invalido: borde rojo +
+    // mensaje visible. Si esta vacio (valueMissing) usa data-msg-requerido;
+    // para cualquier otro tipo de invalidez (pattern, o el rango de fechas
+    // via setCustomValidity) se usa el mensaje que ya trae el HTML en el
+    // .invalid-feedback (guardado la primera vez para no perderlo).
+    function marcarValidez(input) {
+        const feedback = obtenerFeedback(input);
+
+        if (input.checkValidity()) {
+            input.classList.remove('is-invalid');
+            if (feedback) feedback.style.display = 'none';
+            return;
         }
 
-        [inputNombre, inputInicio, inputFin, inputObjetivo].forEach(function (input) {
-            input.addEventListener('input', verificarFormulario);
-            input.addEventListener('change', verificarFormulario);
+        input.classList.add('is-invalid');
+        if (!feedback) {
+            return;
+        }
+
+        if (feedback.dataset.msgPatron === undefined) {
+            feedback.dataset.msgPatron = feedback.textContent.trim();
+        }
+
+        feedback.textContent = input.validity.valueMissing
+            ? (input.dataset.msgRequerido || MENSAJE_CAMPO_OBLIGATORIO)
+            : feedback.dataset.msgPatron;
+
+        feedback.style.display = 'block';
+    }
+
+    function verificarFormulario() {
+        actualizarValidezRango();
+
+        let esValido = true;
+        inputsValidables.forEach(function (input) {
+            marcarValidez(input);
+            if (!input.checkValidity()) {
+                esValido = false;
+            }
         });
 
-        verificarFormulario();
+        btnGuardar.disabled = !esValido;
     }
+
+    // Expuesta para que prepararEdicionPeriodo() y cancelarEdicionPeriodo()
+    // puedan pedir una revalidacion manual tras llenar/limpiar el form por JS.
+    window.verificarFormularioPeriodo = verificarFormulario;
+
+    inputsValidables.forEach(function (input) {
+        input.addEventListener('input', verificarFormulario);
+        input.addEventListener('change', verificarFormulario);
+    });
+
+    // Verificación inicial (ej. al cargar la pantalla, tab "Nuevo Periodo" vacío).
+    verificarFormulario();
 
     // Toasts/alertas de exito y error via parametros en la URL
     const parametros = new URLSearchParams(window.location.search);

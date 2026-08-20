@@ -18,6 +18,16 @@
     <link href="${pageContext.request.contextPath}/assets/css/alertas.css" rel="stylesheet">
 
     <style>
+        /* Ajuste para iconos de error en inputs personalizados (igual que en
+           formulario-area.jsp / formulario-alumno.jsp) */
+        .form-control-figma.is-invalid, .form-select.is-invalid {
+            border-color: #dc3545 !important;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath stroke-linejoin='round' d='M5.8 3.6h.4L6 6.5z'/%3e%3ccircle cx='6' cy='8.2' r='.6' fill='%23dc3545' stroke='none'/%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right calc(.375em + .1875rem) center;
+            background-size: calc(.75em + .375rem) calc(.75em + .375rem);
+        }
+
         .btn-figma:disabled {
             background-color: #7ab899 !important;
             color: #ffffff;
@@ -147,22 +157,31 @@
 
                     <div class="mb-4">
                         <label class="campo-label fs-6 fw-bold" for="nombre">Nombre del periodo</label>
+                        <!-- Solo letras, numeros, espacios y guion (-); el oninput bloquea
+                             cualquier otro signo mientras se escribe, igual que en
+                             matricula/telefono de formulario-alumno.jsp. -->
                         <input type="text" id="nombre" name="nombre" class="form-control form-control-figma w-100 fs-6"
-                               placeholder="Ej. Septiembre - Diciembre 2026" maxlength="50" required>
-                        <div class="invalid-feedback">Ingresa un nombre para el periodo.</div>
+                               placeholder="Ej. Septiembre - Diciembre 2026" maxlength="50"
+                               pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-]+$"
+                               title="Solo se permiten letras, números, espacios y guion (-)"
+                               oninput="this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-]/g, '')"
+                               data-msg-requerido="Ingresa un nombre para el periodo." required>
+                        <div class="invalid-feedback">Solo se permiten letras, números, espacios y guion (-).</div>
                     </div>
 
                     <div class="row g-3 mb-4">
                         <div class="col-md-6">
                             <label class="campo-label fs-6 fw-bold" for="fechaInicio">Fecha de inicio</label>
                             <input type="date" id="fechaInicio" name="fechaInicio" class="form-control form-control-figma w-100 fs-6"
-                                   style="cursor: pointer;" onclick="this.showPicker()" required>
+                                   style="cursor: pointer;" onclick="this.showPicker()"
+                                   data-msg-requerido="Selecciona la fecha de inicio." required>
                             <div class="invalid-feedback">Selecciona la fecha de inicio.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="campo-label fs-6 fw-bold" for="fechaFin">Fecha de fin</label>
                             <input type="date" id="fechaFin" name="fechaFin" class="form-control form-control-figma w-100 fs-6"
-                                   style="cursor: pointer;" onclick="this.showPicker()" required>
+                                   style="cursor: pointer;" onclick="this.showPicker()"
+                                   data-msg-requerido="Selecciona la fecha de fin." required>
                             <div class="invalid-feedback">La fecha de fin debe ser posterior a la de inicio.</div>
                         </div>
                     </div>
@@ -170,7 +189,8 @@
                     <div class="mb-4">
                         <label class="campo-label fs-6 fw-bold" for="asistenciasGrupales">Objetivo de tutorías grupales por tutor</label>
                         <input type="number" id="asistenciasGrupales" name="asistenciasGrupales" class="form-control form-control-figma w-100 fs-6"
-                               placeholder="Ej. 15" min="0" step="1" required>
+                               placeholder="Ej. 15" min="0" step="1"
+                               data-msg-requerido="Indica el objetivo de tutorías grupales." required>
                         <div class="invalid-feedback">Indica cuántas tutorías grupales debe impartir cada tutor en este periodo.</div>
                         <div class="form-text">Se usará para medir el avance de cada tutor en el reporte de Tutorías Grupales.</div>
                     </div>

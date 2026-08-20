@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <c:set var="paginaActiva" value="grupos" scope="request"/>
 <!-- alumnoFormulario, esEdicion, tituloBanner y mensajeError ya vienen calculados desde
-     AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los consume. -->
+AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los consume. -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -32,6 +32,19 @@
             opacity: 0.6;
             box-shadow: none;
             border: none;
+        }
+
+        /* Truco para detectar el autocompletado del navegador (Chrome/Edge)
+           desde JS: al autocompletar un input, el navegador dispara esta
+           animacion (vacia, no se ve nada) y formulario-alumno.js la escucha
+           via el evento 'animationstart' para revalidar el campo al instante.
+           Igual que en formulario-area.jsp. */
+        @keyframes onAutoFillStart {
+            from {}
+            to {}
+        }
+        input:-webkit-autofill {
+            animation-name: onAutoFillStart;
         }
     </style>
 </head>
@@ -65,7 +78,7 @@
                         <label for="nombres" class="form-label fs-6 fw-bold">Nombres</label>
                         <input type="text" id="nombres" name="nombres" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.nombres}" placeholder="Escribe los nombres"
-                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" required>
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" data-msg-requerido="Los nombres son obligatorios." required>
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
@@ -73,7 +86,7 @@
                         <label for="apellidoPaterno" class="form-label fs-6 fw-bold">Apellido paterno</label>
                         <input type="text" id="apellidoPaterno" name="apellidoPaterno" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.apellidoPaterno}" placeholder="Escribe el apellido paterno"
-                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" required>
+                               pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" data-msg-requerido="El apellido paterno es obligatorio." required>
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
@@ -89,8 +102,9 @@
                         <label for="correo" class="form-label fs-6 fw-bold">Correo</label>
                         <input type="email" id="correo" name="correo" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.correoInstitucional}"
-                               placeholder="Escribe el correo" pattern="^[a-zA-Z0-9._-]+@utez\.edu\.mx$"
-                               oninput="this.value = this.value.replace(/[^a-zA-Z0-9.\-_@]/g, '')" required>
+                               placeholder="Escribe el correo" pattern="^[a-zA-Z0-9._\-]+@utez\.edu\.mx$"
+                               oninput="this.value = this.value.replace(/[^a-zA-Z0-9.\-_@]/g, '')"
+                               data-msg-requerido="El correo es obligatorio." required>
                         <div class="invalid-feedback">El correo debe tener un formato válido y terminar en @utez.edu.mx.</div>
                     </div>
 
@@ -101,6 +115,7 @@
                                style="text-transform: uppercase;"
                                maxlength="10" minlength="10" pattern="^[a-zA-Z0-9]{10}$"
                                oninput="this.value = this.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase()"
+                               data-msg-requerido="La matrícula es obligatoria."
                         ${esEdicion ? 'readonly' : ''} required>
                         <div class="invalid-feedback">La matrícula debe tener exactamente 10 caracteres alfanuméricos.</div>
                     </div>
@@ -110,7 +125,8 @@
                         <input type="text" id="telefono" name="telefono" class="form-control form-control-figma w-100 fs-6"
                                value="${alumnoFormulario.telefono}" placeholder="Escribe el teléfono"
                                pattern="^\d{10}$" maxlength="10" minlength="10"
-                               oninput="this.value = this.value.replace(/[^0-9]/g, '')" required>
+                               oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+                               data-msg-requerido="El teléfono es obligatorio." required>
                         <div class="invalid-feedback">Debe contener exactamente 10 dígitos numéricos.</div>
                     </div>
 
@@ -121,7 +137,8 @@
 
                     <div class="mb-4">
                         <label for="genero" class="form-label fs-6 fw-bold">Género</label>
-                        <select id="genero" name="idGenero" class="form-select form-control-figma w-100 fs-6" required>
+                        <select id="genero" name="idGenero" class="form-select form-control-figma w-100 fs-6"
+                                data-msg-requerido="Por favor seleccione un género." required>
                             <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione el género</option>
                             <c:forEach var="genero" items="${listaGeneros}">
                                 <option value="${genero.id}" ${alumnoFormulario != null && alumnoFormulario.idGenero == genero.id ? 'selected' : ''}>
@@ -140,7 +157,7 @@
                             <option value="">Todas las academias</option>
                             <c:forEach var="academia" items="${listaAcademias}">
                                 <option value="${academia.idAcademia}"
-                                        ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.idAcademia == academia.idAcademia ? 'selected' : ''}>
+                                    ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.idAcademia == academia.idAcademia ? 'selected' : ''}>
                                         ${academia.nombre}
                                 </option>
                             </c:forEach>
@@ -153,11 +170,12 @@
                         <!-- Habilitado desde el inicio, con TODAS las carreras del sistema ya
                              renderizadas; el filtro de Academia (arriba) solo oculta opciones
                              por JS via data-academia-id, nunca bloquea ni recarga este select. -->
-                        <select id="carreraSelect" name="idCarrera" class="form-select form-control-figma w-100 fs-6" required>
+                        <select id="carreraSelect" name="idCarrera" class="form-select form-control-figma w-100 fs-6"
+                                data-msg-requerido="Por favor seleccione una carrera." required>
                             <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione la carrera</option>
                             <c:forEach var="carrera" items="${listaCarreras}">
                                 <option value="${carrera.idCarrera}" data-nivel="${carrera.nivel}" data-academia-id="${carrera.idAcademia}"
-                                        ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.idCarrera == carrera.idCarrera ? 'selected' : ''}>
+                                    ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.idCarrera == carrera.idCarrera ? 'selected' : ''}>
                                         ${carrera.nombre}
                                 </option>
                             </c:forEach>
@@ -167,7 +185,8 @@
 
                     <div class="mb-4">
                         <label for="cuatrimestre" class="form-label fs-6 fw-bold">Cuatrimestre</label>
-                        <select id="cuatrimestre" name="cuatrimestre" class="form-select form-control-figma w-100 fs-6" required disabled
+                        <select id="cuatrimestre" name="cuatrimestre" class="form-select form-control-figma w-100 fs-6"
+                                data-msg-requerido="Por favor seleccione un cuatrimestre." required disabled
                                 data-cuatrimestre-actual="${alumnoFormulario.grupo.cuatrimestre}">
                             <option value="" selected>Seleccione primero la carrera</option>
                         </select>
@@ -176,7 +195,8 @@
 
                     <div class="mb-4">
                         <label for="letra" class="form-label fs-6 fw-bold">Grupo</label>
-                        <select id="letra" name="letra" class="form-select form-control-figma w-100 fs-6" required>
+                        <select id="letra" name="letra" class="form-select form-control-figma w-100 fs-6"
+                                data-msg-requerido="Por favor seleccione un grupo." required>
                             <option value="" ${empty alumnoFormulario ? 'selected' : ''}>Seleccione el grupo</option>
                             <option value="A" ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.letra == 'A' ? 'selected' : ''}>A</option>
                             <option value="B" ${alumnoFormulario != null && alumnoFormulario.grupo != null && alumnoFormulario.grupo.letra == 'B' ? 'selected' : ''}>B</option>
