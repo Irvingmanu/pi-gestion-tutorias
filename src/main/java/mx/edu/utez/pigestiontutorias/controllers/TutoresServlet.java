@@ -1,24 +1,41 @@
 package mx.edu.utez.pigestiontutorias.controllers;
 
 import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.Part;
 import mx.edu.utez.pigestiontutorias.models.Academia;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.models.dao.AsignacionTutorDao;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 // NOMINA ya no es una columna separada: NUMERO_EMPLEADO es el unico identificador del
 // tutor (PK real de TUTOR), asi que cumple el mismo papel que antes tenia "nomina".
 @WebServlet(name = "TutoresServlet", value = "/gestion-tutores")
+@MultipartConfig(
+        fileSizeThreshold = 1024 * 1024,
+        maxFileSize = 1024 * 1024 * 10,
+        maxRequestSize = 1024 * 1024 * 15
+)
 public class TutoresServlet extends HttpServlet {
 
     private static final String REGEX_NOMINA = "^[0-9]{4}$";
@@ -31,6 +48,7 @@ public class TutoresServlet extends HttpServlet {
     private static final int MAX_NOMBRES = 100;
     private static final int MAX_APELLIDO = 50;
     private static final int MAX_CORREO = 100;
+    private static final int NOMINA_MINIMA = 1000;
 
     private final TutorDao tutorDAO = new TutorDao();
     private final AsignacionTutorDao asignacionTutorDAO = new AsignacionTutorDao();
@@ -59,13 +77,17 @@ public class TutoresServlet extends HttpServlet {
                 if (nominaStr != null && !nominaStr.trim().isEmpty()) {
                     tutorEdit = tutorDAO.getById(Integer.parseInt(nominaStr.trim()));
                 }
+                forwardAFormulario(request, response, tutorEdit, null, null);
+            } else {
+                Tutor tutorNuevo = new Tutor();
+                tutorNuevo.setNumeroEmpleado(tutorDAO.obtenerSiguienteNomina());
+                forwardAFormulario(request, response, null, tutorNuevo, null);
             }
-            forwardAFormulario(request, response, tutorEdit, null, null);
             return;
         }
 
         // 3. CONSULTA Y LISTADO GENERAL
-        List<Tutor> listaTutores = tutorDAO.getAll();
+        List<Tutor> listaTutores = tutorDAO.getAllConGrupo();
         List<Academia> listaAcademias = tutorDAO.getAllAcademias();
 
         Map<Integer, String> nombresAcademia = new HashMap<>();
@@ -99,6 +121,11 @@ public class TutoresServlet extends HttpServlet {
             return;
         }
 
+        if ("cargaMasiva".equals(accion)) {
+            procesarCargaMasiva(request, response);
+            return;
+        }
+
         // 2. CREAR / ACTUALIZAR TUTOR
         Tutor tutor = new Tutor();
         String nominaStr = request.getParameter("nomina");
@@ -111,7 +138,7 @@ public class TutoresServlet extends HttpServlet {
         if (nominaValida) {
             int nominaParseada = Integer.parseInt(nominaStr.trim());
             // "0000" cumple el regex de 4 digitos pero no es una nomina real (parsea a 0).
-            nominaValida = nominaParseada > 0;
+            nominaValida = nominaParseada >= NOMINA_MINIMA;
             if (nominaValida) {
                 tutor.setNumeroEmpleado(nominaParseada);
             }
@@ -301,5 +328,154 @@ public class TutoresServlet extends HttpServlet {
             }
         }
         response.sendRedirect(request.getContextPath() + "/gestion-tutores?" + parametro);
+    }
+
+    // Carga masiva de tutores desde un archivo Excel (.xlsx/.xls). Formato esperado por
+    // hoja (fila 1 = encabezados, los datos empiezan en la fila 2):
+    // A: Nomina (opcional, se autoasigna desde 1000 si viene vacia)
+    // B: Nombres (requerido)          C: Apellido paterno (requerido)
+    // D: Apellido materno (opcional)  E: Correo (opcional, se autogenera si viene vacio)
+    // F: Telefono, 10 digitos (requerido)
+    // G: ID Academia (requerido, numerico; ver catalogo de academias en gestion-tutores.jsp)
+    //
+    // Cada fila se valida por separado (formato + duplicados) antes de intentar guardarla:
+    // una fila invalida se descarta y se cuenta como error, no cancela el resto del archivo.
+    // El guardado en si (TutorDao#crearMasivo) es un solo batch/commit.
+    private void procesarCargaMasiva(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        try {
+            Part parteArchivo = request.getPart("archivoExcel");
+            if (parteArchivo == null || parteArchivo.getSize() == 0) {
+                response.sendRedirect(request.getContextPath() + "/gestion-tutores?error=archivo_vacio");
+                return;
+            }
+
+            List<Tutor> tutoresValidos = new ArrayList<>();
+            int filasConError = 0;
+
+            // Detectan duplicados DENTRO del mismo archivo (la validacion contra la BD,
+            // via tutorDAO.existeX, solo detecta duplicados contra registros ya guardados).
+            Set<Integer> nominasEnLote = new HashSet<>();
+            Set<String> correosEnLote = new HashSet<>();
+            Set<String> telefonosEnLote = new HashSet<>();
+            int siguienteNomina = tutorDAO.obtenerSiguienteNomina();
+
+            try (InputStream entrada = parteArchivo.getInputStream();
+                 Workbook libro = WorkbookFactory.create(entrada)) {
+
+                Sheet hoja = libro.getSheetAt(0);
+
+                for (int f = 1; f <= hoja.getLastRowNum(); f++) {
+                    Row fila = hoja.getRow(f);
+                    if (fila == null || esTextoVacio(obtenerTexto(fila.getCell(1)))) continue;
+
+                    Tutor tutor = new Tutor();
+
+                    int numeroEmpleado = (int) obtenerNumerico(fila.getCell(0));
+                    if (numeroEmpleado < NOMINA_MINIMA) {
+                        numeroEmpleado = siguienteNomina++;
+                    } else {
+                        siguienteNomina = Math.max(siguienteNomina, numeroEmpleado + 1);
+                    }
+                    tutor.setNumeroEmpleado(numeroEmpleado);
+
+                    tutor.setNombres(obtenerTexto(fila.getCell(1)));
+                    tutor.setApellidoPaterno(obtenerTexto(fila.getCell(2)));
+                    tutor.setApellidoMaterno(obtenerTexto(fila.getCell(3)));
+
+                    String correo = obtenerTexto(fila.getCell(4));
+                    if (esTextoVacio(correo)) {
+                        correo = generarCorreoInstitucional(tutor.getNombres(), tutor.getApellidoPaterno());
+                    }
+                    tutor.setCorreoInstitucional(correo);
+
+                    tutor.setTelefono(obtenerTexto(fila.getCell(5)));
+                    tutor.setIdAcademia((int) obtenerNumerico(fila.getCell(6)));
+
+                    if (esFilaValida(tutor, nominasEnLote, correosEnLote, telefonosEnLote)) {
+                        tutoresValidos.add(tutor);
+                    } else {
+                        filasConError++;
+                    }
+                }
+            }
+
+            if (tutoresValidos.isEmpty()) {
+                response.sendRedirect(request.getContextPath() + "/gestion-tutores?error=archivo_invalido");
+                return;
+            }
+
+            int insertados = tutorDAO.crearMasivo(tutoresValidos);
+            String parametro = insertados > 0
+                    ? "exito=carga_masiva&insertados=" + insertados + "&conError=" + filasConError
+                    : "error=carga_fallida";
+            response.sendRedirect(request.getContextPath() + "/gestion-tutores?" + parametro);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/gestion-tutores?error=archivo_invalido");
+        }
+    }
+
+    // Blindaje de servidor: valida formato de cada campo y descarta duplicados, tanto
+    // contra la BD (tutorDAO.existeX) como dentro del propio archivo (nominasEnLote/
+    // correosEnLote/telefonosEnLote), antes de dejar pasar la fila al batch de insercion.
+    private boolean esFilaValida(Tutor tutor, Set<Integer> nominasEnLote, Set<String> correosEnLote, Set<String> telefonosEnLote) {
+        if (esTextoVacio(tutor.getNombres()) || esTextoVacio(tutor.getApellidoPaterno())) return false;
+        if (tutor.getTelefono() == null || !tutor.getTelefono().matches(REGEX_TELEFONO)) return false;
+        if (tutor.getCorreoInstitucional() == null || !tutor.getCorreoInstitucional().matches(REGEX_CORREO)) return false;
+        if (tutor.getIdAcademia() <= 0) return false;
+        if (tutor.getNumeroEmpleado() < NOMINA_MINIMA) return false;
+
+        if (!nominasEnLote.add(tutor.getNumeroEmpleado())) return false;
+        if (!correosEnLote.add(tutor.getCorreoInstitucional().toLowerCase())) return false;
+        if (!telefonosEnLote.add(tutor.getTelefono())) return false;
+
+        if (tutorDAO.existeNomina(tutor.getNumeroEmpleado())) return false;
+        if (tutorDAO.existeCorreo(tutor.getCorreoInstitucional())) return false;
+        return !tutorDAO.existeTelefono(tutor.getTelefono());
+    }
+
+    // Mismo criterio que el autocompletado del formulario (assets/js/coordinador/tutor.js):
+    // primerNombre + primerApellidoPaterno + "@utez.edu.mx", sin acentos ni espacios.
+    private String generarCorreoInstitucional(String nombres, String apellidoPaterno) {
+        String primerNombre = primeraPalabraSinAcentos(nombres);
+        String primerApellido = primeraPalabraSinAcentos(apellidoPaterno);
+        if (primerNombre.isEmpty() || primerApellido.isEmpty()) return null;
+        return primerNombre + primerApellido + "@utez.edu.mx";
+    }
+
+    private String primeraPalabraSinAcentos(String texto) {
+        if (esTextoVacio(texto)) return "";
+        String primera = texto.trim().split("\\s+")[0];
+        String sinAcentos = Normalizer.normalize(primera, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
+        return sinAcentos.toLowerCase().replaceAll("[^a-z]", "");
+    }
+
+    private boolean esTextoVacio(String texto) {
+        return texto == null || texto.isBlank();
+    }
+
+    // Lee una celda como texto sin importar si Excel la guardo como texto o como numero
+    // (ej. la nomina o el telefono capturados sin formato de texto en la hoja).
+    private String obtenerTexto(Cell celda) {
+        if (celda == null) return null;
+        return switch (celda.getCellType()) {
+            case STRING -> celda.getStringCellValue().trim();
+            case NUMERIC -> String.valueOf((long) celda.getNumericCellValue());
+            default -> null;
+        };
+    }
+
+    private double obtenerNumerico(Cell celda) {
+        if (celda == null) return 0;
+        try {
+            return switch (celda.getCellType()) {
+                case NUMERIC -> celda.getNumericCellValue();
+                case STRING -> Double.parseDouble(celda.getStringCellValue().trim());
+                default -> 0;
+            };
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 }

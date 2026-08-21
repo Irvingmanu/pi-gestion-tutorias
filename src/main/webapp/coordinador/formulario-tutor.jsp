@@ -85,8 +85,7 @@ TutoresServlet (forwardAFormulario/resolverMensajeError): esta vista solo los co
                         <label for="apellidoMaterno" class="form-label fs-6 fw-bold">Apellido materno</label>
                         <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control form-control-figma w-100 fs-6"
                                value="${tutorFormulario.apellidoMaterno}"
-                               placeholder="Escribe el apellido materno" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$"
-                               required>
+                               placeholder="Escribe el apellido materno" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" required>
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
@@ -115,11 +114,13 @@ TutoresServlet (forwardAFormulario/resolverMensajeError): esta vista solo los co
 
                     <div class="mb-4">
                         <label for="nomina" class="form-label fs-6 fw-bold">Nómina</label>
+                        <!-- La nomina ya no la captura el coordinador: se asigna automaticamente
+                             a partir de 1000 (ver TutorDao#obtenerSiguienteNomina), tanto para
+                             tutores nuevos como para los ya existentes en modo edicion. -->
                         <input type="text" id="nomina" name="nomina" class="form-control form-control-figma w-100 fs-6"
                                value="${tutorFormulario != null && tutorFormulario.numeroEmpleado > 0 ? tutorFormulario.numeroEmpleado : ''}"
-                               placeholder="Escribe la nómina" maxlength="4" minlength="4" pattern="^[0-9]{4}$"
-                               oninput="this.value = this.value.replace(/[^0-9]/g, '')"
-                        ${esEdicion ? 'readonly' : ''} required>
+                               placeholder="Asignada automáticamente" maxlength="4" minlength="4" pattern="^[0-9]{4}$"
+                               readonly required>
                         <div class="invalid-feedback">La nómina debe tener exactamente 4 dígitos.</div>
                     </div>
 

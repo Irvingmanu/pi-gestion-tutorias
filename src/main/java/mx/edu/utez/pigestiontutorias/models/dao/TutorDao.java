@@ -5,12 +5,11 @@ import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.utils.PasswordUtil;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TutorDao implements Dao<Tutor, Integer> {
 
@@ -75,6 +74,76 @@ public class TutorDao implements Dao<Tutor, Integer> {
                 try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
             }
             return false;
+        } finally {
+            if (con != null) {
+                try { con.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+        }
+    }
+
+    // La nomina (NUMERO_EMPLEADO) ya no la captura el coordinador a mano: se asigna
+    // automaticamente a partir de 1000 (primer tutor = 1000, luego MAX(NUMERO_EMPLEADO) + 1).
+    // La usan tanto el alta individual (formulario-tutor.jsp) como la carga masiva por Excel.
+    public int obtenerSiguienteNomina() {
+        String sql = "SELECT NVL(MAX(NUMERO_EMPLEADO), 999) + 1 AS SIGUIENTE FROM TUTOR";
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return Math.max(rs.getInt("SIGUIENTE"), 1000);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 1000;
+    }
+
+    // Alta masiva (carga de Excel via TutoresServlet + Apache POI): un solo batch/commit
+    // para todos los tutores validados por el servlet, en vez de una transaccion por fila.
+    // No inserta horarios de atencion: el Excel no los captura, el tutor puede agregarlos
+    // despues editando su registro.
+    public int crearMasivo(List<Tutor> tutores) {
+        if (tutores == null || tutores.isEmpty()) return 0;
+
+        String sqlTutor = "INSERT INTO TUTOR(NUMERO_EMPLEADO, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, CORREO_INSTITUCIONAL, TELEFONO, ID_ACADEMIA, PASS) " +
+                "VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
+
+        Connection con = null;
+        try {
+            con = SQLConnector.getConnection();
+            con.setAutoCommit(false);
+
+            int insertados = 0;
+            try (PreparedStatement ps = con.prepareStatement(sqlTutor)) {
+                for (Tutor t : tutores) {
+                    String pass = (t.getPass() != null && !t.getPass().isBlank())
+                            ? t.getPass() : "Tut@" + t.getNumeroEmpleado();
+
+                    ps.setInt(1, t.getNumeroEmpleado());
+                    ps.setString(2, t.getNombres());
+                    ps.setString(3, t.getApellidoPaterno());
+                    ps.setString(4, t.getApellidoMaterno());
+                    ps.setString(5, t.getCorreoInstitucional());
+                    ps.setString(6, t.getTelefono());
+                    ps.setInt(7, t.getIdAcademia());
+                    ps.setString(8, PasswordUtil.hash(pass));
+                    ps.addBatch();
+                }
+
+                int[] resultados = ps.executeBatch();
+                for (int resultado : resultados) {
+                    if (resultado > 0 || resultado == Statement.SUCCESS_NO_INFO) insertados++;
+                }
+            }
+
+            con.commit();
+            return insertados;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            return 0;
         } finally {
             if (con != null) {
                 try { con.close(); } catch (SQLException ex) { ex.printStackTrace(); }
@@ -179,6 +248,45 @@ public class TutorDao implements Dao<Tutor, Integer> {
             e.printStackTrace();
         }
         return lista;
+    }
+
+    // Igual que getAll(), pero resuelve ademas el/los grupos que cada tutor tiene
+    // asignados actualmente via JOIN con ASIGNACION_TUTOR + GRUPO + CARRERA (LEFT JOIN
+    // para no perder tutores sin ningun grupo asignado). La usa gestion-tutores.jsp para
+    // pintar la columna "Grupo" sin una consulta aparte por cada fila de la tabla.
+    public List<Tutor> getAllConGrupo() {
+        Map<Integer, Tutor> tutoresPorNomina = new LinkedHashMap<>();
+        String sql = "SELECT t.*, car.NOMBRE AS NOMBRE_CARRERA, g.CUATRIMESTRE, g.LETRA " +
+                "FROM TUTOR t " +
+                "LEFT JOIN ASIGNACION_TUTOR a ON a.ID_TUTOR = t.NUMERO_EMPLEADO AND a.ESTADO = 'S' " +
+                "LEFT JOIN GRUPO g ON g.ID_GRUPO = a.ID_GRUPO AND g.ESTADO = 'S' " +
+                "LEFT JOIN CARRERA car ON car.ID_CARRERA = g.ID_CARRERA " +
+                "ORDER BY t.NOMBRES, t.NUMERO_EMPLEADO";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                int numeroEmpleado = rs.getInt("NUMERO_EMPLEADO");
+                Tutor tutor = tutoresPorNomina.get(numeroEmpleado);
+                if (tutor == null) {
+                    tutor = mapearTutor(rs);
+                    tutor.setGruposAsignados(new ArrayList<>());
+                    tutoresPorNomina.put(numeroEmpleado, tutor);
+                }
+
+                String nombreCarrera = rs.getString("NOMBRE_CARRERA");
+                if (nombreCarrera != null) {
+                    tutor.getGruposAsignados().add(nombreCarrera + " " + rs.getInt("CUATRIMESTRE") + "°" + rs.getString("LETRA"));
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("Error en getAllConGrupo: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return new ArrayList<>(tutoresPorNomina.values());
     }
 
     // El PK de TUTOR ahora es NUMERO_EMPLEADO directamente (ya no hay ID_TUTOR sintetico

@@ -14,6 +14,7 @@ public class Tutor {
     private String estado;
     private List<String> horariosDispo;
     private Academia academia;
+    private List<String> gruposAsignados;
 
     public Tutor() {
     }
@@ -57,4 +58,15 @@ public class Tutor {
 
     public Academia getAcademia() { return academia; }
     public void setAcademia(Academia academia) { this.academia = academia; }
+
+    public List<String> getGruposAsignados() { return gruposAsignados; }
+    public void setGruposAsignados(List<String> gruposAsignados) { this.gruposAsignados = gruposAsignados; }
+
+    // Concatena los grupos resueltos via JOIN en TutorDao#getAllConGrupo() en un solo
+    // texto legible, para pintar la columna "Grupo" de gestion-tutores.jsp sin logica
+    // adicional en la vista (mismo criterio que getApellidos()).
+    public String getGrupoAsignadoTexto() {
+        if (gruposAsignados == null || gruposAsignados.isEmpty()) return "Sin grupo asignado";
+        return String.join(", ", gruposAsignados);
+    }
 }

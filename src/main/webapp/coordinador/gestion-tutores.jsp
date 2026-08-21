@@ -64,6 +64,24 @@
             </div>
         </div>
 
+        <!-- Carga masiva de tutores desde Excel (.xlsx). Columnas esperadas: Nomina (opcional),
+             Nombres, Apellido paterno, Apellido materno (opcional), Correo (opcional), Telefono,
+             ID Academia. Ver ids de academia en el filtro de arriba. -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <form id="formCargaMasiva" class="d-flex flex-wrap align-items-end gap-2"
+                      action="${pageContext.request.contextPath}/gestion-tutores" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="accion" value="cargaMasiva">
+                    <div>
+                        <label class="campo-label fs-6" for="archivoExcel">Carga masiva (Excel)</label>
+                        <input type="file" id="archivoExcel" name="archivoExcel" class="form-control form-control-figma"
+                               accept=".xlsx,.xls" style="max-width: 280px;" required>
+                    </div>
+                    <button type="submit" class="btn-figma">Subir archivo</button>
+                </form>
+            </div>
+        </div>
+
         <!-- Tabla de tutores -->
         <div class="table-responsive mb-auto">
             <c:if test="${empty listaTutores}">
@@ -79,6 +97,7 @@
                         <col class="col-correo-t">
                         <col class="col-telefono">
                         <col class="col-academia">
+                        <col class="col-grupo-t">
                         <col class="col-acciones-t">
                     </colgroup>
                     <thead>
@@ -88,6 +107,7 @@
                         <th>Correo</th>
                         <th>Teléfono</th>
                         <th>Academia</th>
+                        <th>Grupo</th>
                         <th>Acciones</th>
                     </tr>
                     </thead>
@@ -107,6 +127,7 @@
                             <td>${tutor.correoInstitucional}</td>
                             <td>${tutor.telefono}</td>
                             <td>${nombresAcademia[tutor.idAcademia]}</td>
+                            <td>${tutor.grupoAsignadoTexto}</td>
                             <td>
                                 <div class="d-flex justify-content-center gap-2">
                                     <c:if test="${tutor.estado != 'N'}">
@@ -127,7 +148,7 @@
                         </tr>
                     </c:forEach>
                     <tr id="filaSinResultados" style="display: none;">
-                        <td colspan="6" class="text-center">No se encontraron tutores con los filtros seleccionados.</td>
+                        <td colspan="7" class="text-center">No se encontraron tutores con los filtros seleccionados.</td>
                     </tr>
                     </tbody>
                 </table>

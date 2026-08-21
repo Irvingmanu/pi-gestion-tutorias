@@ -271,6 +271,46 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
+// ==========================================================================
+// AUTOCOMPLETADO DE CORREO INSTITUCIONAL en formulario-tutor.jsp: mientras el
+// coordinador escribe Nombres/Apellido paterno, el correo se arma solo como
+// primerNombre + primerApellidoPaterno + "@utez.edu.mx" (sin acentos ni espacios).
+// Mismo criterio que TutoresServlet#generarCorreoInstitucional (carga masiva por Excel).
+// ==========================================================================
+document.addEventListener('DOMContentLoaded', function () {
+    const inputNombres = document.getElementById('nombres');
+    const inputApellidoPaterno = document.getElementById('apellidoPaterno');
+    const inputCorreo = document.getElementById('correo');
+    if (!inputNombres || !inputApellidoPaterno || !inputCorreo) return;
+
+    const DOMINIO_CORREO = '@utez.edu.mx';
+    // Recuerda el ultimo valor que generamos nosotros: si el correo actual ya no
+    // coincide con el, significa que el usuario lo edito a mano y dejamos de tocarlo
+    // (asi no le pisamos un correo distinto que haya escrito el, ej. en modo edicion).
+    let ultimoCorreoGenerado = inputCorreo.value || '';
+
+    function primeraPalabraSinAcentos(texto) {
+        const primera = (texto || '').trim().split(/\s+/)[0] || '';
+        return primera.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
+    }
+
+    function actualizarCorreoAutomatico() {
+        if (inputCorreo.value !== ultimoCorreoGenerado) return;
+
+        const primerNombre = primeraPalabraSinAcentos(inputNombres.value);
+        const primerApellido = primeraPalabraSinAcentos(inputApellidoPaterno.value);
+
+        ultimoCorreoGenerado = (primerNombre && primerApellido) ? primerNombre + primerApellido + DOMINIO_CORREO : '';
+        inputCorreo.value = ultimoCorreoGenerado;
+        // Dispara "input" para que la validacion en vivo (mas arriba en este archivo y
+        // en validar-correo.js) reevalue el campo y el boton Guardar.
+        inputCorreo.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    inputNombres.addEventListener('input', actualizarCorreoAutomatico);
+    inputApellidoPaterno.addEventListener('input', actualizarCorreoAutomatico);
+});
+
 /**
  * Filtrado en tiempo real de la tabla de tutores.
  */
@@ -343,6 +383,15 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'actualizado':
                 mostrarToast('exito', '¡Éxito!', 'El tutor fue actualizado correctamente');
                 break;
+            case 'carga_masiva': {
+                const insertados = parametros.get('insertados') || '0';
+                const conError = parseInt(parametros.get('conError') || '0', 10);
+                const detalle = conError > 0
+                    ? `Se registraron ${insertados} tutor(es). ${conError} fila(s) del archivo se omitieron por datos inválidos o duplicados.`
+                    : `Se registraron ${insertados} tutor(es) correctamente.`;
+                mostrarToast('exito', '¡Carga masiva completada!', detalle);
+                break;
+            }
         }
 
         window.history.replaceState(null, null, window.location.pathname);
@@ -363,6 +412,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
             case 'tutor_periodo_activo':
                 mostrarAlerta('error', 'No se puede eliminar', 'Este tutor tiene un grupo asignado dentro de un periodo escolar activo. Debes esperar a que el periodo finalice o reasignar el grupo antes de eliminarlo.');
+                break;
+            case 'archivo_vacio':
+                mostrarAlerta('error', 'Archivo requerido', 'Selecciona un archivo de Excel antes de subirlo.');
+                break;
+            case 'archivo_invalido':
+                mostrarAlerta('error', 'Archivo inválido', 'No se pudo leer el archivo o ninguna fila tenía datos válidos. Verifica el formato de las columnas.');
+                break;
+            case 'carga_fallida':
+                mostrarAlerta('error', 'Error', 'No se pudo completar la carga masiva. Intenta de nuevo.');
                 break;
         }
 
