@@ -54,24 +54,15 @@
                     </select>
                 </div>
 
-                <!-- 3. Acciones (Excel + Agregar Tutor) -->
+                <!-- 3. Acciones (Carga Masiva + Nuevo Tutor) -->
                 <div class="d-flex align-items-end gap-3">
-                    <!-- Carga masiva de tutores desde Excel (.xlsx). Columnas esperadas (todas requeridas):
-                                 Nombres, Apellido paterno, Apellido materno, Telefono (10 digitos), ID Academia,
-                                 Horarios de atencion (uno o mas, ej. "Lunes: 07:00 - 09:00", separados por ";" o
-                                 salto de linea). Nomina y Correo ya NO van en el Excel: se autoasignan. Ver ids
-                                 de academia en el filtro de arriba. -->
-                    <!-- Carga Masiva -->
-                    <form id="formCargaMasiva" class="d-flex align-items-end gap-2 mb-0"
-                          action="${pageContext.request.contextPath}/gestion-tutores" method="post" enctype="multipart/form-data">
-                        <input type="hidden" name="accion" value="cargaMasiva">
-                        <div>
-                            <input type="file" id="archivoExcel" name="archivoExcel" class="form-control form-control-figma"
-                                   accept=".xlsx,.xls" style="max-width: 230px;" required
-                                   title="Columnas requeridas: Nombres, Apellido paterno, Apellido materno, Teléfono, ID Academia, Horarios de atención (ej. &quot;Lunes: 07:00 - 09:00&quot;). Nómina y Correo se autoasignan, no van en el archivo.">
-                        </div>
-                        <button type="submit" class="btn-figma">Carga Masiva</button>
-                    </form>
+                    <!-- Carga Masiva: mismo patron que el modal "Carga Masiva de Alumnos" de
+                         coordinador/gestion-grupos.jsp (boton que abre un modal de Bootstrap,
+                         con el detalle de columnas en un form-text dentro del modal). -->
+                    <div class="text-center">
+                        <label class="campo-label fs-6 d-block">Carga Masiva</label>
+                        <button type="button" class="btn-figma" data-bs-toggle="modal" data-bs-target="#modalCargaMasivaTutores">Carga Masiva</button>
+                    </div>
 
                     <!-- Nuevo Tutor -->
                     <div class="text-center">
@@ -163,6 +154,46 @@
 
         </div>
 
+    </div>
+
+    <!-- ==================== MODAL: CARGA MASIVA DE TUTORES ====================
+         Mismo patron visual que el modal "Carga Masiva de Alumnos" de
+         coordinador/gestion-grupos.jsp (modal-header/body/footer, ayuda de columnas en un
+         form-text, footer Cancelar/Subir archivo). No necesita un <select> de "a donde va
+         cada fila" como el de Alumnos->Grupo: aqui la Academia es una columna del propio
+         Excel (columna E), porque un mismo archivo puede traer tutores de academias
+         distintas. Ver TutoresServlet#procesarCargaMasiva para el detalle de columnas. -->
+    <div class="modal fade" id="modalCargaMasivaTutores" tabindex="-1" aria-labelledby="modalCargaMasivaTutoresLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formCargaMasivaTutores" action="${pageContext.request.contextPath}/gestion-tutores" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="accion" value="cargaMasiva">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalCargaMasivaTutoresLabel">Carga Masiva de Tutores</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fs-6 fw-bold" for="archivoExcel">Archivo Excel (.xlsx, .xls)</label>
+                            <input type="file" id="archivoExcel" name="archivoExcel" class="form-control form-control-figma w-100 fs-6"
+                                   accept=".xlsx,.xls" required>
+                            <div class="form-text">
+                                Columnas: A) Nombres &middot; B) Apellido paterno &middot; C) Apellido materno &middot;
+                                D) Teléfono (10 dígitos) &middot; E) ID Academia &middot; F) Horarios de atención.
+                                La primera fila es de encabezados.
+                                <strong>Horarios:</strong> uno o más por tutor, formato "Día: HH:MM - HH:MM"
+                                (ej. "Lunes: 07:00 - 09:00"); varios horarios en la misma celda se separan con ";" o con un salto de línea.
+                                <strong>Nómina y Correo</strong> no van en el archivo: se autoasignan.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-cancelar-figma" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn-figma">Subir archivo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <form id="formEliminarTutor" action="${pageContext.request.contextPath}/gestion-tutores" method="POST" style="display:none;">
