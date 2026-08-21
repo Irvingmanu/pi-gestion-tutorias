@@ -7,6 +7,8 @@
 
     String ctx = request.getContextPath();
 %>
+<meta name="context-path" content="<%= ctx %>">
+
 <!-- ==================== BARRA SUPERIOR MOVIL (solo <768px) ==================== -->
 <nav class="navbar mobile-topbar d-md-none">
     <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas"
@@ -68,3 +70,4 @@
         }
     })();
 </script>
+<script src="<%= ctx %>/assets/js/session-guard.js"></script>

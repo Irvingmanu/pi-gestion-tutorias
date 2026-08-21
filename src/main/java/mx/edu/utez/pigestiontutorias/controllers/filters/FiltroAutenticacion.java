@@ -10,7 +10,6 @@ import jakarta.servlet.http.HttpSession;
 import mx.edu.utez.pigestiontutorias.utils.SesionActivaManager;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 @WebFilter("/*")
@@ -26,6 +25,17 @@ public class FiltroAutenticacion extends HttpFilter {
 
         String requestURI = request.getRequestURI();
         HttpSession session = request.getSession(false);
+
+        // El endpoint de polling (session-guard.js) SIEMPRE debe llegar a
+        // SesionCheckServlet y responder JSON real, sin que el filtro lo intercepte
+        // ni redirija: si aqui invalidamos/redirigimos, un fetch() normal sigue el
+        // redirect solo, recibe el HTML de login.jsp en vez del JSON, y el
+        // JavaScript nunca se entera de que la sesion ya no es valida.
+        boolean sesionCheckRequest = requestURI.endsWith("/verificar-sesion");
+        if (sesionCheckRequest) {
+            chain.doFilter(request, response);
+            return;
+        }
 
         boolean loggedIn = (session != null && session.getAttribute("usuario") != null);
 
@@ -81,8 +91,6 @@ public class FiltroAutenticacion extends HttpFilter {
         }
     }
 
-    // Devuelve la pantalla principal de cada rol (reutilizado tanto para el rebote de
-    // /login mientras hay sesion activa, como para el rebote por acceso a un rol ajeno).
     private String destinoSegunRol(String rol) {
         if ("Coordinador".equalsIgnoreCase(rol)) {
             return "/gestion-tutores";
@@ -94,11 +102,6 @@ public class FiltroAutenticacion extends HttpFilter {
         return "/login.jsp";
     }
 
-    // Roles permitidos para una ruta dada. null = sin restriccion de rol (cualquier
-    // usuario logueado puede entrar, ej. /solicitudes que usan Alumno y Tutor).
-    //
-    // OJO: si agregas un servlet/JSP nuevo, tienes que registrarlo aqui (o que viva
-    // dentro de /alumno/, /tutor/ o /coordinador/, que ya se cubren solos).
     private List<String> rolesPermitidosPara(String ruta) {
 
         if (ruta.startsWith("/alumno/")) return List.of("Alumno");

@@ -5,6 +5,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Sistema de Gestión de Tutorías - Iniciar Sesión</title>
     <link href="assets/css/bootstrap.css" rel="stylesheet">
     <link href="assets/css/bi/bootstrap-icons.css" rel="stylesheet">
@@ -36,14 +39,23 @@
             </div>
         </c:if>
 
-        <form action="login" method="POST" id="loginForm" novalidate>
+        <c:if test="${param.motivo == 'sesion_duplicada'}">
+            <div class="alert alert-warning alert-dismissible fade show d-flex align-items-center py-2" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <div class="small flex-grow-1">Tu sesión se cerró porque se inició sesión con tu cuenta en otro dispositivo o navegador.</div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </c:if>
+
+        <form action="login" method="POST" id="loginForm" autocomplete="off" novalidate>
 
             <div class="mb-4">
                 <label for="correo" class="auth-label">Correo institucional</label>
                 <div class="auth-field">
                     <img src="assets/img/login/usuario.png" alt="" class="auth-icon-left">
                     <input type="email" class="form-control auth-input" id="correo" name="correo"
-                           value="${param.correo}" placeholder="correo@utez.edu.mx" required>
+                           value="${param.correo}" placeholder="correo@utez.edu.mx"
+                           autocomplete="off" readonly required>
                     <div class="invalid-feedback">
                         Ingresa tu correo institucional.
                     </div>
@@ -55,7 +67,7 @@
                 <div class="auth-field auth-field--password">
                     <img src="assets/img/login/candado.png" alt="" class="auth-icon-left">
                     <input type="password" class="form-control auth-input" id="password" name="password"
-                           placeholder="Contraseña" required>
+                           placeholder="Contraseña" autocomplete="new-password" readonly required>
                     <button type="button" class="auth-toggle-password" id="togglePassword" aria-label="Mostrar contraseña">
                         <img src="assets/img/login/ojoOcultar.png" alt="" class="auth-field-icon" id="toggleIcon">
                     </button>
@@ -92,6 +104,30 @@
             form.classList.add('was-validated');
         }, false);
     })();
+
+    // Si la pagina se restauro desde el bfcache (boton "Atras" del navegador), la
+    // recargamos desde el servidor para que el formulario siempre aparezca limpio.
+    window.addEventListener('pageshow', function (evento) {
+        if (evento.persisted) {
+            window.location.reload();
+        }
+    });
+
+    // Truco anti-autofill: Chrome (y la mayoria de navegadores) NO autocompletan
+    // campos marcados como "readonly" al cargar la pagina. En cuanto el usuario
+    // hace foco/clic en el campo, le quitamos el readonly para que pueda escribir
+    // normal. Esto es mas confiable que autocomplete="off", que Chrome ignora
+    // a proposito para contraseñas guardadas.
+    ['correo', 'password'].forEach(function (id) {
+        var campo = document.getElementById(id);
+        campo.value = '';
+        campo.addEventListener('focus', function quitarReadonly() {
+            campo.removeAttribute('readonly');
+        });
+        campo.addEventListener('mousedown', function () {
+            campo.removeAttribute('readonly');
+        });
+    });
 </script>
 </body>
 </html>
