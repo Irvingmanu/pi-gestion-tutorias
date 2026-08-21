@@ -36,7 +36,7 @@
             <img src="<%= ctx %>/assets/img/tutor/solicitudes.png" alt="Solicitudes">
             <span>Solicitudes</span>
         </a>
-        <a href="<%= ctx %>/tutor/reportes.jsp" class="nav-item-grupos<%= "reportes".equals(paginaActiva) ? " active" : "" %>">
+        <a href="<%= ctx %>/ReportesServlet" class="nav-item-grupos<%= "reportes".equals(paginaActiva) ? " active" : "" %>">
             <img src="<%= ctx %>/assets/img/tutor/reportes.png" alt="Reportes">
             <span>Reportes</span>
         </a>

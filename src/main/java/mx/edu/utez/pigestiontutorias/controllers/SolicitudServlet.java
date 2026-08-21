@@ -107,6 +107,11 @@ public class SolicitudServlet extends HttpServlet {
         // ---- Listado de solicitudes del tutor (imagen 2: Solicitudes) ----
         Integer idUsuario = (Integer) session.getAttribute("idUsuario");
         Tutor tutor = idUsuario != null ? tutorDao.getById(idUsuario) : null;
+
+        // >>> FIX: antes esta línea no existía, por eso el navbar nunca marcaba
+        // "Solicitudes" como activo al entrar al listado normal.
+        request.setAttribute("paginaActiva", "solicitudes");
+
         if (tutor == null) {
             request.setAttribute("error", "No se encontró el tutor asociado a este usuario.");
             request.getRequestDispatcher("/tutor/solicitudes.jsp").forward(request, response);
@@ -316,7 +321,7 @@ public class SolicitudServlet extends HttpServlet {
     // La usan tanto el formulario de nueva solicitud (alumno) como el de
     // reprogramar (tutor), para no calcular la disponibilidad de dos formas distintas.
     private Map<LocalDate, Set<String>> construirDisponibilidad(int idTutor, List<Horario> listaHorarios,
-                                                                  LocalDate fechaInicio, LocalDate limite) {
+                                                                LocalDate fechaInicio, LocalDate limite) {
         Map<LocalDate, Set<String>> horasOcupadas = solicitudDao.getHorasOcupadas(idTutor, fechaInicio, limite);
         Map<LocalDate, Set<String>> disponibilidad = new LinkedHashMap<>();
 
