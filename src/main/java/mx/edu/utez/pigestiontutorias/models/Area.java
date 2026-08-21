@@ -11,6 +11,7 @@ public class Area {
     private String correoContacto;
     private String enlaceCita;
     private List<Motivo> motivos;
+    private int alumnosCanalizados;
 
     public Area() {
     }
@@ -72,6 +73,16 @@ public class Area {
 
     public void setMotivos(List<Motivo> motivos) {
         this.motivos = motivos;
+    }
+
+    // Cuantos alumnos ya fueron canalizados a esta area (ver AreaDAO#contarCanalizados).
+    // Si es > 0, el nombre del area y sus motivos quedan bloqueados para edicion.
+    public int getAlumnosCanalizados() {
+        return alumnosCanalizados;
+    }
+
+    public void setAlumnosCanalizados(int alumnosCanalizados) {
+        this.alumnosCanalizados = alumnosCanalizados;
     }
 
     @Override

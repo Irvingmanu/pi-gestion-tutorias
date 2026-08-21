@@ -118,6 +118,7 @@ public class AreaDAO implements Dao<Area, Integer> {
                 if (rs.next()) {
                     Area a = mapearArea(rs);
                     a.setMotivos(motivoDAO.getByIdArea(a.getIdArea()));
+                    a.setAlumnosCanalizados(contarCanalizados(a.getIdArea()));
                     return a;
                 }
             }
@@ -125,6 +126,25 @@ public class AreaDAO implements Dao<Area, Integer> {
             e.printStackTrace();
         }
         return null;
+    }
+
+    // Cuantos alumnos ya fueron canalizados a esta area (tabla CANALIZACION.ID_AREA), sin
+    // importar el motivo ni el estatus: mientras exista al menos uno, el nombre del area y
+    // sus motivos quedan bloqueados para edicion (regla de negocio en AreaServlet/JSP).
+    public int contarCanalizados(int idArea) {
+        String sql = "SELECT COUNT(*) FROM CANALIZACION WHERE ID_AREA = ?";
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idArea);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     @Override

@@ -40,6 +40,14 @@ public class AreaServlet extends HttpServlet {
 
         if ("agregarMotivo".equals(accion)) {
             int idArea = Integer.parseInt(request.getParameter("idArea"));
+
+            // El area ya tiene alumnos canalizados: sus motivos quedan bloqueados aunque el
+            // cliente manipule el HTML para saltarse el disabled/hidden del formulario.
+            if (areaDAO.contarCanalizados(idArea) > 0) {
+                redirigirAEdicion(request, response, idArea, null, "area_bloqueada");
+                return;
+            }
+
             String nuevoMotivo = request.getParameter("nuevoMotivo");
 
             boolean motivoValido = nuevoMotivo != null && nuevoMotivo.trim().matches(REGEX_NOMBRE);
@@ -62,6 +70,12 @@ public class AreaServlet extends HttpServlet {
 
         if ("editarMotivo".equals(accion)) {
             int idArea = Integer.parseInt(request.getParameter("idArea"));
+
+            if (areaDAO.contarCanalizados(idArea) > 0) {
+                redirigirAEdicion(request, response, idArea, null, "area_bloqueada");
+                return;
+            }
+
             int idMotivo = Integer.parseInt(request.getParameter("idMotivo"));
             String nombreMotivo = request.getParameter("nombreMotivo");
 
@@ -86,6 +100,12 @@ public class AreaServlet extends HttpServlet {
 
         if ("eliminarMotivo".equals(accion)) {
             int idArea = Integer.parseInt(request.getParameter("idArea"));
+
+            if (areaDAO.contarCanalizados(idArea) > 0) {
+                redirigirAEdicion(request, response, idArea, null, "area_bloqueada");
+                return;
+            }
+
             boolean eliminado = motivoDAO.delete(Integer.parseInt(request.getParameter("idMotivo")));
 
             // Si falla (p.ej. FK: ya hay alumnos canalizados con este motivo), no se puede
@@ -100,11 +120,20 @@ public class AreaServlet extends HttpServlet {
         boolean esEdicion = idAreaParam != null && !idAreaParam.isEmpty();
 
         Area area = new Area();
-        area.setNombre(request.getParameter("nombreArea"));
         area.setNombresEncargado(request.getParameter("nombresEncargado"));
         area.setApellidoPaternoEncargado(request.getParameter("apellidoPaternoEncargado"));
         area.setApellidoMaternoEncargado(request.getParameter("apellidoMaternoEncargado"));
         area.setCorreoContacto(request.getParameter("correo"));
+
+        // Si el area ya tiene alumnos canalizados, su nombre queda bloqueado: se ignora lo
+        // que venga en "nombreArea" (el input es readonly en el cliente, pero un cliente
+        // manipulado podria enviar otro valor) y se conserva el nombre real de BD.
+        if (esEdicion && areaDAO.contarCanalizados(Integer.parseInt(idAreaParam)) > 0) {
+            Area actual = areaDAO.getById(Integer.parseInt(idAreaParam));
+            area.setNombre(actual != null ? actual.getNombre() : request.getParameter("nombreArea"));
+        } else {
+            area.setNombre(request.getParameter("nombreArea"));
+        }
 
         String[] motivos = request.getParameterValues("motivos[]");
 

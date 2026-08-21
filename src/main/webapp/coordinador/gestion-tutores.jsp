@@ -33,14 +33,17 @@
             Gestión de Tutores
         </div>
 
-        <!-- Buscar tutor / Filtro Academia / Nuevo Tutor -->
+        <!-- Buscar tutor / Filtro Academia / Carga Masiva / Nuevo Tutor -->
         <div class="row mb-3">
             <div class="col-12 d-flex justify-content-between align-items-end">
+                <!-- 1. Buscar tutor -->
                 <div>
                     <label class="campo-label fs-6" for="buscarTutor">Buscar tutor</label>
                     <input type="text" id="buscarTutor" class="campo-buscar campo-buscar-tutor"
                            placeholder="Buscar por nombre">
                 </div>
+
+                <!-- 2. Select Academia -->
                 <div class="flex-grow-1 mx-3">
                     <label class="campo-label fs-6" for="academiaFiltroTutores">Academia</label>
                     <select id="academiaFiltroTutores" class="campo-select w-100">
@@ -50,10 +53,28 @@
                         </c:forEach>
                     </select>
                 </div>
-                <div class="text-center">
-                    <label class="campo-label fs-6">Nuevo Tutor</label>
-                    <a href="${pageContext.request.contextPath}/gestion-tutores?accion=nuevo" class="btn-figma text-decoration-none">Agregar</a>
-                </div>
+
+                <!-- 3. Acciones (Excel + Agregar Tutor) -->
+                <div class="d-flex align-items-end gap-3">
+                    <!-- Carga masiva de tutores desde Excel (.xlsx). Columnas esperadas: Nomina (opcional),
+                                 Nombres, Apellido paterno, Apellido materno (opcional), Correo (opcional), Telefono,
+                                 ID Academia. Ver ids de academia en el filtro de arriba. -->
+                    <!-- Carga Masiva -->
+                    <form id="formCargaMasiva" class="d-flex align-items-end gap-2 mb-0"
+                          action="${pageContext.request.contextPath}/gestion-tutores" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="accion" value="cargaMasiva">
+                        <div>
+                            <input type="file" id="archivoExcel" name="archivoExcel" class="form-control form-control-figma"
+                                   accept=".xlsx,.xls" style="max-width: 230px;" required>
+                        </div>
+                        <button type="submit" class="btn-figma">Carga Masiva</button>
+                    </form>
+
+                    <!-- Nuevo Tutor -->
+                    <div class="text-center">
+                        <label class="campo-label fs-6 d-block">Nuevo Tutor</label>
+                        <a href="${pageContext.request.contextPath}/gestion-tutores?accion=nuevo" class="btn-figma text-decoration-none d-block">Agregar</a>
+                    </div>
             </div>
         </div>
 
@@ -61,24 +82,6 @@
             <div class="col-md-6 d-flex align-items-center gap-2">
                 <input type="checkbox" id="mostrarInactivos" class="form-check-input">
                 <label class="form-check-label fs-6" for="mostrarInactivos">Mostrar tutores dados de baja</label>
-            </div>
-        </div>
-
-        <!-- Carga masiva de tutores desde Excel (.xlsx). Columnas esperadas: Nomina (opcional),
-             Nombres, Apellido paterno, Apellido materno (opcional), Correo (opcional), Telefono,
-             ID Academia. Ver ids de academia en el filtro de arriba. -->
-        <div class="row mb-3">
-            <div class="col-12">
-                <form id="formCargaMasiva" class="d-flex flex-wrap align-items-end gap-2"
-                      action="${pageContext.request.contextPath}/gestion-tutores" method="post" enctype="multipart/form-data">
-                    <input type="hidden" name="accion" value="cargaMasiva">
-                    <div>
-                        <label class="campo-label fs-6" for="archivoExcel">Carga masiva (Excel)</label>
-                        <input type="file" id="archivoExcel" name="archivoExcel" class="form-control form-control-figma"
-                               accept=".xlsx,.xls" style="max-width: 280px;" required>
-                    </div>
-                    <button type="submit" class="btn-figma">Subir archivo</button>
-                </form>
             </div>
         </div>
 

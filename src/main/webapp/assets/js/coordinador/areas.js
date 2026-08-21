@@ -98,6 +98,9 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'motivo_en_uso':
                 mostrarAlerta('error', 'No se puede eliminar', 'Este motivo no puede eliminarse porque ya hay alumnos canalizados con él.');
                 break;
+            case 'area_bloqueada':
+                mostrarAlerta('error', 'Área bloqueada', 'El nombre del área y sus motivos están bloqueados porque ya cuenta con alumnos canalizados.');
+                break;
         }
 
         window.history.replaceState(null, null, window.location.pathname);
