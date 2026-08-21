@@ -38,7 +38,7 @@ import java.util.Set;
 // gestion-grupos.jsp / accion=crearGrupo). @MultipartConfig es necesario para poder leer
 // request.getPart("archivoExcel") en accion=cargaMasivaAlumnos.
 @WebServlet(name = "AlumnoServlet", value = "/gestion-grupos")
-@MultipartConfig
+@MultipartConfig(maxFileSize = AlumnoServlet.MAX_TAMANO_ARCHIVO_EXCEL)
 public class AlumnoServlet extends HttpServlet {
 
     private static final String REGEX_NOMBRE = "^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$";
@@ -49,6 +49,12 @@ public class AlumnoServlet extends HttpServlet {
     private static final int MAX_NOMBRES = 100;
     private static final int MAX_APELLIDO = 50;
     private static final int MAX_CORREO = 100;
+
+    // Limite del Excel de carga masiva (tambien usado en @MultipartConfig, abajo): un
+    // archivo de solo texto (matricula/nombre/correo/telefono) nunca deberia acercarse a
+    // esto ni con miles de filas; 5MB es margen de sobra contra un archivo corrupto/gigante
+    // subido por error, sin ser tan bajo que estorbe un caso legitimo.
+    static final long MAX_TAMANO_ARCHIVO_EXCEL = 5L * 1024 * 1024;
 
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();
     private final AsignacionTutorDao asignacionTutorDAO = new AsignacionTutorDao();
@@ -344,20 +350,26 @@ public class AlumnoServlet extends HttpServlet {
     private void procesarCargaMasivaAlumnos(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
 
-        Integer idGrupo = parseIntOrNull(request.getParameter("idGrupo"));
-        Grupo grupo = idGrupo != null ? grupoDao.getById(idGrupo) : null;
-        if (grupo == null || !"S".equals(grupo.getEstado())) {
-            response.sendRedirect(request.getContextPath() + "/gestion-grupos?error=carga_sin_grupo");
-            return;
-        }
-
-        PeriodoEscolar periodoDelGrupo = periodoEscolarDao.getById(grupo.getIdPeriodo());
-        if (periodoDelGrupo == null) {
-            response.sendRedirect(request.getContextPath() + "/gestion-grupos?error=carga_sin_grupo");
-            return;
-        }
-
+        // Con @MultipartConfig(maxFileSize=...), el contenedor no rechaza la subida al
+        // vuelo: el archivo se recibe completo y recien se valida el limite al parsear el
+        // multipart, en el PRIMER acceso a un parametro/Part de este request (aqui,
+        // getParameter("idGrupo") mas abajo) — por eso todo el metodo, no solo
+        // request.getPart(), esta dentro de este try, con IllegalStateException cachado por
+        // separado del catch generico (que es para errores de POI al leer el Excel).
         try {
+            Integer idGrupo = parseIntOrNull(request.getParameter("idGrupo"));
+            Grupo grupo = idGrupo != null ? grupoDao.getById(idGrupo) : null;
+            if (grupo == null || !"S".equals(grupo.getEstado())) {
+                response.sendRedirect(request.getContextPath() + "/gestion-grupos?error=carga_sin_grupo");
+                return;
+            }
+
+            PeriodoEscolar periodoDelGrupo = periodoEscolarDao.getById(grupo.getIdPeriodo());
+            if (periodoDelGrupo == null) {
+                response.sendRedirect(request.getContextPath() + "/gestion-grupos?error=carga_sin_grupo");
+                return;
+            }
+
             Part parteArchivo = request.getPart("archivoExcel");
             if (parteArchivo == null || parteArchivo.getSize() == 0) {
                 response.sendRedirect(request.getContextPath() + "/gestion-grupos?error=archivo_vacio");
@@ -473,6 +485,8 @@ public class AlumnoServlet extends HttpServlet {
                     : "error=carga_fallida";
             response.sendRedirect(request.getContextPath() + "/gestion-grupos?" + parametro);
 
+        } catch (IllegalStateException e) {
+            response.sendRedirect(request.getContextPath() + "/gestion-grupos?error=archivo_muy_grande");
         } catch (Exception e) {
             e.printStackTrace();
             response.sendRedirect(request.getContextPath() + "/gestion-grupos?error=archivo_invalido");

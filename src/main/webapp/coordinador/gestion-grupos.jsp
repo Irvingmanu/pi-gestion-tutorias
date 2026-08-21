@@ -351,6 +351,7 @@
                             G) Teléfono (10 dígitos). La primera fila es de encabezados.
                             <strong>Matrícula:</strong> opcional (se autogenera) solo si el grupo elegido es de 1er cuatrimestre;
                             para 2° en adelante es obligatoria (alumnos de reingreso ya tienen la suya).
+                            Tamaño máximo del archivo: 5 MB.
                         </div>
                     </div>
                 </div>

@@ -722,6 +722,19 @@ document.addEventListener('DOMContentLoaded', function () {
     let btnCerrarCargaMasiva = document.getElementById('btnCerrarCargaMasiva');
     if (btnCancelarCargaMasiva) btnCancelarCargaMasiva.addEventListener('click', intentarCerrarModalCargaMasiva);
     if (btnCerrarCargaMasiva) btnCerrarCargaMasiva.addEventListener('click', intentarCerrarModalCargaMasiva);
+
+    // Debe coincidir con MAX_TAMANO_ARCHIVO_EXCEL en AlumnoServlet.java. Es solo para dar
+    // feedback inmediato sin esperar el POST completo del archivo; el limite real, que no se
+    // puede saltar manipulando el cliente, lo sigue aplicando @MultipartConfig en el servlet.
+    const TAMANO_MAXIMO_EXCEL = 5 * 1024 * 1024;
+
+    formCargaMasiva.addEventListener('submit', function (e) {
+        let archivo = inputCargaArchivo.files && inputCargaArchivo.files[0];
+        if (archivo && archivo.size > TAMANO_MAXIMO_EXCEL) {
+            e.preventDefault();
+            mostrarAlerta('error', 'Error', 'El archivo supera el tamaño máximo permitido (5 MB). Reduce el archivo e intenta de nuevo.');
+        }
+    });
 });
 
 // Toasts/alertas de exito y error via parametros en la URL (?exito=, ?error=)
@@ -816,6 +829,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
             case 'archivo_vacio':
                 mostrarAlerta('error', 'Error', 'Selecciona un archivo Excel (.xlsx o .xls) antes de subir.');
+                break;
+            case 'archivo_muy_grande':
+                mostrarAlerta('error', 'Error', 'El archivo supera el tamaño máximo permitido (5 MB). Reduce el archivo e intenta de nuevo.');
                 break;
             case 'archivo_invalido':
                 // Si hay filas invalidas con numero de renglon (window.filasInvalidasExcel),
