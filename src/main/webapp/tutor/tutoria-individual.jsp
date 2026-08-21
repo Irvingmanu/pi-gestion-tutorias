@@ -69,7 +69,7 @@
             <li class="nav-item" role="presentation">
                 <button class="nav-link ${tabActiva == 'espontanea' ? 'active' : ''}" id="tab-espontanea-btn" data-bs-toggle="tab"
                         data-bs-target="#tab-espontanea" type="button" role="tab" aria-selected="${tabActiva == 'espontanea' ? 'true' : 'false'}">
-                    Tutoría Espontánea
+                    Tutoría Individual
                 </button>
             </li>
         </ul>

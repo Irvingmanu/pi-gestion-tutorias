@@ -53,6 +53,9 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
                         return false;
                     }
                     idSesionGrupal = keys.getInt(1);
+                    // Se refleja en la entidad recibida para que el caller pueda usar el ID
+                    // recien generado (ej. para asociarle la asistencia de la cuadricula).
+                    entidad.setIdSesionGrupal(idSesionGrupal);
                 }
             }
 

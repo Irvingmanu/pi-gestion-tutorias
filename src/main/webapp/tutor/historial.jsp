@@ -76,6 +76,7 @@ gdbg
                             <th>Temas Tratados</th>
                             <th>Acuerdos</th>
                             <th>Estado</th>
+                            <th>Acciones</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -88,6 +89,14 @@ gdbg
                                 <td>${item.temasTratados}</td>
                                 <td>${item.acuerdos}</td>
                                 <td>${item.estado}</td>
+                                <td>
+                                    <c:if test="${item.tipo == 'Grupal'}">
+                                        <a class="btn btn-sm btn-secondary"
+                                           href="${pageContext.request.contextPath}/tutoria-grupal?idGrupo=${item.idGrupo}">
+                                            Ver asistencia
+                                        </a>
+                                    </c:if>
+                                </td>
                             </tr>
                         </c:forEach>
                         </tbody>

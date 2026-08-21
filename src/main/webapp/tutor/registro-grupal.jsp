@@ -12,6 +12,7 @@
     <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/coordinador/gestion-grupos.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/alertas.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/tutor/asistencia-grid.css" rel="stylesheet">
 </head>
 <body>
 
@@ -35,19 +36,26 @@
                 </div>
             </c:when>
             <c:otherwise>
-                <div class="form-wrap-figma" style="max-width: 900px;">
+                <div class="form-wrap-figma form-wrap-figma--ancho">
                     <!-- novalidate: quitamos los mensajes nativos del navegador, igual que en coordinador -->
                     <form id="formRegistroGrupal" class="needs-validation" action="${pageContext.request.contextPath}/tutoria-grupal" method="post" novalidate>
+                        <!-- Bandera para el guardado parcial: cuando el tutor solo justifica/corrige
+                             asistencia de sesiones ya registradas (sin llenar Fecha/Hora/Acuerdos/Temas
+                             ni tocar la columna "Sesión actual"), registro-grupal.js la pone en "true"
+                             para que el servidor NO cree una sesión nueva y solo actualice la asistencia. -->
+                        <input type="hidden" id="inputSoloAsistencia" name="soloAsistencia" value="false">
 
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
                                 <label for="grupoAsignado" class="form-label fs-6 fw-bold">Grupo</label>
                                 <select id="grupoAsignado" name="idGrupo" class="form-select form-control-figma w-100 fs-6" required>
                                     <c:if test="${gruposAsignados.size() > 1}">
-                                        <option value="" selected>Seleccione el grupo</option>
+                                        <option value="" ${empty idGrupoPreseleccionado ? 'selected' : ''}>Seleccione el grupo</option>
                                     </c:if>
                                     <c:forEach var="grupo" items="${gruposAsignados}">
-                                        <option value="${grupo.idGrupo}">${grupo.nombreGrupo}</option>
+                                        <option value="${grupo.idGrupo}" ${idGrupoPreseleccionado == grupo.idGrupo ? 'selected' : ''}>
+                                                ${grupo.nombreGrupo}
+                                        </option>
                                     </c:forEach>
                                 </select>
                                 <div class="invalid-feedback">Selecciona un grupo.</div>
@@ -92,18 +100,22 @@
 
                         <div id="contenedorAsistencia" class="mb-4" style="display: none;">
                             <p class="fs-5 fw-bold text-center my-3">Lista de Asistencia</p>
-                            <div class="table-responsive">
-                                <table class="tabla-grupos fs-6 w-100">
-                                    <thead>
-                                    <tr>
-                                        <th>Matrícula</th>
-                                        <th>Nombre</th>
-                                        <th class="text-center">Asistencia</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody id="cuerpoTablaAsistencia">
-                                    </tbody>
+                            <p class="texto-ayuda-cuadricula text-center text-muted mb-3">
+                                Haz clic (o doble clic) sobre cualquier celda de asistencia para alternar su estado
+                                entre Presente (✓), Ausente (X) y Justificado (J).
+                            </p>
+
+                            <div class="tabla-asistencia-grid-wrap mb-3">
+                                <table class="tabla-asistencia-grid" id="tablaCuadricula">
+                                    <thead id="theadCuadricula"></thead>
+                                    <tbody id="cuerpoTablaAsistencia"></tbody>
                                 </table>
+                            </div>
+
+                            <div class="leyenda-asistencia">
+                                <span class="leyenda-item"><span class="leyenda-icono estado-presente"></span> Presente</span>
+                                <span class="leyenda-item"><span class="leyenda-icono estado-falta"></span> Ausente</span>
+                                <span class="leyenda-item"><span class="leyenda-icono estado-justificado"></span> Justificado (no resta % de asistencia)</span>
                             </div>
                         </div>
 
