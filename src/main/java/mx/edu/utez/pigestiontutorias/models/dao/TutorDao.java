@@ -2,10 +2,13 @@ package mx.edu.utez.pigestiontutorias.models.dao;
 
 import mx.edu.utez.pigestiontutorias.models.Academia;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
-import mx.edu.utez.pigestiontutorias.utils.PasswordUtil;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,7 +20,6 @@ public class TutorDao implements Dao<Tutor, Integer> {
     public boolean create(Tutor entidad) {
         String sqlTutor = "INSERT INTO TUTOR(NUMERO_EMPLEADO, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, CORREO_INSTITUCIONAL, TELEFONO, ID_ACADEMIA, PASS) " +
                 "VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
-        String sqlHorario = "INSERT INTO HORARIO_ATENCION (ID_TUTOR, DIA_SEMANA, HORA_DESDE, HORA_HASTA) VALUES (?, ?, TO_DSINTERVAL('0 ' || ? || ':00'), TO_DSINTERVAL('0 ' || ? || ':00'))";
 
         Connection con = null;
         try {
@@ -35,35 +37,11 @@ public class TutorDao implements Dao<Tutor, Integer> {
                 psTutor.setString(5, entidad.getCorreoInstitucional());
                 psTutor.setString(6, entidad.getTelefono());
                 psTutor.setInt(7, entidad.getIdAcademia());
-                psTutor.setString(8, PasswordUtil.hash(pass));
+                psTutor.setString(8, pass);
                 psTutor.executeUpdate();
             }
 
-            if (entidad.getHorariosDispo() != null && !entidad.getHorariosDispo().isEmpty()) {
-                try (PreparedStatement psHorario = con.prepareStatement(sqlHorario)) {
-                    for (String horarioStr : entidad.getHorariosDispo()) {
-
-                        // Extractor inteligente: Busca el día y las horas en el texto que manda el JS
-                        String dia = "Lunes";
-                        String desde = "00:00";
-                        String hasta = "00:00";
-
-                        java.util.regex.Matcher mDia = java.util.regex.Pattern.compile("(Lunes|Martes|Mi[eé]rcoles|Jueves|Viernes)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(horarioStr);
-                        if (mDia.find()) dia = normalizarDiaSemana(mDia.group(1));
-
-                        java.util.regex.Matcher mHoras = java.util.regex.Pattern.compile("([0-2][0-9]:[0-5][0-9])").matcher(horarioStr);
-                        if (mHoras.find()) desde = mHoras.group(1);
-                        if (mHoras.find()) hasta = mHoras.group(1);
-
-                        psHorario.setInt(1, entidad.getNumeroEmpleado());
-                        psHorario.setString(2, dia);
-                        psHorario.setString(3, desde);
-                        psHorario.setString(4, hasta);
-                        psHorario.addBatch();
-                    }
-                    psHorario.executeBatch();
-                }
-            }
+            insertarHorarios(con, entidad.getNumeroEmpleado(), entidad.getHorariosDispo());
 
             con.commit();
             return true;
@@ -78,6 +56,39 @@ public class TutorDao implements Dao<Tutor, Integer> {
             if (con != null) {
                 try { con.close(); } catch (SQLException ex) { ex.printStackTrace(); }
             }
+        }
+    }
+
+    // Inserta los horarios de atencion de un tutor (una fila por dia en HORARIO_ATENCION).
+    // Extractor "inteligente": cada texto puede venir del JS del formulario (ej. "Lunes:
+    // 07:00 - 09:00") o de una celda de Excel en la carga masiva, por eso busca el dia y las
+    // horas en vez de exigir un formato exacto. Reutilizado por create(), update() y
+    // crearMasivo() para no repetir la misma extraccion tres veces.
+    private void insertarHorarios(Connection con, int numeroEmpleado, List<String> horarios) throws SQLException {
+        if (horarios == null || horarios.isEmpty()) return;
+
+        String sqlHorario = "INSERT INTO HORARIO_ATENCION (ID_TUTOR, DIA_SEMANA, HORA_DESDE, HORA_HASTA) VALUES (?, ?, TO_DSINTERVAL('0 ' || ? || ':00'), TO_DSINTERVAL('0 ' || ? || ':00'))";
+
+        try (PreparedStatement psHorario = con.prepareStatement(sqlHorario)) {
+            for (String horarioStr : horarios) {
+                String dia = "Lunes";
+                String desde = "00:00";
+                String hasta = "00:00";
+
+                java.util.regex.Matcher mDia = java.util.regex.Pattern.compile("(Lunes|Martes|Mi[eé]rcoles|Jueves|Viernes)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(horarioStr);
+                if (mDia.find()) dia = normalizarDiaSemana(mDia.group(1));
+
+                java.util.regex.Matcher mHoras = java.util.regex.Pattern.compile("([0-2][0-9]:[0-5][0-9])").matcher(horarioStr);
+                if (mHoras.find()) desde = mHoras.group(1);
+                if (mHoras.find()) hasta = mHoras.group(1);
+
+                psHorario.setInt(1, numeroEmpleado);
+                psHorario.setString(2, dia);
+                psHorario.setString(3, desde);
+                psHorario.setString(4, hasta);
+                psHorario.addBatch();
+            }
+            psHorario.executeBatch();
         }
     }
 
@@ -100,8 +111,8 @@ public class TutorDao implements Dao<Tutor, Integer> {
 
     // Alta masiva (carga de Excel via TutoresServlet + Apache POI): un solo batch/commit
     // para todos los tutores validados por el servlet, en vez de una transaccion por fila.
-    // No inserta horarios de atencion: el Excel no los captura, el tutor puede agregarlos
-    // despues editando su registro.
+    // Los horarios de atencion tambien vienen del Excel (columna obligatoria) y se insertan
+    // aparte con insertarHorarios(), porque HORARIO_ATENCION admite varias filas por tutor.
     public int crearMasivo(List<Tutor> tutores) {
         if (tutores == null || tutores.isEmpty()) return 0;
 
@@ -126,7 +137,7 @@ public class TutorDao implements Dao<Tutor, Integer> {
                     ps.setString(5, t.getCorreoInstitucional());
                     ps.setString(6, t.getTelefono());
                     ps.setInt(7, t.getIdAcademia());
-                    ps.setString(8, PasswordUtil.hash(pass));
+                    ps.setString(8, pass);
                     ps.addBatch();
                 }
 
@@ -134,6 +145,10 @@ public class TutorDao implements Dao<Tutor, Integer> {
                 for (int resultado : resultados) {
                     if (resultado > 0 || resultado == Statement.SUCCESS_NO_INFO) insertados++;
                 }
+            }
+
+            for (Tutor t : tutores) {
+                insertarHorarios(con, t.getNumeroEmpleado(), t.getHorariosDispo());
             }
 
             con.commit();
@@ -362,7 +377,6 @@ public class TutorDao implements Dao<Tutor, Integer> {
     public boolean update(Tutor entidad) {
         String sqlTutor = "UPDATE TUTOR SET NOMBRES = ?, APELLIDO_PATERNO = ?, APELLIDO_MATERNO = ?, CORREO_INSTITUCIONAL = ?, TELEFONO = ?, ID_ACADEMIA = ? WHERE NUMERO_EMPLEADO = ?";
         String sqlDeleteHorarios = "DELETE FROM HORARIO_ATENCION WHERE ID_TUTOR = ?";
-        String sqlInsertHorario = "INSERT INTO HORARIO_ATENCION (ID_TUTOR, DIA_SEMANA, HORA_DESDE, HORA_HASTA) VALUES (?, ?, TO_DSINTERVAL('0 ' || ? || ':00'), TO_DSINTERVAL('0 ' || ? || ':00'))";
 
         Connection con = null;
         try {
@@ -385,31 +399,7 @@ public class TutorDao implements Dao<Tutor, Integer> {
                 psDel.executeUpdate();
             }
 
-            if (entidad.getHorariosDispo() != null && !entidad.getHorariosDispo().isEmpty()) {
-                try (PreparedStatement psIns = con.prepareStatement(sqlInsertHorario)) {
-                    for (String horarioStr : entidad.getHorariosDispo()) {
-
-                        // Mismo extractor inteligente que usamos al crear
-                        String dia = "Lunes";
-                        String desde = "00:00";
-                        String hasta = "00:00";
-
-                        java.util.regex.Matcher mDia = java.util.regex.Pattern.compile("(Lunes|Martes|Mi[eé]rcoles|Jueves|Viernes)", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(horarioStr);
-                        if (mDia.find()) dia = normalizarDiaSemana(mDia.group(1));
-
-                        java.util.regex.Matcher mHoras = java.util.regex.Pattern.compile("([0-2][0-9]:[0-5][0-9])").matcher(horarioStr);
-                        if (mHoras.find()) desde = mHoras.group(1);
-                        if (mHoras.find()) hasta = mHoras.group(1);
-
-                        psIns.setInt(1, entidad.getNumeroEmpleado());
-                        psIns.setString(2, dia);
-                        psIns.setString(3, desde);
-                        psIns.setString(4, hasta);
-                        psIns.addBatch();
-                    }
-                    psIns.executeBatch();
-                }
-            }
+            insertarHorarios(con, entidad.getNumeroEmpleado(), entidad.getHorariosDispo());
 
             con.commit();
             return true;
@@ -457,7 +447,7 @@ public class TutorDao implements Dao<Tutor, Integer> {
         String sql = "UPDATE TUTOR SET PASS = ? WHERE NUMERO_EMPLEADO = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, PasswordUtil.hash(nuevaPassword));
+            ps.setString(1, nuevaPassword);
             ps.setInt(2, numeroEmpleado);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {
