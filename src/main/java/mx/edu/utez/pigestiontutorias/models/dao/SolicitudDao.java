@@ -70,6 +70,33 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
     }
 
     // ---------------------------------------------------------------
+    // 1b. Limite de 1 solicitud por semana (alumno): rolling de 7 dias corridos,
+    // contados desde FECHA_REGISTRO (el momento en que se creo la solicitud, NO la
+    // fecha de la cita que el alumno propone). Si ya tiene una solicitud registrada
+    // en los ultimos 7 dias, no puede crear otra hasta que se cumpla la semana.
+    // ---------------------------------------------------------------
+    public boolean tieneSolicitudReciente(String matricula) {
+        String sql = "SELECT COUNT(*) FROM SOLICITUD_TUTORIA " +
+                "WHERE MATRICULA = ? AND FECHA_REGISTRO >= (SYSDATE - 7)";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setString(1, matricula);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) > 0;
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al verificar solicitudes recientes: " + e.getMessage());
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    // ---------------------------------------------------------------
     // 2. Listar todas las solicitudes de un tutor (con datos del alumno)
     // ---------------------------------------------------------------
     public List<Solicitud> findByTutor(int idTutor) {

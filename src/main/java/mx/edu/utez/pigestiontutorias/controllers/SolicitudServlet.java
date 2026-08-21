@@ -148,6 +148,14 @@ public class SolicitudServlet extends HttpServlet {
                 return;
             }
 
+            // Blindaje de servidor: maximo 1 solicitud por semana (7 dias corridos desde su
+            // ultima solicitud registrada). El formulario no impide reenviar, asi que se
+            // revalida aqui igual que el resto de las reglas de negocio del servlet.
+            if (solicitudDao.tieneSolicitudReciente(alumno.getMatricula())) {
+                response.sendRedirect(request.getContextPath() + "/solicitudes?accion=nueva&error=limite_semanal");
+                return;
+            }
+
             // No confiamos en un idTutor mandado por el formulario: lo calculamos
             // aquí igual que en el JSP, a partir del grupo del alumno.
             Integer idTutor = asignacionTutorDao.findIdTutorByGrupo(alumno.getIdGrupo());

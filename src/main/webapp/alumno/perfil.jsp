@@ -92,15 +92,15 @@
                     <div class="mb-3">
                         <label for="passwordNueva" class="form-label fs-6 fw-bold">Nueva contraseña</label>
                         <input type="password" id="passwordNueva" class="form-control form-control-figma w-100 fs-6"
-                               placeholder="Nueva contraseña" minlength="8">
+                               placeholder="Nueva contraseña" minlength="8" maxlength="64">
                         <div class="invalid-feedback" id="errorPasswordNueva">
-                            Debe tener al menos 8 caracteres, una mayúscula y un número, y ser distinta a la actual.
+                            Debe tener entre 8 y 64 caracteres, una mayúscula y un número, y ser distinta a la actual.
                         </div>
                     </div>
                     <div class="mb-2">
                         <label for="passwordConfirmar" class="form-label fs-6 fw-bold">Confirmar nueva contraseña</label>
                         <input type="password" id="passwordConfirmar" class="form-control form-control-figma w-100 fs-6"
-                               placeholder="Confirma la nueva contraseña">
+                               placeholder="Confirma la nueva contraseña" maxlength="64">
                         <div class="invalid-feedback" id="errorPasswordConfirmar">Las contraseñas no coinciden.</div>
                     </div>
                 </div>

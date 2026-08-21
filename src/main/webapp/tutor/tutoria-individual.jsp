@@ -28,6 +28,10 @@
         mensajeError = "Ocurrió un error al guardar el registro. Intenta de nuevo.";
     } else if ("tutor_no_encontrado".equals(codigoError)) {
         mensajeError = "No se encontró el perfil de tutor asociado a tu cuenta.";
+    } else if ("aun_no_es_el_dia".equals(codigoError)) {
+        mensajeError = "Aún no puedes completar esta sesión: solo se puede el día programado o después.";
+    } else if ("sesion_no_encontrada".equals(codigoError)) {
+        mensajeError = "No se encontró la sesión que intentas completar.";
     }
 %>
 <!DOCTYPE html>

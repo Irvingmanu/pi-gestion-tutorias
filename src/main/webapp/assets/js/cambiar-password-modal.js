@@ -53,6 +53,11 @@ function resetearModalCambiarPassword() {
     });
 }
 
+/** Entre 8 y 64 caracteres, al menos una mayúscula y un número (debe coincidir con CambioPasswordUtil.java). */
+function cumpleRequisitosPassword(password) {
+    return password.length >= 8 && password.length <= 64 && /[A-Z]/.test(password) && /[0-9]/.test(password);
+}
+
 function validarPasoNuevaPassword() {
     const inputNueva = document.getElementById('passwordNueva');
     const inputConfirmar = document.getElementById('passwordConfirmar');
@@ -67,7 +72,7 @@ function validarPasoNuevaPassword() {
         marcarInvalido(
             inputNueva,
             document.getElementById('errorPasswordNueva'),
-            'Debe tener al menos 8 caracteres, una mayúscula y un número.'
+            'Debe tener entre 8 y 64 caracteres, una mayúscula y un número.'
         );
         esValido = false;
     } else if (inputNueva.value && passwordActualVerificada !== null && inputNueva.value === passwordActualVerificada) {
@@ -86,11 +91,6 @@ function validarPasoNuevaPassword() {
 
     btnGuardar.disabled = !esValido;
     return esValido;
-}
-
-/** Al menos 8 caracteres, una mayúscula y un número (debe coincidir con CambioPasswordUtil.java). */
-function cumpleRequisitosPassword(password) {
-    return password.length >= 8 && /[A-Z]/.test(password) && /[0-9]/.test(password);
 }
 
 function verificarPasswordActual() {

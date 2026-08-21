@@ -42,6 +42,11 @@
                 Ocurrió un error al enviar tu solicitud. Intenta de nuevo.
             </div>
         </c:if>
+        <c:if test="${param.error == 'limite_semanal'}">
+            <div class="alert alert-warning" role="alert">
+                Ya registraste una solicitud de tutoría esta semana. Podrás crear otra a partir de 7 días después de tu última solicitud.
+            </div>
+        </c:if>
 
         <div class="form-wrap-figma" style="max-width: 50%;">
 

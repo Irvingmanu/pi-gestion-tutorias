@@ -223,6 +223,28 @@ public class SesionIndividualServlet extends HttpServlet {
 
         if (esCompletado) {
             int idSesion = Integer.parseInt(idSesionStr.trim());
+
+            // Blindaje de servidor: el tutor solo puede completar la sesion el dia
+            // programado o despues, nunca antes (ej. no puede adelantar/inventar el
+            // registro de una cita que todavia no ocurre).
+            SesionIndividual sesionExistente = sesionIndividualDao.getById(idSesion);
+            if (sesionExistente == null) {
+                request.setAttribute("error", "sesion_no_encontrada");
+                cargarListas(request, tutor);
+                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
+                return;
+            }
+
+            LocalDate fechaProgramada = sesionExistente.getFecha() != null
+                    ? sesionExistente.getFecha().toLocalDate() : null;
+
+            if (fechaProgramada != null && fechaProgramada.isAfter(LocalDate.now())) {
+                request.setAttribute("error", "aun_no_es_el_dia");
+                cargarListas(request, tutor);
+                request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
+                return;
+            }
+
             guardado = sesionIndividualDao.completarSesion(idSesion, temasTratados, acuerdos, idMotivos, estatusAsistencia, baseUrl);
         } else {
             if (matricula == null || matricula.isBlank() || fechaStr == null || fechaStr.isBlank()

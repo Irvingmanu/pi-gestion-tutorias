@@ -52,8 +52,26 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         return null;
     }
 
+    // Necesario para validar la FECHA programada de una sesion antes de dejar que el
+    // tutor la complete (ver SesionIndividualServlet, doPost, rama "esCompletado"):
+    // el tutor solo puede completar una sesion el dia programado o despues, nunca antes.
     @Override
     public SesionIndividual getById(Integer id) {
+        String sql = "SELECT * FROM SESION_INDIVIDUAL WHERE ID_SESION_INDIVIDUAL = ?";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return mapearSesion(rs);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
         return null;
     }
 
