@@ -15,10 +15,12 @@ document.addEventListener('DOMContentLoaded', function () {
         mostrarAlerta('error', 'Grupo ya asignado', 'Este grupo ya tiene un tutor asignado en ese cuatrimestre.');
     } else if (error === 'academia_no_coincide') {
         mostrarAlerta('error', 'Academia no coincide', 'Solo puedes asignar al tutor a grupos que pertenezcan a su misma academia.');
+    } else if (error === 'cuatrimestre_no_permitido') {
+        mostrarAlerta('error', 'Cuatrimestre no permitido', 'Los grupos de 6° y 10° cuatrimestre no pueden tener tutor asignado, excepto en la carrera Terapia Física.');
     } else if (error === 'true') {
         mostrarAlerta('error', 'Error en la Asignación', 'Esta asignación ya existe en la base de datos.');
     } else if (error === 'grupo_asignado') {
-    mostrarAlerta('error', 'Grupo ya asignado', 'Este grupo ya tiene un tutor asignado en ese cuatrimestre y periodo escolar.');
+        mostrarAlerta('error', 'Grupo ya asignado', 'Este grupo ya tiene un tutor asignado en ese cuatrimestre y periodo escolar.');
     }
 
     if (exito || error) {

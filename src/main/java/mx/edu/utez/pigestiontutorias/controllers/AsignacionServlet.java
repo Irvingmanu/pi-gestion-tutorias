@@ -14,7 +14,9 @@ import mx.edu.utez.pigestiontutorias.models.dao.GrupoDao;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
 
 import java.io.IOException;
+import java.text.Normalizer;
 import java.util.List;
+import java.util.stream.Collectors;
 
 // Un tutor solo se puede asignar a un GRUPO que ya existe (creado previamente al dar de
 // alta a un alumno), nunca a uno inventado en el formulario: por eso "Nueva Asignacion"
@@ -33,7 +35,12 @@ public class AsignacionServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         List<Tutor> listaTutores = tutorDao.findAll();
         List<AsignacionTutor> listaAsignaciones = asignacionTutorDao.getAll();
-        List<Grupo> listaGrupos = grupoDao.getAll();
+        // Regla de negocio: los grupos de 6° y 10° cuatrimestre no llevan tutor asignado,
+        // salvo en la carrera "Terapia Fisica" (unica excepcion). Se filtran aqui para que
+        // ni siquiera aparezcan como opcion en el <select> de "Nueva Asignacion".
+        List<Grupo> listaGrupos = grupoDao.getAll().stream()
+                .filter(grupo -> !esCuatrimestreBloqueado(grupo))
+                .collect(Collectors.toList());
 
         request.setAttribute("listaTutores", listaTutores);
         request.setAttribute("listaAsignaciones", listaAsignaciones);
@@ -79,6 +86,14 @@ public class AsignacionServlet extends HttpServlet {
             return;
         }
 
+        // Blindaje de servidor: los grupos de 6° y 10° cuatrimestre no se asignan a un
+        // tutor, salvo en la carrera "Terapia Fisica" (unica excepcion), sin confiar en que
+        // el <select> del formulario no fue manipulado (esos grupos ya vienen ocultos ahi).
+        if (esCuatrimestreBloqueado(grupo)) {
+            response.sendRedirect(request.getContextPath() + "/asignacion?error=cuatrimestre_no_permitido");
+            return;
+        }
+
         if (asignacionTutorDao.existeAsignacionActiva(idGrupo)) {
             response.sendRedirect(request.getContextPath() + "/asignacion?error=grupo_asignado");
             return;
@@ -103,5 +118,27 @@ public class AsignacionServlet extends HttpServlet {
             return cuatrimestre >= 7 && cuatrimestre <= 10;
         }
         return false;
+    }
+
+    // Unica carrera exceptuada de la regla de abajo: sus grupos de 6° y 10° si pueden
+    // llevar tutor asignado. Comparacion sin acentos/mayusculas para no depender de como
+    // este capturado el nombre exacto en el catalogo CARRERA (poblado a mano via SQL).
+    private static final String CARRERA_EXCEPCION_CUATRIMESTRE = "terapia fisica";
+
+    private boolean esCarreraExceptuada(String nombreCarrera) {
+        if (nombreCarrera == null) return false;
+        String normalizado = Normalizer.normalize(nombreCarrera.trim().toLowerCase(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "");
+        return normalizado.equals(CARRERA_EXCEPCION_CUATRIMESTRE);
+    }
+
+    // Regla de negocio: un grupo de 6° o 10° cuatrimestre no puede tener tutor asignado,
+    // salvo que su carrera sea la excepcion (Terapia Fisica). La usan tanto el <select> de
+    // "Nueva Asignacion" (doGet, para que esos grupos ni aparezcan) como el guardado (doPost,
+    // como blindaje de servidor).
+    private boolean esCuatrimestreBloqueado(Grupo grupo) {
+        int cuatrimestre = grupo.getCuatrimestre();
+        boolean esCuatrimestreRestringido = cuatrimestre == 6 || cuatrimestre == 10;
+        return esCuatrimestreRestringido && !esCarreraExceptuada(grupo.getNombreCarrera());
     }
 }
