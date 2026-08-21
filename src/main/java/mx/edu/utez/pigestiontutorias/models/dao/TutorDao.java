@@ -8,7 +8,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -60,10 +59,9 @@ public class TutorDao implements Dao<Tutor, Integer> {
     }
 
     // Inserta los horarios de atencion de un tutor (una fila por dia en HORARIO_ATENCION).
-    // Extractor "inteligente": cada texto puede venir del JS del formulario (ej. "Lunes:
-    // 07:00 - 09:00") o de una celda de Excel en la carga masiva, por eso busca el dia y las
-    // horas en vez de exigir un formato exacto. Reutilizado por create(), update() y
-    // crearMasivo() para no repetir la misma extraccion tres veces.
+    // Extractor "inteligente": el texto viene del JS del formulario (ej. "Lunes: 07:00 -
+    // 09:00"), por eso busca el dia y las horas en vez de exigir un formato exacto.
+    // Reutilizado por create() y update() para no repetir la misma extraccion.
     private void insertarHorarios(Connection con, int numeroEmpleado, List<String> horarios) throws SQLException {
         if (horarios == null || horarios.isEmpty()) return;
 
@@ -94,7 +92,7 @@ public class TutorDao implements Dao<Tutor, Integer> {
 
     // La nomina (NUMERO_EMPLEADO) ya no la captura el coordinador a mano: se asigna
     // automaticamente a partir de 1000 (primer tutor = 1000, luego MAX(NUMERO_EMPLEADO) + 1).
-    // La usan tanto el alta individual (formulario-tutor.jsp) como la carga masiva por Excel.
+    // La usa el alta individual (formulario-tutor.jsp).
     public int obtenerSiguienteNomina() {
         String sql = "SELECT NVL(MAX(NUMERO_EMPLEADO), 999) + 1 AS SIGUIENTE FROM TUTOR";
         try (Connection con = SQLConnector.getConnection();
@@ -107,63 +105,6 @@ public class TutorDao implements Dao<Tutor, Integer> {
             e.printStackTrace();
         }
         return 1000;
-    }
-
-    // Alta masiva (carga de Excel via TutoresServlet + Apache POI): un solo batch/commit
-    // para todos los tutores validados por el servlet, en vez de una transaccion por fila.
-    // Los horarios de atencion tambien vienen del Excel (columna obligatoria) y se insertan
-    // aparte con insertarHorarios(), porque HORARIO_ATENCION admite varias filas por tutor.
-    public int crearMasivo(List<Tutor> tutores) {
-        if (tutores == null || tutores.isEmpty()) return 0;
-
-        String sqlTutor = "INSERT INTO TUTOR(NUMERO_EMPLEADO, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, CORREO_INSTITUCIONAL, TELEFONO, ID_ACADEMIA, PASS) " +
-                "VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
-
-        Connection con = null;
-        try {
-            con = SQLConnector.getConnection();
-            con.setAutoCommit(false);
-
-            int insertados = 0;
-            try (PreparedStatement ps = con.prepareStatement(sqlTutor)) {
-                for (Tutor t : tutores) {
-                    String pass = (t.getPass() != null && !t.getPass().isBlank())
-                            ? t.getPass() : "Tut@" + t.getNumeroEmpleado();
-
-                    ps.setInt(1, t.getNumeroEmpleado());
-                    ps.setString(2, t.getNombres());
-                    ps.setString(3, t.getApellidoPaterno());
-                    ps.setString(4, t.getApellidoMaterno());
-                    ps.setString(5, t.getCorreoInstitucional());
-                    ps.setString(6, t.getTelefono());
-                    ps.setInt(7, t.getIdAcademia());
-                    ps.setString(8, pass);
-                    ps.addBatch();
-                }
-
-                int[] resultados = ps.executeBatch();
-                for (int resultado : resultados) {
-                    if (resultado > 0 || resultado == Statement.SUCCESS_NO_INFO) insertados++;
-                }
-            }
-
-            for (Tutor t : tutores) {
-                insertarHorarios(con, t.getNumeroEmpleado(), t.getHorariosDispo());
-            }
-
-            con.commit();
-            return insertados;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            if (con != null) {
-                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
-            }
-            return 0;
-        } finally {
-            if (con != null) {
-                try { con.close(); } catch (SQLException ex) { ex.printStackTrace(); }
-            }
-        }
     }
 
     // CK_HORARIO_DIA (BD_INTEGRADORA_SGT.sql) solo acepta los dias SIN acento

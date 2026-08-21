@@ -37,8 +37,10 @@ public class AsignacionServlet extends HttpServlet {
         List<AsignacionTutor> listaAsignaciones = asignacionTutorDao.getAll();
         // Regla de negocio: los grupos de 6° y 10° cuatrimestre no llevan tutor asignado,
         // salvo en la carrera "Terapia Fisica" (unica excepcion). Se filtran aqui para que
-        // ni siquiera aparezcan como opcion en el <select> de "Nueva Asignacion".
-        List<Grupo> listaGrupos = grupoDao.getAll().stream()
+        // ni siquiera aparezcan como opcion en el <select> de "Nueva Asignacion". Ademas,
+        // getDisponiblesParaAsignacion() ya excluye los grupos sin alumnos o con todos sus
+        // alumnos dados de baja (no tiene sentido asignarles tutor).
+        List<Grupo> listaGrupos = grupoDao.getDisponiblesParaAsignacion().stream()
                 .filter(grupo -> !esCuatrimestreBloqueado(grupo))
                 .collect(Collectors.toList());
 
@@ -96,6 +98,14 @@ public class AsignacionServlet extends HttpServlet {
 
         if (asignacionTutorDao.existeAsignacionActiva(idGrupo)) {
             response.sendRedirect(request.getContextPath() + "/asignacion?error=grupo_asignado");
+            return;
+        }
+
+        // Blindaje de servidor: un grupo sin alumnos o con todos sus alumnos dados de baja
+        // no puede recibir tutor, sin confiar en que el <select> del formulario no fue
+        // manipulado (esos grupos ya vienen ocultos ahi, ver getDisponiblesParaAsignacion()).
+        if (!grupoDao.tieneAlumnosActivos(idGrupo)) {
+            response.sendRedirect(request.getContextPath() + "/asignacion?error=grupo_sin_alumnos");
             return;
         }
 

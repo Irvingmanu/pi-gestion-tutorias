@@ -383,15 +383,6 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'actualizado':
                 mostrarToast('exito', '¡Éxito!', 'El tutor fue actualizado correctamente');
                 break;
-            case 'carga_masiva': {
-                const insertados = parametros.get('insertados') || '0';
-                const conError = parseInt(parametros.get('conError') || '0', 10);
-                const detalle = conError > 0
-                    ? `Se registraron ${insertados} tutor(es). ${conError} fila(s) del archivo se omitieron por datos inválidos o duplicados.`
-                    : `Se registraron ${insertados} tutor(es) correctamente.`;
-                mostrarToast('exito', '¡Carga masiva completada!', detalle);
-                break;
-            }
         }
 
         window.history.replaceState(null, null, window.location.pathname);
@@ -412,15 +403,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 break;
             case 'tutor_periodo_activo':
                 mostrarAlerta('error', 'No se puede eliminar', 'Este tutor tiene un grupo asignado dentro de un periodo escolar activo. Debes esperar a que el periodo finalice o reasignar el grupo antes de eliminarlo.');
-                break;
-            case 'archivo_vacio':
-                mostrarAlerta('error', 'Archivo requerido', 'Selecciona un archivo de Excel antes de subirlo.');
-                break;
-            case 'archivo_invalido':
-                mostrarAlerta('error', 'Archivo inválido', 'No se pudo leer el archivo o ninguna fila tenía datos válidos. Verifica el formato de las columnas.');
-                break;
-            case 'carga_fallida':
-                mostrarAlerta('error', 'Error', 'No se pudo completar la carga masiva. Intenta de nuevo.');
                 break;
         }
 

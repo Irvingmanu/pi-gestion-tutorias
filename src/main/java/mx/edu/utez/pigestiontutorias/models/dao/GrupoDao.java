@@ -166,6 +166,54 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         }
     }
 
+    // Grupos que puede recibir un tutor en "Nueva Asignacion": ademas de estar activos,
+    // deben tener por lo menos un alumno con ESTADO = 'S' (un grupo vacio o con todos sus
+    // alumnos dados de baja no tiene a quien tutorar, asi que ni siquiera aparece en el
+    // <select> de grupos de asignacion.jsp).
+    public List<Grupo> getDisponiblesParaAsignacion() {
+        List<Grupo> lista = new ArrayList<>();
+        String sql = SELECT_BASE +
+                "WHERE g.ESTADO = 'S' AND EXISTS (SELECT 1 FROM ALUMNO a WHERE a.ID_GRUPO = g.ID_GRUPO AND a.ESTADO = 'S') " +
+                "ORDER BY car.NOMBRE, g.CUATRIMESTRE, g.LETRA";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                lista.add(mapear(rs));
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al obtener los grupos disponibles para asignacion: " + e.getMessage());
+            e.printStackTrace();
+        }
+
+        return lista;
+    }
+
+    // Blindaje de servidor para "Nueva Asignacion": confirma que el grupo tenga al menos
+    // un alumno con ESTADO = 'S', sin confiar en que el <select> del formulario no fue
+    // manipulado.
+    public boolean tieneAlumnosActivos(int idGrupo) {
+        String sql = "SELECT 1 FROM ALUMNO WHERE ID_GRUPO = ? AND ESTADO = 'S' AND ROWNUM = 1";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, idGrupo);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al verificar los alumnos activos del grupo: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     // Grupos que un tutor tiene asignados actualmente, con la etiqueta amigable lista
     // para pintar el <select> de "Tutoria Grupal"/"Tutoria Espontanea" (ej. "DSM 3°A").
     public List<Grupo> getGruposByTutor(int idTutor) {

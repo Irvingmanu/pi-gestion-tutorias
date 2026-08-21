@@ -1,47 +1,28 @@
 package mx.edu.utez.pigestiontutorias.controllers;
 
 import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.MultipartConfig;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.Part;
 import mx.edu.utez.pigestiontutorias.models.Academia;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.models.dao.AsignacionTutorDao;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.text.Normalizer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 // NOMINA ya no es una columna separada: NUMERO_EMPLEADO es el unico identificador del
 // tutor (PK real de TUTOR), asi que cumple el mismo papel que antes tenia "nomina".
 @WebServlet(name = "TutoresServlet", value = "/gestion-tutores")
-// Habilita request.getPart(...) para la carga masiva de tutores via Excel.
-@MultipartConfig(
-        fileSizeThreshold = 1024 * 1024,       // 1 MB en memoria antes de volcar a disco
-        maxFileSize = 1024 * 1024 * 10,        // 10 MB por archivo
-        maxRequestSize = 1024 * 1024 * 15      // 15 MB por request
-)
 public class TutoresServlet extends HttpServlet {
 
     private static final String REGEX_NOMINA = "^[0-9]{4}$";
     private static final String REGEX_CORREO = "^[a-zA-Z0-9._-]+@utez\\.edu\\.mx$";
-    private static final String REGEX_TELEFONO = "^\\d{10}$";
     // Nomina minima permitida: la asignacion automatica (TutorDao#obtenerSiguienteNomina)
     // siempre inicia en 1000, asi que cualquier valor menor se considera invalido.
     private static final int NOMINA_MINIMA = 1000;
@@ -116,12 +97,6 @@ public class TutoresServlet extends HttpServlet {
         // 1b. REACTIVAR TUTOR (vía POST)
         if ("reactivar".equals(accion)) {
             procesarReactivacion(request, response);
-            return;
-        }
-
-        // 1c. CARGA MASIVA DE TUTORES (Excel, vía POST multipart/form-data)
-        if ("cargaMasiva".equals(accion)) {
-            procesarCargaMasiva(request, response);
             return;
         }
 
@@ -308,178 +283,5 @@ public class TutoresServlet extends HttpServlet {
             }
         }
         response.sendRedirect(request.getContextPath() + "/gestion-tutores?" + parametro);
-    }
-
-    // Un horario de Excel debe traer un dia de la semana y al menos 2 horas (desde/hasta),
-    // igual que el extractor "inteligente" de TutorDao#insertarHorarios.
-    private static final java.util.regex.Pattern PATRON_DIA_HORARIO =
-            java.util.regex.Pattern.compile("(Lunes|Martes|Mi[eé]rcoles|Jueves|Viernes)", java.util.regex.Pattern.CASE_INSENSITIVE);
-    private static final java.util.regex.Pattern PATRON_HORA_HORARIO =
-            java.util.regex.Pattern.compile("([0-2][0-9]:[0-5][0-9])");
-
-    // Carga masiva de tutores desde un archivo Excel (.xlsx/.xls). Formato esperado por
-    // hoja (fila 1 = encabezados, los datos empiezan en la fila 2):
-    // A: Nombres (requerido)              B: Apellido paterno (requerido)
-    // C: Apellido materno (requerido)     D: Telefono, 10 digitos (requerido)
-    // E: ID Academia (requerido, numerico; ver catalogo de academias en gestion-tutores.jsp)
-    // F: Horarios de atencion (requerido, al menos uno). Formato por horario "Dia: HH:MM -
-    //    HH:MM" (igual que el que arma el formulario individual, ver tutor.js#agregarHorario);
-    //    varios horarios en la misma celda se separan con ";" o con un salto de linea.
-    //
-    // Nomina y Correo YA NO son columnas del Excel: la nomina se autoasigna a partir de
-    // 1000 (TutorDao#obtenerSiguienteNomina) y el correo se autogenera desde nombre +
-    // apellido paterno (generarCorreoInstitucional), igual que en el alta individual.
-    //
-    // Cada fila se valida por separado (formato + duplicados) antes de intentar guardarla:
-    // una fila invalida se descarta y se cuenta como error, no cancela el resto del archivo.
-    // El guardado en si (TutorDao#crearMasivo) es un solo batch/commit.
-    private void procesarCargaMasiva(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        try {
-            Part parteArchivo = request.getPart("archivoExcel");
-            if (parteArchivo == null || parteArchivo.getSize() == 0) {
-                response.sendRedirect(request.getContextPath() + "/gestion-tutores?error=archivo_vacio");
-                return;
-            }
-
-            List<Tutor> tutoresValidos = new ArrayList<>();
-            int filasConError = 0;
-
-            // Detecta duplicados DENTRO del mismo archivo (la validacion contra la BD,
-            // via tutorDAO.existeX, solo detecta duplicados contra registros ya guardados).
-            // La nomina no necesita set propio: siempre se autoasigna con un contador
-            // estrictamente creciente, asi que nunca se repite dentro del mismo archivo.
-            Set<String> correosEnLote = new HashSet<>();
-            Set<String> telefonosEnLote = new HashSet<>();
-            int siguienteNomina = tutorDAO.obtenerSiguienteNomina();
-
-            try (InputStream entrada = parteArchivo.getInputStream();
-                 Workbook libro = WorkbookFactory.create(entrada)) {
-
-                Sheet hoja = libro.getSheetAt(0);
-
-                for (int f = 1; f <= hoja.getLastRowNum(); f++) {
-                    Row fila = hoja.getRow(f);
-                    if (fila == null || esTextoVacio(obtenerTexto(fila.getCell(0)))) continue;
-
-                    Tutor tutor = new Tutor();
-                    tutor.setNumeroEmpleado(siguienteNomina++);
-
-                    tutor.setNombres(obtenerTexto(fila.getCell(0)));
-                    tutor.setApellidoPaterno(obtenerTexto(fila.getCell(1)));
-                    tutor.setApellidoMaterno(obtenerTexto(fila.getCell(2)));
-                    tutor.setCorreoInstitucional(generarCorreoInstitucional(tutor.getNombres(), tutor.getApellidoPaterno()));
-                    tutor.setTelefono(obtenerTexto(fila.getCell(3)));
-                    tutor.setIdAcademia((int) obtenerNumerico(fila.getCell(4)));
-                    tutor.setHorariosDispo(parsearHorarios(obtenerTexto(fila.getCell(5))));
-
-                    if (esFilaValida(tutor, correosEnLote, telefonosEnLote)) {
-                        tutoresValidos.add(tutor);
-                    } else {
-                        filasConError++;
-                    }
-                }
-            }
-
-            if (tutoresValidos.isEmpty()) {
-                response.sendRedirect(request.getContextPath() + "/gestion-tutores?error=archivo_invalido");
-                return;
-            }
-
-            int insertados = tutorDAO.crearMasivo(tutoresValidos);
-            String parametro = insertados > 0
-                    ? "exito=carga_masiva&insertados=" + insertados + "&conError=" + filasConError
-                    : "error=carga_fallida";
-            response.sendRedirect(request.getContextPath() + "/gestion-tutores?" + parametro);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/gestion-tutores?error=archivo_invalido");
-        }
-    }
-
-    // Separa la celda de horarios en entradas individuales: varios horarios en la misma
-    // celda pueden venir separados por ";" o por un salto de linea (Alt+Enter en Excel).
-    private List<String> parsearHorarios(String textoCelda) {
-        List<String> horarios = new ArrayList<>();
-        if (esTextoVacio(textoCelda)) return horarios;
-        for (String token : textoCelda.split("[;\\n\\r]+")) {
-            String limpio = token.trim();
-            if (!limpio.isEmpty()) horarios.add(limpio);
-        }
-        return horarios;
-    }
-
-    // Un horario es valido si trae un dia de la semana reconocible y al menos 2 horas
-    // (desde/hasta) en formato HH:MM, sin importar el resto de la puntuacion.
-    private boolean esHorarioValido(String horario) {
-        if (esTextoVacio(horario)) return false;
-        if (!PATRON_DIA_HORARIO.matcher(horario).find()) return false;
-        java.util.regex.Matcher mHoras = PATRON_HORA_HORARIO.matcher(horario);
-        return mHoras.find() && mHoras.find();
-    }
-
-    // Blindaje de servidor: valida formato de cada campo y descarta duplicados, tanto
-    // contra la BD (tutorDAO.existeX) como dentro del propio archivo (correosEnLote/
-    // telefonosEnLote), antes de dejar pasar la fila al batch de insercion.
-    private boolean esFilaValida(Tutor tutor, Set<String> correosEnLote, Set<String> telefonosEnLote) {
-        if (esTextoVacio(tutor.getNombres()) || esTextoVacio(tutor.getApellidoPaterno()) || esTextoVacio(tutor.getApellidoMaterno())) return false;
-        if (tutor.getTelefono() == null || !tutor.getTelefono().matches(REGEX_TELEFONO)) return false;
-        if (tutor.getCorreoInstitucional() == null || !tutor.getCorreoInstitucional().matches(REGEX_CORREO)) return false;
-        if (tutor.getIdAcademia() <= 0) return false;
-
-        if (tutor.getHorariosDispo() == null || tutor.getHorariosDispo().isEmpty()) return false;
-        for (String horario : tutor.getHorariosDispo()) {
-            if (!esHorarioValido(horario)) return false;
-        }
-
-        if (!correosEnLote.add(tutor.getCorreoInstitucional().toLowerCase())) return false;
-        if (!telefonosEnLote.add(tutor.getTelefono())) return false;
-
-        if (tutorDAO.existeCorreo(tutor.getCorreoInstitucional())) return false;
-        return !tutorDAO.existeTelefono(tutor.getTelefono());
-    }
-
-    // Mismo criterio que el autocompletado del formulario (assets/js/coordinador/tutor.js):
-    // primerNombre + primerApellidoPaterno + "@utez.edu.mx", sin acentos ni espacios.
-    private String generarCorreoInstitucional(String nombres, String apellidoPaterno) {
-        String primerNombre = primeraPalabraSinAcentos(nombres);
-        String primerApellido = primeraPalabraSinAcentos(apellidoPaterno);
-        if (primerNombre.isEmpty() || primerApellido.isEmpty()) return null;
-        return primerNombre + primerApellido + "@utez.edu.mx";
-    }
-
-    private String primeraPalabraSinAcentos(String texto) {
-        if (esTextoVacio(texto)) return "";
-        String primera = texto.trim().split("\\s+")[0];
-        String sinAcentos = Normalizer.normalize(primera, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
-        return sinAcentos.toLowerCase().replaceAll("[^a-z]", "");
-    }
-
-    private boolean esTextoVacio(String texto) {
-        return texto == null || texto.isBlank();
-    }
-
-    // Lee una celda como texto sin importar si Excel la guardo como texto o como numero
-    // (ej. la nomina o el telefono capturados sin formato de texto en la hoja).
-    private String obtenerTexto(Cell celda) {
-        if (celda == null) return null;
-        return switch (celda.getCellType()) {
-            case STRING -> celda.getStringCellValue().trim();
-            case NUMERIC -> String.valueOf((long) celda.getNumericCellValue());
-            default -> null;
-        };
-    }
-
-    private double obtenerNumerico(Cell celda) {
-        if (celda == null) return 0;
-        try {
-            return switch (celda.getCellType()) {
-                case NUMERIC -> celda.getNumericCellValue();
-                case STRING -> Double.parseDouble(celda.getStringCellValue().trim());
-                default -> 0;
-            };
-        } catch (NumberFormatException e) {
-            return 0;
-        }
     }
 }
