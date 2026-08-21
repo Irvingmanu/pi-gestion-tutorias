@@ -10,6 +10,7 @@ public class HistorialItemDTO {
     private String temasTratados;
     private String acuerdos;
     private String estado;
+    private Integer idGrupo; // solo para tipo "Grupal": alimenta el enlace a la cuadricula de asistencia
 
     public HistorialItemDTO() {}
 
@@ -33,4 +34,7 @@ public class HistorialItemDTO {
 
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
+
+    public Integer getIdGrupo() { return idGrupo; }
+    public void setIdGrupo(Integer idGrupo) { this.idGrupo = idGrupo; }
 }

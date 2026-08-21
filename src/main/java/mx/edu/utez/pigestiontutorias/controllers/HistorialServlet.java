@@ -60,6 +60,7 @@ public class HistorialServlet extends HttpServlet {
                 item.setTemasTratados(sg.getTemasTratados());
                 item.setAcuerdos(sg.getAcuerdos());
                 item.setEstado(sg.getEstado());
+                item.setIdGrupo(sg.getIdGrupo());
                 historial.add(item);
             }
         }

@@ -1,0 +1,211 @@
+/* ==========================================================================
+   CUADRICULA DE "PASE DE LISTA" GRUPAL (estilo Excel)
+   Usa las mismas variables de assets/css/global.css (--borde-tabla, --header-tabla,
+   --texto, --radius-figma). Los colores de estado reutilizan la paleta ya usada
+   en assets/css/coordinador/gestion-tutores.css para "Al día" / "En riesgo".
+   ========================================================================== */
+
+:root {
+    --estado-presente-bg: #E1F3E9;
+    --estado-presente-color: #008B74;
+    --estado-falta-bg: #FBE2E1;
+    --estado-falta-color: #DC2626;
+    --estado-justificado-bg: #FFF3CD;
+    --estado-justificado-color: #B8860B;
+    /* --header-tabla (global.css) es un gris casi transparente (rgba(0,0,0,.06)), pensado
+       para tablas cortas sin scroll. En esta cuadricula, con scroll horizontal y muchas
+       columnas de sesion, ese encabezado deja "transparentar" el contenido que pasa por
+       debajo y se ve amontonado -- por eso usa su propio gris solido y mas marcado. */
+    --header-grid-solido: #E1E3E6;
+}
+
+.texto-ayuda-cuadricula {
+    font-size: 0.8rem;
+    max-width: 640px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Ancho fijo de las 3 columnas congeladas: matricula(0) + no.(110) + nombre(160) */
+.col-matricula-asist { width: 110px; min-width: 110px; left: 0; }
+.col-no-asist         { width: 50px;  min-width: 50px;  left: 110px; }
+.col-nombre-asist      { width: 220px; min-width: 220px; left: 160px; }
+.col-fecha-asist       { width: 76px;  min-width: 76px; }
+.col-total-asist,
+.col-porc-asist        { width: 90px;  min-width: 90px; }
+
+/* El formulario de /tutoria-grupal usa el wrapper compartido .form-wrap-figma (definido
+   en global.css), que trae max-width:520px + margin:0 auto para los formularios angostos
+   (Nueva Area, Nuevo Tutor, etc). Esta pagina lo marca con este modificador para que la
+   cuadricula pueda usar todo el ancho disponible sin tocar esa clase compartida. */
+.form-wrap-figma--ancho {
+    max-width: 100%;
+    margin: 0;
+}
+
+.tabla-asistencia-grid-wrap {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    overflow-x: auto;
+    overflow-y: auto;
+    border: 1px solid var(--borde-tabla);
+    border-radius: var(--radius-figma);
+    max-height: 65vh;
+}
+
+.tabla-asistencia-grid {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: #ffffff;
+    min-width: 100%;
+}
+
+.tabla-asistencia-grid th,
+.tabla-asistencia-grid td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--borde-tabla);
+    border-right: 1px solid var(--borde-tabla);
+    vertical-align: middle;
+    text-align: center;
+    white-space: nowrap;
+    font-size: 0.85rem;
+}
+
+.tabla-asistencia-grid th {
+    background-color: var(--header-grid-solido);
+    font-weight: 600;
+    color: var(--texto);
+}
+
+/* ==========================================================================
+   ENCABEZADO PEGAJOSO (dos filas: mes agrupado + fecha)
+   ========================================================================== */
+.tabla-asistencia-grid thead tr:first-child th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.tabla-asistencia-grid thead tr:nth-child(2) th {
+    position: sticky;
+    top: 33px; /* alto aproximado de la primera fila del encabezado */
+    z-index: 2;
+}
+
+/* ==========================================================================
+   COLUMNAS CONGELADAS (Matricula, No., Nombre) — fondo solido y jerarquia
+   mayor que el resto del contenido para que, al hacer scroll horizontal,
+   las demas celdas pasen por debajo sin empalmarse visualmente.
+   ========================================================================== */
+.tabla-asistencia-grid td.col-matricula-asist,
+.tabla-asistencia-grid td.col-no-asist,
+.tabla-asistencia-grid td.col-nombre-asist {
+    position: sticky;
+    z-index: 1;
+    background-color: #ffffff;
+}
+
+.tabla-asistencia-grid th.col-matricula-asist,
+.tabla-asistencia-grid th.col-no-asist,
+.tabla-asistencia-grid th.col-nombre-asist {
+    position: sticky;
+    z-index: 3;
+    background-color: var(--header-grid-solido);
+}
+
+/* Fila resaltada (riesgo de asistencia) */
+.tabla-asistencia-grid tr.fila-riesgo td.col-nombre-asist,
+.tabla-asistencia-grid tr.fila-riesgo td.col-matricula-asist,
+.tabla-asistencia-grid tr.fila-riesgo td.col-no-asist {
+    background-color: var(--estado-falta-bg);
+}
+.tabla-asistencia-grid tr.fila-riesgo td.porcentaje-asistencia {
+    background-color: var(--estado-falta-bg);
+    color: var(--estado-falta-color);
+    font-weight: 700;
+}
+
+/* ==========================================================================
+   CELDAS DE ASISTENCIA (clic rapido, ciclo Presente -> Ausente -> Justificado)
+   ========================================================================== */
+.celda-asist {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: 1px solid var(--borde-tabla);
+    background-color: #f5f5f5;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.celda-asist::before { content: ""; }
+
+.celda-asist[data-estatus="Presente"] {
+    background-color: var(--estado-presente-bg);
+    color: var(--estado-presente-color);
+    border-color: var(--estado-presente-color);
+}
+.celda-asist[data-estatus="Presente"]::before { content: "\2713"; }
+
+.celda-asist[data-estatus="Falta"] {
+    background-color: var(--estado-falta-bg);
+    color: var(--estado-falta-color);
+    border-color: var(--estado-falta-color);
+}
+.celda-asist[data-estatus="Falta"]::before { content: "\2715"; }
+
+.celda-asist[data-estatus="Justificado"] {
+    background-color: var(--estado-justificado-bg);
+    color: var(--estado-justificado-color);
+    border-color: var(--estado-justificado-color);
+}
+.celda-asist[data-estatus="Justificado"]::before { content: "J"; }
+
+.btn-select-all {
+    display: block;
+    margin: 4px auto 0;
+    width: 20px;
+    height: 20px;
+    line-height: 1;
+    border-radius: 50%;
+    border: 1px solid var(--estado-presente-color);
+    background-color: #ffffff;
+    color: var(--estado-presente-color);
+    font-size: 0.7rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+.btn-select-all:hover {
+    background-color: var(--estado-presente-bg);
+}
+
+/* ==========================================================================
+   LEYENDA
+   ========================================================================== */
+.leyenda-asistencia {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: var(--texto);
+}
+.leyenda-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+.leyenda-icono {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+}
+.leyenda-icono.estado-presente { background-color: var(--estado-presente-bg); border: 1px solid var(--estado-presente-color); }
+.leyenda-icono.estado-falta { background-color: var(--estado-falta-bg); border: 1px solid var(--estado-falta-color); }
+.leyenda-icono.estado-justificado { background-color: var(--estado-justificado-bg); border: 1px solid var(--estado-justificado-color); }
