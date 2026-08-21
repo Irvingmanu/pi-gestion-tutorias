@@ -45,6 +45,13 @@ public class SolicitudServlet extends HttpServlet {
             return;
         }
 
+        // Cancelación automática: antes de mostrar cualquier listado o detalle,
+        // se cancelan las solicitudes "Pendiente" que ya están a 1 día o menos
+        // de su fecha/hora propuesta. Complementa a CancelacionSolicitudesListener
+        // (tarea en segundo plano), por si nadie visitó ninguna pantalla desde
+        // la última corrida programada.
+        solicitudDao.cancelarSolicitudesVencidas();
+
         String accion = request.getParameter("accion");
 
         // ---- Formulario de nueva solicitud (alumno) ----
@@ -77,6 +84,7 @@ public class SolicitudServlet extends HttpServlet {
                 case "Confirmada": badgeColor = "success"; break;
                 case "Rechazada": badgeColor = "danger"; break;
                 case "Reprogramada": badgeColor = "info"; break;
+                case "Cancelada": badgeColor = "secondary"; break;
                 default: badgeColor = "warning"; // Para "Pendiente"
             }
             request.setAttribute("badgeColor", badgeColor);
@@ -209,13 +217,24 @@ public class SolicitudServlet extends HttpServlet {
         // ---- Aceptar (pantalla de detalle, botón del tutor) ----
         if ("aceptar".equals(accion)) {
             int idSolicitud = Integer.parseInt(request.getParameter("idSolicitud"));
+
+            // Por si la solicitud venció justo antes de que el tutor diera clic en
+            // "Aceptar": se corre la cancelación automática y se vuelve a leer el
+            // estatus ya actualizado antes de continuar.
+            solicitudDao.cancelarSolicitudesVencidas();
             Solicitud solicitud = solicitudDao.getById(idSolicitud);
+
+            if (solicitud == null || !"Pendiente".equals(solicitud.getEstatus())) {
+                response.sendRedirect(request.getContextPath() + "/solicitudes?accion=detalle&idSolicitud="
+                        + idSolicitud + "&error=solicitud_vencida");
+                return;
+            }
 
             solicitudDao.actualizarEstatus(idSolicitud, "Confirmada");
 
             // Al aceptar, la solicitud se convierte en una sesión pendiente: así deja de
             // ser invisible para el alumno y aparece en su agenda.
-            if (solicitud != null && solicitud.getFechaPropuesta() != null) {
+            if (solicitud.getFechaPropuesta() != null) {
                 SesionIndividual sesion = new SesionIndividual();
                 sesion.setIdTutor(solicitud.getIdTutor());
                 sesion.setMatricula(solicitud.getMatricula());

@@ -28,7 +28,7 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
 
     // ---------------------------------------------------------------
     // 1. Insertar una nueva solicitud (la crea el alumno)
-
+    // ---------------------------------------------------------------
     @Override
     public boolean create(Solicitud solicitud) {
         String sql = "INSERT INTO SOLICITUD_TUTORIA " +
@@ -207,6 +207,49 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
             System.err.println("Error al reprogramar la solicitud: " + e.getMessage());
             e.printStackTrace();
             return false;
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // 5b. Cancelación automática de solicitudes vencidas: cualquier solicitud
+    // que siga "Pendiente" y a la que le falte 1 día o menos para la fecha/hora
+    // propuesta se cancela sola. La llama tanto el SolicitudServlet (al cargar
+    // listados/detalle o antes de aceptar) como CancelacionSolicitudesListener
+    // (tarea programada en segundo plano) — mismo método, dos disparadores.
+    //
+    // FECHA_PROPUESTA es solo la fecha (00:00) y HORA_PROPUESTA es texto
+    // "HH:mm", así que se reconstruye la fecha-hora completa sumándole las
+    // horas/minutos como fracción de día, y se compara contra SYSDATE + 1.
+    //
+    // IMPORTANTE: si la columna ESTATUS tiene un CHECK constraint con los
+    // valores permitidos, hay que agregar 'Cancelada' a esa lista, ej.:
+    //   ALTER TABLE SOLICITUD_TUTORIA DROP CONSTRAINT <nombre_constraint>;
+    //   ALTER TABLE SOLICITUD_TUTORIA ADD CONSTRAINT <nombre_constraint>
+    //       CHECK (ESTATUS IN ('Pendiente','Confirmada','Rechazada','Reprogramada','Cancelada'));
+    // ---------------------------------------------------------------
+    public int cancelarSolicitudesVencidas() {
+        String sql = "UPDATE SOLICITUD_TUTORIA " +
+                "SET ESTATUS = 'Cancelada', FECHA_RESPUESTA = SYSDATE " +
+                "WHERE ESTATUS = 'Pendiente' " +
+                "AND (FECHA_PROPUESTA " +
+                "     + NVL(TO_NUMBER(SUBSTR(HORA_PROPUESTA, 1, 2)), 0) / 24 " +
+                "     + NVL(TO_NUMBER(SUBSTR(HORA_PROPUESTA, 4, 2)), 0) / 1440" +
+                ") <= (SYSDATE + 1)";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            int filas = ps.executeUpdate();
+            if (filas > 0) {
+                System.out.println("Cancelación automática: " + filas
+                        + " solicitud(es) pendiente(s) vencida(s) cancelada(s).");
+            }
+            return filas;
+
+        } catch (SQLException e) {
+            System.err.println("Error al cancelar solicitudes vencidas: " + e.getMessage());
+            e.printStackTrace();
+            return 0;
         }
     }
 
