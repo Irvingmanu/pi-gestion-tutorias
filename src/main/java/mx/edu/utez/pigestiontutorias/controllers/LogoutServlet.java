@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import mx.edu.utez.pigestiontutorias.utils.SesionActivaManager;
 
 import java.io.IOException;
 
@@ -18,6 +19,8 @@ public class LogoutServlet extends HttpServlet {
 
         HttpSession session = request.getSession(false);
         if (session != null) {
+            String correo = (String) session.getAttribute("usuario");
+            SesionActivaManager.eliminarSesion(correo, session.getId());
             session.invalidate();
         }
         response.sendRedirect(request.getContextPath() + "/login.jsp");

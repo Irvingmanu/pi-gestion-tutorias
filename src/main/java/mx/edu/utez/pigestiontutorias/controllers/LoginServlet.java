@@ -13,11 +13,10 @@ import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.CoordinadorDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.TutorDao;
 import mx.edu.utez.pigestiontutorias.utils.PasswordUtil;
+import mx.edu.utez.pigestiontutorias.utils.SesionActivaManager;
 
 import java.io.IOException;
 
-// todos los roles inician sesion con su correo institucional + password, y el correo se busca primero en
-// ALUMNO, luego en TUTOR y finalmente en COORDINADOR (regla de negocio del nuevo esquema).
 @WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
 public class LoginServlet extends HttpServlet {
 
@@ -40,7 +39,6 @@ public class LoginServlet extends HttpServlet {
 
         correo = correo.trim();
         password = password.trim();
-        HttpSession session = request.getSession(true);
 
         Alumno alumno = alumnoDAO.findByCorreo(correo);
         if (alumno != null) {
@@ -48,6 +46,7 @@ public class LoginServlet extends HttpServlet {
                 credencialesInvalidas(request, response);
                 return;
             }
+            HttpSession session = iniciarSesionSegura(request, alumno.getCorreoInstitucional());
             session.setAttribute("usuario", alumno.getCorreoInstitucional());
             session.setAttribute("rol", "Alumno");
             session.setAttribute("matricula", alumno.getMatricula());
@@ -62,6 +61,7 @@ public class LoginServlet extends HttpServlet {
                 credencialesInvalidas(request, response);
                 return;
             }
+            HttpSession session = iniciarSesionSegura(request, tutor.getCorreoInstitucional());
             session.setAttribute("usuario", tutor.getCorreoInstitucional());
             session.setAttribute("rol", "Tutor");
             session.setAttribute("idUsuario", tutor.getNumeroEmpleado());
@@ -76,6 +76,7 @@ public class LoginServlet extends HttpServlet {
                 credencialesInvalidas(request, response);
                 return;
             }
+            HttpSession session = iniciarSesionSegura(request, coordinador.getCorreoInstitucional());
             session.setAttribute("usuario", coordinador.getCorreoInstitucional());
             session.setAttribute("rol", "Coordinador");
             session.setAttribute("idUsuario", coordinador.getNumeroEmpleado());
@@ -85,6 +86,20 @@ public class LoginServlet extends HttpServlet {
         }
 
         credencialesInvalidas(request, response);
+    }
+
+    // Invalida cualquier sesion previa de ESTE navegador (evita session fixation),
+    // crea una nueva y la registra como la unica sesion valida para ese correo,
+    // desplazando automaticamente cualquier otra sesion activa (otro navegador,
+    // otra pestaña de incognito, etc).
+    private HttpSession iniciarSesionSegura(HttpServletRequest request, String correoInstitucional) {
+        HttpSession sesionPrevia = request.getSession(false);
+        if (sesionPrevia != null) {
+            sesionPrevia.invalidate();
+        }
+        HttpSession session = request.getSession(true);
+        SesionActivaManager.registrarSesion(correoInstitucional, session.getId());
+        return session;
     }
 
     private boolean credencialesValidas(String estado, String passAlmacenada, String passIngresada) {
