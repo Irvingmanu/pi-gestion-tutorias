@@ -20,6 +20,7 @@ import mx.edu.utez.pigestiontutorias.models.SolicitudPendienteDTO;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.CanalizacionDao;
+import mx.edu.utez.pigestiontutorias.models.dao.GrupoDao;
 import mx.edu.utez.pigestiontutorias.models.dao.PeriodoEscolarDao;
 import mx.edu.utez.pigestiontutorias.models.dao.ReportesDao;
 import mx.edu.utez.pigestiontutorias.models.dao.SesionGrupalDao;
@@ -50,14 +51,43 @@ public class ReportesServlet extends HttpServlet {
     private final SolicitudDao solicitudDao = new SolicitudDao();
     private final TutorDao tutorDao = new TutorDao();
     private final AlumnoDAO alumnoDao = new AlumnoDAO();
+    private final GrupoDao grupoDao = new GrupoDao();
     private final EmailSender emailSender = new EmailSender();
 
     private static final LocalDate FECHA_DEFAULT_DESDE = LocalDate.of(2000, 1, 1);
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter FORMATO_FECHA_ARCHIVO = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
+    // Cualquier excepcion no controlada dentro de doGetInterno (SQLException de una consulta
+    // rota, NullPointerException, etc.) antes se colaba hasta el contenedor y Tomcat devolvia
+    // su pagina HTML de error 500 -- que rompia el fetch().then(r => r.json()) del dashboard
+    // (SyntaxError: Unexpected token '<') y el usuario solo veia "No se pudo cargar el
+    // reporte." sin ninguna pista de la causa real. Ahora se atrapa aqui, se deja el stack
+    // trace completo en el log del servidor (unico lugar donde se puede ver la linea exacta
+    // que fallo) y se responde JSON valido para que el front no truene al parsearlo.
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        try {
+            doGetInterno(request, response);
+        } catch (Exception e) {
+            System.err.println("Error inesperado en ReportesServlet.doGet: " + e.getMessage());
+            e.printStackTrace();
+            responderErrorJson(response, e);
+        }
+    }
+
+    private void responderErrorJson(HttpServletResponse response, Exception e) throws IOException {
+        if (response.isCommitted()) return;
+        response.reset();
+        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        response.setContentType("application/json;charset=UTF-8");
+        response.setCharacterEncoding("UTF-8");
+        String mensaje = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+        response.getWriter().print("{\"status\":\"error\",\"message\":\"" + escaparJson(mensaje) + "\"}");
+        response.getWriter().flush();
+    }
+
+    private void doGetInterno(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("usuario") == null) {
             if ("datos".equals(request.getParameter("accion")) || "csv".equalsIgnoreCase(request.getParameter("formato"))) {
@@ -74,6 +104,18 @@ public class ReportesServlet extends HttpServlet {
         // 1. MOSTRAR LA VISTA JSP (Por Defecto)
         if (accion == null && formato == null) {
             request.setAttribute("listaCarreras", alumnoDao.getAllCarreras());
+
+            // El filtro de "Grupo Asignado" del dashboard del tutor solo debe ofrecer los
+            // grupos que ASIGNACION_TUTOR realmente le asigno (getGruposByTutor ya filtra
+            // por ID_TUTOR + ESTADO='S') -- asi el tutor no puede ni siquiera armar, desde
+            // el propio <select>, una combinacion de carrera/cuatrimestre/grupo ajena.
+            String rolSesionVista = (String) session.getAttribute("rol");
+            if ("Tutor".equals(rolSesionVista)) {
+                Integer idUsuarioVista = (Integer) session.getAttribute("idUsuario");
+                if (idUsuarioVista != null) {
+                    request.setAttribute("listaGruposTutor", grupoDao.getGruposByTutor(idUsuarioVista));
+                }
+            }
 
             request.setAttribute("paginaActiva", "reportes");
             request.getRequestDispatcher("/tutor/reportes.jsp").forward(request, response);
@@ -209,6 +251,16 @@ public class ReportesServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        try {
+            doPostInterno(request, response);
+        } catch (Exception e) {
+            System.err.println("Error inesperado en ReportesServlet.doPost: " + e.getMessage());
+            e.printStackTrace();
+            responderErrorJson(response, e);
+        }
+    }
+
+    private void doPostInterno(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         Integer idUsuario = session != null ? (Integer) session.getAttribute("idUsuario") : null;
         String rolSesion = session != null ? (String) session.getAttribute("rol") : null;

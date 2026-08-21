@@ -134,6 +134,12 @@
 .btn-reactivar {
     background-color: #4CAF50;
 }
+/* "Ver historial del alumno" (columna Acciones): mismo patron pildora que Editar/Eliminar/
+   Reactivar de arriba, con el verde institucional del proyecto (--utez-green, global.css)
+   en vez de un color nuevo, para no introducir un segundo verde en la paleta. */
+.btn-historial {
+    background-color: var(--utez-green);
+}
 
 /* Fila de un registro dado de baja (ACTIVO = 'N') */
 .fila-inactiva {

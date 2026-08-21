@@ -152,6 +152,7 @@
                         <tr class="${alumno.estado == 'N' ? 'fila-inactiva' : ''}"
                             data-nombre="${fn:toLowerCase(alumno.nombres)} ${fn:toLowerCase(alumno.apellidos)}"
                             data-carrera="${grupoAlumno.nombreCarrera}"
+                            data-carrera-id="${grupoAlumno.idCarrera}"
                             data-cuatri="${grupoAlumno.cuatrimestre}"
                             data-grupo="${grupoAlumno.letra}"
                             data-grupo-id="${alumno.idGrupo}"
@@ -171,6 +172,10 @@
                             <td>${grupoAlumno.cuatrimestre}&deg; ${grupoAlumno.letra}</td>
                             <td>
                                 <div class="d-flex justify-content-center gap-2">
+                                    <a href="${pageContext.request.contextPath}/reportes-globales?matricula=${alumno.matricula}"
+                                       class="btn-accion btn-historial" title="Ver historial del alumno">
+                                        <img src="${pageContext.request.contextPath}/assets/img/coordinador/reportes.png" width="16" alt="Ver historial">
+                                    </a>
                                     <c:if test="${alumno.estado != 'N'}">
                                         <a href="${pageContext.request.contextPath}/gestion-grupos?accion=prepararEdicion&matricula=${alumno.matricula}" class="btn-accion btn-editar">
                                             <img src="${pageContext.request.contextPath}/assets/img/coordinador/editar.png" width="16" alt="Editar">
@@ -351,7 +356,6 @@
                             G) Teléfono (10 dígitos). La primera fila es de encabezados.
                             <strong>Matrícula:</strong> opcional (se autogenera) solo si el grupo elegido es de 1er cuatrimestre;
                             para 2° en adelante es obligatoria (alumnos de reingreso ya tienen la suya).
-                            Tamaño máximo del archivo: 5 MB.
                         </div>
                     </div>
                 </div>
@@ -377,6 +381,10 @@
 <jsp:include page="../includes/alertas.jsp" />
 
 <script>
+    // Usado en alumnos.js para armar el link de "Ver historial de tutorías del grupo"
+    // hacia /reportes-globales.
+    window.APP_CONTEXT = '${pageContext.request.contextPath}';
+
     // Tutor asignado por grupo, indexado por ID_GRUPO, usado en alumnos.js para
     // mostrarlo junto al titulo de cada tabla agrupada.
     window.tutoresPorGrupo = {

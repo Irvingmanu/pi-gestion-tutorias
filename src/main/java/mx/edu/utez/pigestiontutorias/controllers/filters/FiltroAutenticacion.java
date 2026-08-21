@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpSession;
 import mx.edu.utez.pigestiontutorias.utils.SesionActivaManager;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 
 @WebFilter("/*")
@@ -25,17 +26,6 @@ public class FiltroAutenticacion extends HttpFilter {
 
         String requestURI = request.getRequestURI();
         HttpSession session = request.getSession(false);
-
-        // El endpoint de polling (session-guard.js) SIEMPRE debe llegar a
-        // SesionCheckServlet y responder JSON real, sin que el filtro lo intercepte
-        // ni redirija: si aqui invalidamos/redirigimos, un fetch() normal sigue el
-        // redirect solo, recibe el HTML de login.jsp en vez del JSON, y el
-        // JavaScript nunca se entera de que la sesion ya no es valida.
-        boolean sesionCheckRequest = requestURI.endsWith("/verificar-sesion");
-        if (sesionCheckRequest) {
-            chain.doFilter(request, response);
-            return;
-        }
 
         boolean loggedIn = (session != null && session.getAttribute("usuario") != null);
 
@@ -91,6 +81,8 @@ public class FiltroAutenticacion extends HttpFilter {
         }
     }
 
+    // Devuelve la pantalla principal de cada rol (reutilizado tanto para el rebote de
+    // /login mientras hay sesion activa, como para el rebote por acceso a un rol ajeno).
     private String destinoSegunRol(String rol) {
         if ("Coordinador".equalsIgnoreCase(rol)) {
             return "/gestion-tutores";
@@ -102,6 +94,11 @@ public class FiltroAutenticacion extends HttpFilter {
         return "/login.jsp";
     }
 
+    // Roles permitidos para una ruta dada. null = sin restriccion de rol (cualquier
+    // usuario logueado puede entrar, ej. /solicitudes que usan Alumno y Tutor).
+    //
+    // OJO: si agregas un servlet/JSP nuevo, tienes que registrarlo aqui (o que viva
+    // dentro de /alumno/, /tutor/ o /coordinador/, que ya se cubren solos).
     private List<String> rolesPermitidosPara(String ruta) {
 
         if (ruta.startsWith("/alumno/")) return List.of("Alumno");
@@ -117,7 +114,6 @@ public class FiltroAutenticacion extends HttpFilter {
             case "/tutoria-grupal":
             case "/historial-tutorias":
             case "/perfilTutor":
-            case "/ReportesServlet":
             case "/TutoriaServlet":
                 return List.of("Tutor");
 
@@ -133,6 +129,16 @@ public class FiltroAutenticacion extends HttpFilter {
 
             case "/solicitudes":
                 return List.of("Alumno", "Tutor");
+
+            // ReportesServlet.java atiende tanto al dashboard del Tutor (tutor/reportes.jsp)
+            // como al del Coordinador (coordinador/reportes-globales.jsp, que llama a este
+            // mismo servlet para accion=datos/csv): antes solo dejaba pasar "Tutor" aqui, asi
+            // que cualquier peticion del Coordinador quedaba redirigida a /gestion-tutores
+            // (una pagina HTML completa) en vez de recibir el JSON esperado -- por eso el
+            // fetch().then(r => r.json()) del dashboard de Reportes Globales tronaba con
+            // "Unexpected token '<'" y las tarjetas KPI se quedaban en "--".
+            case "/ReportesServlet":
+                return List.of("Tutor", "Coordinador");
 
             default:
                 return null;

@@ -5,6 +5,7 @@ import mx.edu.utez.pigestiontutorias.models.AlumnoBusquedaDTO;
 import mx.edu.utez.pigestiontutorias.models.Carrera;
 import mx.edu.utez.pigestiontutorias.models.EventoAgenda;
 import mx.edu.utez.pigestiontutorias.models.Genero;
+import mx.edu.utez.pigestiontutorias.models.TrayectoriaGrupoDTO;
 import mx.edu.utez.pigestiontutorias.utils.PasswordUtil;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
@@ -16,31 +17,59 @@ public class AlumnoDAO implements Dao<Alumno, String> {
 
     private final GrupoDao grupoDao = new GrupoDao();
 
+    // Alta individual: en la misma transaccion que el INSERT en ALUMNO, deja el renglon de
+    // apertura en ALUMNO_GRUPO_HISTORICO (mismo patron que ya usaba crearMasivo() para la
+    // carga por Excel, aplicado ahora tambien al alta de un solo alumno) para que su
+    // trayectoria academica se pueda reconstruir despues.
     @Override
     public boolean create(Alumno entidad) {
-        String sql = "INSERT INTO ALUMNO(MATRICULA, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, CORREO_INSTITUCIONAL, TELEFONO, ID_GENERO, ID_GRUPO, PASS) " +
+        String sqlAlumno = "INSERT INTO ALUMNO(MATRICULA, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, CORREO_INSTITUCIONAL, TELEFONO, ID_GENERO, ID_GRUPO, PASS) " +
                 "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        String sqlHistorico = "INSERT INTO ALUMNO_GRUPO_HISTORICO (MATRICULA, ID_GRUPO, FECHA_INICIO, MOTIVO_CAMBIO) VALUES (?, ?, SYSDATE, ?)";
 
-        try (Connection con = SQLConnector.getConnection();
-             PreparedStatement ps = con.prepareStatement(sql)) {
+        Connection con = null;
+        try {
+            con = SQLConnector.getConnection();
+            con.setAutoCommit(false);
 
             String pass = (entidad.getPass() != null && !entidad.getPass().isBlank())
                     ? entidad.getPass() : "Tut@" + entidad.getMatricula();
 
-            ps.setString(1, entidad.getMatricula());
-            ps.setString(2, entidad.getNombres());
-            ps.setString(3, entidad.getApellidoPaterno());
-            ps.setString(4, entidad.getApellidoMaterno());
-            ps.setString(5, entidad.getCorreoInstitucional());
-            ps.setString(6, entidad.getTelefono());
-            ps.setInt(7, entidad.getIdGenero());
-            ps.setInt(8, entidad.getIdGrupo());
-            ps.setString(9, PasswordUtil.hash(pass));
+            boolean insertado;
+            try (PreparedStatement ps = con.prepareStatement(sqlAlumno)) {
+                ps.setString(1, entidad.getMatricula());
+                ps.setString(2, entidad.getNombres());
+                ps.setString(3, entidad.getApellidoPaterno());
+                ps.setString(4, entidad.getApellidoMaterno());
+                ps.setString(5, entidad.getCorreoInstitucional());
+                ps.setString(6, entidad.getTelefono());
+                ps.setInt(7, entidad.getIdGenero());
+                ps.setInt(8, entidad.getIdGrupo());
+                ps.setString(9, PasswordUtil.hash(pass));
+                insertado = ps.executeUpdate() > 0;
+            }
 
-            return ps.executeUpdate() > 0;
+            if (insertado) {
+                try (PreparedStatement ps = con.prepareStatement(sqlHistorico)) {
+                    ps.setString(1, entidad.getMatricula());
+                    ps.setInt(2, entidad.getIdGrupo());
+                    ps.setString(3, "Alta inicial");
+                    ps.executeUpdate();
+                }
+            }
+
+            con.commit();
+            return insertado;
         } catch (SQLException e) {
             e.printStackTrace();
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
             return false;
+        } finally {
+            if (con != null) {
+                try { con.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
         }
     }
 
@@ -254,28 +283,110 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return alumno;
     }
 
+    // Edicion desde formulario-alumno.jsp: es el unico punto donde el coordinador puede
+    // cambiar a un alumno de grupo (incluyendo pasarlo a una carrera de Ingenieria, ya que
+    // GRUPO.ID_CARRERA es independiente del nivel). Si el ID_GRUPO cambia, cierra el
+    // renglon abierto en ALUMNO_GRUPO_HISTORICO y abre uno nuevo, en la misma transaccion
+    // que el UPDATE, para que getTrayectoriaPorAlumno() pueda reconstruir el recorrido
+    // completo del alumno (usado por la seccion "Trayectoria academica" del historial).
     @Override
     public boolean update(Alumno entidad) {
-        String sql = "UPDATE ALUMNO SET NOMBRES = ?, APELLIDO_PATERNO = ?, APELLIDO_MATERNO = ?, " +
+        String sqlGrupoAnterior = "SELECT ID_GRUPO FROM ALUMNO WHERE MATRICULA = ?";
+        String sqlCerrarHistorico = "UPDATE ALUMNO_GRUPO_HISTORICO SET FECHA_FIN = SYSDATE " +
+                "WHERE MATRICULA = ? AND ID_GRUPO = ? AND FECHA_FIN IS NULL";
+        String sqlAbrirHistorico = "INSERT INTO ALUMNO_GRUPO_HISTORICO (MATRICULA, ID_GRUPO, FECHA_INICIO, MOTIVO_CAMBIO) " +
+                "VALUES (?, ?, SYSDATE, ?)";
+        String sqlAlumno = "UPDATE ALUMNO SET NOMBRES = ?, APELLIDO_PATERNO = ?, APELLIDO_MATERNO = ?, " +
                 "CORREO_INSTITUCIONAL = ?, TELEFONO = ?, ID_GENERO = ?, ID_GRUPO = ? WHERE MATRICULA = ?";
+
+        Connection con = null;
+        try {
+            con = SQLConnector.getConnection();
+            con.setAutoCommit(false);
+
+            Integer idGrupoAnterior = null;
+            try (PreparedStatement ps = con.prepareStatement(sqlGrupoAnterior)) {
+                ps.setString(1, entidad.getMatricula());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) idGrupoAnterior = rs.getInt(1);
+                }
+            }
+
+            if (idGrupoAnterior != null && !idGrupoAnterior.equals(entidad.getIdGrupo())) {
+                try (PreparedStatement ps = con.prepareStatement(sqlCerrarHistorico)) {
+                    ps.setString(1, entidad.getMatricula());
+                    ps.setInt(2, idGrupoAnterior);
+                    ps.executeUpdate();
+                }
+                try (PreparedStatement ps = con.prepareStatement(sqlAbrirHistorico)) {
+                    ps.setString(1, entidad.getMatricula());
+                    ps.setInt(2, entidad.getIdGrupo());
+                    ps.setString(3, "Cambio de grupo");
+                    ps.executeUpdate();
+                }
+            }
+
+            boolean actualizado;
+            try (PreparedStatement ps = con.prepareStatement(sqlAlumno)) {
+                ps.setString(1, entidad.getNombres());
+                ps.setString(2, entidad.getApellidoPaterno());
+                ps.setString(3, entidad.getApellidoMaterno());
+                ps.setString(4, entidad.getCorreoInstitucional());
+                ps.setString(5, entidad.getTelefono());
+                ps.setInt(6, entidad.getIdGenero());
+                ps.setInt(7, entidad.getIdGrupo());
+                ps.setString(8, entidad.getMatricula());
+                actualizado = ps.executeUpdate() > 0;
+            }
+
+            con.commit();
+            return actualizado;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            return false;
+        } finally {
+            if (con != null) {
+                try { con.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+        }
+    }
+
+    // Recorrido academico completo de un alumno (Parte A de "Historial a largo plazo"):
+    // un renglon por cada estancia en ALUMNO_GRUPO_HISTORICO, con el nombre/nivel de
+    // carrera y los datos del grupo resueltos via JOIN. fechaFin NULL = grupo actual.
+    public List<TrayectoriaGrupoDTO> getTrayectoriaPorAlumno(String matricula) {
+        List<TrayectoriaGrupoDTO> lista = new ArrayList<>();
+        String sql = "SELECT c.NOMBRE AS NOMBRE_CARRERA, c.NIVEL, g.CUATRIMESTRE, g.LETRA, g.GENERACION, " +
+                "h.FECHA_INICIO, h.FECHA_FIN, h.MOTIVO_CAMBIO " +
+                "FROM ALUMNO_GRUPO_HISTORICO h " +
+                "JOIN GRUPO g ON g.ID_GRUPO = h.ID_GRUPO " +
+                "JOIN CARRERA c ON c.ID_CARRERA = g.ID_CARRERA " +
+                "WHERE h.MATRICULA = ? ORDER BY h.FECHA_INICIO ASC";
 
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-
-            ps.setString(1, entidad.getNombres());
-            ps.setString(2, entidad.getApellidoPaterno());
-            ps.setString(3, entidad.getApellidoMaterno());
-            ps.setString(4, entidad.getCorreoInstitucional());
-            ps.setString(5, entidad.getTelefono());
-            ps.setInt(6, entidad.getIdGenero());
-            ps.setInt(7, entidad.getIdGrupo());
-            ps.setString(8, entidad.getMatricula());
-
-            return ps.executeUpdate() > 0;
+            ps.setString(1, matricula);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    TrayectoriaGrupoDTO dto = new TrayectoriaGrupoDTO();
+                    dto.setNombreCarrera(rs.getString("NOMBRE_CARRERA"));
+                    dto.setNivel(rs.getString("NIVEL"));
+                    dto.setCuatrimestre(rs.getInt("CUATRIMESTRE"));
+                    dto.setLetra(rs.getString("LETRA"));
+                    dto.setGeneracion(rs.getString("GENERACION"));
+                    dto.setFechaInicio(rs.getDate("FECHA_INICIO"));
+                    dto.setFechaFin(rs.getDate("FECHA_FIN"));
+                    dto.setMotivoCambio(rs.getString("MOTIVO_CAMBIO"));
+                    lista.add(dto);
+                }
+            }
         } catch (SQLException e) {
             e.printStackTrace();
-            return false;
         }
+        return lista;
     }
 
     @Override

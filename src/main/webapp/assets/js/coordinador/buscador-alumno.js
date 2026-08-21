@@ -79,12 +79,14 @@ function seleccionarAlumnoBuscador(indice) {
     document.getElementById('matriculaAlumnoFiltro').textContent = alumno.matricula;
     document.getElementById('filtroAlumnoActivo').classList.remove('d-none');
 
+    if (typeof cargarTrayectoriaAlumno === 'function') cargarTrayectoriaAlumno(alumno.matricula);
     if (typeof buscarReporteCoordinador === 'function') buscarReporteCoordinador();
 }
 
 function quitarFiltroAlumno() {
     document.getElementById('filtroMatricula').value = '';
     document.getElementById('filtroAlumnoActivo').classList.add('d-none');
+    if (typeof ocultarTrayectoriaAlumno === 'function') ocultarTrayectoriaAlumno();
     if (typeof buscarReporteCoordinador === 'function') buscarReporteCoordinador();
 }
 

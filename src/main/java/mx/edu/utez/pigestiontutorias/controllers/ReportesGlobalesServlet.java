@@ -18,6 +18,7 @@ import mx.edu.utez.pigestiontutorias.models.ReporteExportDatos;
 import mx.edu.utez.pigestiontutorias.models.SesionGrupal;
 import mx.edu.utez.pigestiontutorias.models.SolicitudPendienteDTO;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
+import mx.edu.utez.pigestiontutorias.models.TrayectoriaGrupoDTO;
 import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.CanalizacionDao;
 import mx.edu.utez.pigestiontutorias.models.dao.PeriodoEscolarDao;
@@ -53,8 +54,34 @@ public class ReportesGlobalesServlet extends HttpServlet {
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final java.sql.Date FECHA_DEFAULT_DESDE = java.sql.Date.valueOf(LocalDate.of(2000, 1, 1));
 
+    // Mismo motivo que ReportesServlet.doGet: sin este try-catch, una excepcion no controlada
+    // en cualquiera de las ramas JSON de abajo (incluida trayectoriaAlumno) llegaba a Tomcat
+    // como pagina HTML de error 500, que rompe el fetch().then(r => r.json()) del dashboard
+    // con "Unexpected token '<'" y no deja ver la causa real en ningun lado del cliente.
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        try {
+            doGetInterno(request, response);
+        } catch (Exception e) {
+            System.err.println("Error inesperado en ReportesGlobalesServlet.doGet: " + e.getMessage());
+            e.printStackTrace();
+            responderErrorJson(response, e);
+        }
+    }
+
+    private void responderErrorJson(HttpServletResponse response, Exception e) throws IOException {
+        if (response.isCommitted()) return;
+        response.reset();
+        response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        response.setContentType("application/json;charset=UTF-8");
+        response.setCharacterEncoding("UTF-8");
+        String mensaje = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+        response.getWriter().print("{\"status\":\"error\",\"message\":\"" + escaparJson(mensaje) + "\"}");
+        response.getWriter().flush();
+    }
+
+    private void doGetInterno(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         HttpSession session = request.getSession(false);
@@ -92,6 +119,10 @@ public class ReportesGlobalesServlet extends HttpServlet {
             responderBuscarAlumnos(request, response);
             return;
         }
+        if ("trayectoriaAlumno".equals(accion)) {
+            responderTrayectoriaAlumno(request, response);
+            return;
+        }
         if ("exportarExcel".equals(accion)) {
             exportarExcel(request, response);
             return;
@@ -107,6 +138,22 @@ public class ReportesGlobalesServlet extends HttpServlet {
         request.setAttribute("paginaActiva", "reportes");
         request.setAttribute("listaCarreras", listaCarreras);
         request.setAttribute("listaTutores", listaTutores);
+
+        // Accesos directos desde gestion-grupos.jsp ("Ver historial de tutorias"/"Ver
+        // historial del alumno"): si vienen estos parametros en la URL, se exponen como
+        // atributos para que reportes-globales.jsp preseleccione los filtros y dispare la
+        // busqueda solo, sin que el coordinador tenga que volver a elegirlos a mano.
+        request.setAttribute("prefiltroIdCarrera", request.getParameter("idCarrera"));
+        request.setAttribute("prefiltroCuatrimestre", request.getParameter("cuatrimestre"));
+        request.setAttribute("prefiltroLetra", request.getParameter("letra"));
+        String prefiltroMatricula = request.getParameter("matricula");
+        request.setAttribute("prefiltroMatricula", prefiltroMatricula);
+        if (prefiltroMatricula != null && !prefiltroMatricula.isBlank()) {
+            var alumno = alumnoDAO.getById(prefiltroMatricula);
+            if (alumno != null) {
+                request.setAttribute("prefiltroNombreAlumno", alumno.getNombres() + " " + alumno.getApellidos());
+            }
+        }
 
         RequestDispatcher rd = request.getRequestDispatcher("/coordinador/reportes-globales.jsp");
         rd.forward(request, response);
@@ -427,6 +474,47 @@ public class ReportesGlobalesServlet extends HttpServlet {
             json.append("\"matricula\":\"").append(escaparJson(a.getMatricula())).append("\",");
             json.append("\"nombreCompleto\":\"").append(escaparJson(a.getNombreCompleto())).append("\",");
             json.append("\"grupoAsignado\":\"").append(escaparJson(a.getGrupoAsignado())).append("\"");
+            json.append("}");
+            primero = false;
+        }
+        json.append("]");
+
+        out.print(json);
+        out.flush();
+    }
+
+    // Seccion "Trayectoria academica" del historial del alumno (Parte A): recorrido completo
+    // por ALUMNO_GRUPO_HISTORICO, sin importar el tutor/carrera/periodo actual del coordinador
+    // en sesion -- un alumno solo tiene una MATRICULA, asi que no hace falta mas autorizacion
+    // que estar logueado como coordinador.
+    private void responderTrayectoriaAlumno(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+        PrintWriter out = response.getWriter();
+
+        String matricula = request.getParameter("matricula");
+        if (matricula == null || matricula.isBlank()) {
+            out.print("[]");
+            out.flush();
+            return;
+        }
+
+        List<TrayectoriaGrupoDTO> trayectoria = alumnoDAO.getTrayectoriaPorAlumno(matricula);
+
+        StringBuilder json = new StringBuilder("[");
+        boolean primero = true;
+        for (TrayectoriaGrupoDTO t : trayectoria) {
+            if (!primero) json.append(",");
+            String desde = t.getFechaInicio() != null ? t.getFechaInicio().toLocalDate().format(FORMATO_FECHA) : "";
+            String hasta = t.getFechaFin() != null ? t.getFechaFin().toLocalDate().format(FORMATO_FECHA) : null;
+            json.append("{");
+            json.append("\"nombreCarrera\":\"").append(escaparJson(t.getNombreCarrera())).append("\",");
+            json.append("\"nivel\":\"").append(escaparJson(t.getNivel())).append("\",");
+            json.append("\"cuatrimestre\":").append(t.getCuatrimestre()).append(",");
+            json.append("\"letra\":\"").append(escaparJson(t.getLetra())).append("\",");
+            json.append("\"generacion\":\"").append(escaparJson(t.getGeneracion())).append("\",");
+            json.append("\"fechaInicio\":\"").append(escaparJson(desde)).append("\",");
+            json.append("\"fechaFin\":").append(hasta != null ? "\"" + escaparJson(hasta) + "\"" : "null").append(",");
+            json.append("\"motivoCambio\":\"").append(escaparJson(t.getMotivoCambio())).append("\"");
             json.append("}");
             primero = false;
         }

@@ -129,36 +129,34 @@
         </div>
 
         <div class="row g-3 mb-2">
-            <div class="col-md-4">
-                <label for="filtroCuatrimestre" class="form-label fw-bold">Cuatrimestre</label>
-                <select id="filtroCuatrimestre" class="form-select form-control-figma">
-                    <option value="">Seleccione el cuatrimestre</option>
-                    <c:forEach var="numero" begin="1" end="10">
-                        <option value="${numero}">${numero}°</option>
+            <div class="col-md-6">
+                <label for="filtroGrupoAsignado" class="form-label fw-bold">Grupo Asignado</label>
+                <select id="filtroGrupoAsignado" class="form-select form-control-figma">
+                    <option value="">Todos mis grupos</option>
+                    <c:forEach var="grupo" items="${listaGruposTutor}">
+                        <option value="${grupo.idGrupo}"
+                                data-id-carrera="${grupo.idCarrera}"
+                                data-nombre-carrera="${grupo.nombreCarrera}"
+                                data-cuatrimestre="${grupo.cuatrimestre}"
+                                data-letra="${grupo.letra}">
+                                ${grupo.nombreGrupo}
+                        </option>
                     </c:forEach>
                 </select>
+                <c:if test="${empty listaGruposTutor}">
+                    <div class="form-text text-muted">No tienes grupos asignados actualmente.</div>
+                </c:if>
             </div>
-            <div class="col-md-4">
-                <label for="filtroGrupo" class="form-label fw-bold">Grupo</label>
-                <select id="filtroGrupo" class="form-select form-control-figma">
-                    <option value="">Seleccione el grupo</option>
-                    <option value="A">A</option>
-                    <option value="B">B</option>
-                    <option value="C">C</option>
-                    <option value="D">D</option>
-                    <option value="E">E</option>
-                    <option value="F">F</option>
-                </select>
-            </div>
-            <div class="col-md-4">
-                <label for="filtroCarrera" class="form-label fw-bold">Carrera</label>
-                <select id="filtroCarrera" class="form-select form-control-figma">
-                    <option value="">Seleccione la carrera</option>
-                    <c:forEach var="carrera" items="${listaCarreras}">
-                        <option value="${carrera.idCarrera}">${carrera.nombre}</option>
-                    </c:forEach>
-                </select>
-            </div>
+            <!-- Los tres selects de abajo ya no son visibles/editables por el tutor: se sincronizan
+                 en JS desde #filtroGrupoAsignado (ver mas abajo) para no tener que tocar el resto de
+                 filtrosReporteActuales()/construirParamsExport()/cargarReporte(), que ya leian estos
+                 mismos IDs. Antes eran 3 <select> independientes (Carrera con TODAS las carreras del
+                 sistema, Cuatrimestre 1-10, Grupo A-F) que dejaban al tutor armar cualquier combinacion,
+                 incluidas las que no le pertenecen -- ahora solo puede elegir entre sus propios grupos
+                 asignados (ASIGNACION_TUTOR), listados arriba. -->
+            <select id="filtroCuatrimestre" class="d-none" aria-hidden="true"></select>
+            <select id="filtroGrupo" class="d-none" aria-hidden="true"></select>
+            <select id="filtroCarrera" class="d-none" aria-hidden="true"></select>
         </div>
 
         <div class="row g-3 mb-4 align-items-end">
@@ -704,6 +702,33 @@
 
     document.getElementById('btnBuscar').addEventListener('click', buscarReporteTutor);
     document.addEventListener('DOMContentLoaded', buscarReporteTutor);
+
+    // #filtroGrupoAsignado solo ofrece los grupos que ASIGNACION_TUTOR le dio a este tutor
+    // (ver ReportesServlet, rama que hace forward a esta vista). Al elegir uno, se replican
+    // su carrera/cuatrimestre/letra en los <select> ocultos de siempre (filtroCarrera,
+    // filtroCuatrimestre, filtroGrupo) para no duplicar la logica de busqueda/exportacion
+    // que ya lee esos IDs.
+    function fijarSelectOculto(select, valor, texto) {
+        select.innerHTML = '';
+        if (valor) {
+            const opcion = document.createElement('option');
+            opcion.value = valor;
+            opcion.text = texto;
+            select.appendChild(opcion);
+        }
+        select.value = valor || '';
+    }
+
+    document.getElementById('filtroGrupoAsignado').addEventListener('change', function () {
+        const opcionElegida = this.options[this.selectedIndex];
+        fijarSelectOculto(document.getElementById('filtroCarrera'),
+            opcionElegida.dataset.idCarrera || '', opcionElegida.dataset.nombreCarrera || '');
+        fijarSelectOculto(document.getElementById('filtroCuatrimestre'),
+            opcionElegida.dataset.cuatrimestre || '', (opcionElegida.dataset.cuatrimestre || '') + '°');
+        fijarSelectOculto(document.getElementById('filtroGrupo'),
+            opcionElegida.dataset.letra || '', opcionElegida.dataset.letra || '');
+        buscarReporteTutor();
+    });
 
     function habilitarClickCompletoFecha(id) {
         const input = document.getElementById(id);

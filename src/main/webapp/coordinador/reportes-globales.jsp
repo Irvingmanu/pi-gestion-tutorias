@@ -1,5 +1,6 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -185,8 +186,36 @@
                 </div>
                 <input type="hidden" id="filtroMatricula" value="">
                 <div id="filtroAlumnoActivo" class="alert alert-info d-none d-flex justify-content-between align-items-center py-2 px-3 mt-2 mb-0">
-                    <span>Mostrando el reporte de: <strong id="nombreAlumnoFiltro"></strong> (<span id="matriculaAlumnoFiltro"></span>)</span>
+                    <span>Mostrando el reporte de: <strong id="nombreAlumnoFiltro"></strong> (<span id="matriculaAlumnoFiltro"></span>) — historial completo de todos los años en los que ha estado inscrito.</span>
                     <button type="button" class="btn btn-sm btn-outline-secondary" id="btnQuitarFiltroAlumno">Quitar filtro</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TRAYECTORIA ACADEMICA DEL ALUMNO ====================
+             Solo visible cuando hay un alumno filtrado (buscador o acceso directo desde
+             gestion-grupos.jsp). Se llena via accion=trayectoriaAlumno sobre
+             ALUMNO_GRUPO_HISTORICO (ver cargarTrayectoriaAlumno() mas abajo). -->
+        <div class="row g-3 mb-4 d-none" id="seccionTrayectoriaAlumno">
+            <div class="col-12">
+                <div class="p-3 bg-white rounded-figma shadow-sm border">
+                    <div class="seccion-detalle-titulo mb-2">Trayectoria académica</div>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                            <tr>
+                                <th>Carrera</th>
+                                <th>Nivel</th>
+                                <th>Cuatrimestre</th>
+                                <th>Grupo</th>
+                                <th>Generación</th>
+                                <th>Desde</th>
+                                <th>Hasta</th>
+                            </tr>
+                            </thead>
+                            <tbody id="tablaTrayectoriaBody"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -690,6 +719,17 @@
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/buscador-alumno.js"></script>
 <script>
     const CONTEXT_PATH = "${pageContext.request.contextPath}";
+
+    // Accesos directos desde gestion-grupos.jsp ("Ver historial de tutorías del grupo" /
+    // "Ver historial del alumno"): estos valores los expone ReportesGlobalesServlet.doGet
+    // como atributos prefiltro* cuando la URL trae idCarrera/cuatrimestre/letra/matricula.
+    // Cadena vacia si no vinieron (nunca null, para poder comparar con !== '' sin problema).
+    const PREFILTRO_ID_CARRERA = "${prefiltroIdCarrera}";
+    const PREFILTRO_CUATRIMESTRE = "${prefiltroCuatrimestre}";
+    const PREFILTRO_LETRA = "${prefiltroLetra}";
+    const PREFILTRO_MATRICULA = "${prefiltroMatricula}";
+    const PREFILTRO_NOMBRE_ALUMNO = "${empty prefiltroNombreAlumno ? '' : fn:replace(prefiltroNombreAlumno, '\"', '\\\"')}";
+
     let graficaBarrasCoordinador = null;
 
     function pintarBarrasCoordinador(data) {
@@ -726,7 +766,66 @@
     }
 
     document.getElementById('btnBuscar').addEventListener('click', buscarReporteCoordinador);
-    document.addEventListener('DOMContentLoaded', buscarReporteCoordinador);
+
+    // Trayectoria academica del alumno filtrado (Historial a largo plazo): trae TODOS los
+    // renglones de ALUMNO_GRUPO_HISTORICO para esa matricula, sin importar carrera/
+    // cuatrimestre/grupo actual, y los pinta en orden cronologico.
+    function cargarTrayectoriaAlumno(matricula) {
+        const seccion = document.getElementById('seccionTrayectoriaAlumno');
+        const tbody = document.getElementById('tablaTrayectoriaBody');
+        if (!seccion || !tbody || !matricula) return;
+
+        fetch(CONTEXT_PATH + '/reportes-globales?accion=trayectoriaAlumno&matricula=' + encodeURIComponent(matricula))
+            .then(function (resp) { return resp.json(); })
+            .then(function (lista) {
+                if (!lista.length) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted">Sin movimientos de grupo registrados.</td></tr>';
+                } else {
+                    tbody.innerHTML = lista.map(function (t) {
+                        return '<tr>' +
+                            '<td>' + escaparHtml(t.nombreCarrera) + '</td>' +
+                            '<td>' + escaparHtml(t.nivel) + '</td>' +
+                            '<td>' + escaparHtml(t.cuatrimestre) + '°</td>' +
+                            '<td>' + escaparHtml(t.letra) + '</td>' +
+                            '<td>' + escaparHtml(t.generacion) + '</td>' +
+                            '<td>' + escaparHtml(t.fechaInicio) + '</td>' +
+                            '<td>' + (t.fechaFin ? escaparHtml(t.fechaFin) : '<span class="badge-al-dia px-2 py-1 rounded-figma">Actual</span>') + '</td>' +
+                            '</tr>';
+                    }).join('');
+                }
+                seccion.classList.remove('d-none');
+            })
+            .catch(function (err) { console.error('Error al cargar la trayectoria del alumno:', err); });
+    }
+
+    function ocultarTrayectoriaAlumno() {
+        const seccion = document.getElementById('seccionTrayectoriaAlumno');
+        if (seccion) seccion.classList.add('d-none');
+    }
+
+    // Aplica los prefiltros de un acceso directo (Parte B) antes de la primera busqueda:
+    // preselecciona Carrera/Cuatrimestre/Grupo, o fija el alumno + su trayectoria cuando
+    // el acceso es por matricula. A proposito NO se tocan filtroDesde/filtroHasta: quedan
+    // vacios (rango por defecto = historico completo) para que, al entrar por un alumno,
+    // sus tutorias individuales/canalizaciones/pendientes de TODOS los años inscritos
+    // aparezcan de una vez, no solo las del periodo vigente.
+    function aplicarPrefiltrosYBuscar() {
+        if (PREFILTRO_ID_CARRERA) document.getElementById('filtroCarrera').value = PREFILTRO_ID_CARRERA;
+        if (PREFILTRO_CUATRIMESTRE) document.getElementById('filtroCuatrimestre').value = PREFILTRO_CUATRIMESTRE;
+        if (PREFILTRO_LETRA) document.getElementById('filtroGrupo').value = PREFILTRO_LETRA;
+
+        if (PREFILTRO_MATRICULA) {
+            document.getElementById('filtroMatricula').value = PREFILTRO_MATRICULA;
+            document.getElementById('nombreAlumnoFiltro').textContent = PREFILTRO_NOMBRE_ALUMNO || PREFILTRO_MATRICULA;
+            document.getElementById('matriculaAlumnoFiltro').textContent = PREFILTRO_MATRICULA;
+            document.getElementById('filtroAlumnoActivo').classList.remove('d-none');
+            cargarTrayectoriaAlumno(PREFILTRO_MATRICULA);
+        }
+
+        buscarReporteCoordinador();
+    }
+
+    document.addEventListener('DOMContentLoaded', aplicarPrefiltrosYBuscar);
 
     document.getElementById('cardTutoriasGrupales').addEventListener('click', abrirModalTutoriasGrupales);
     document.getElementById('cardTutoriasGrupales').addEventListener('keydown', function (e) {
