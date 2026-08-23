@@ -27,6 +27,11 @@ document.addEventListener('DOMContentLoaded', function () {
     var HORA_MIN = '07:00';
     var HORA_MAX = '21:00';
 
+    // Fecha de "hoy" en ISO, usada tanto para acotar el <input type="date"> como para
+    // decidir, columna por columna de la cuadricula, que acciones de asistencia estan
+    // permitidas (ver REGLAS DE NEGOCIO DE ASISTENCIA mas abajo).
+    var hoyStr = formatearFechaISO(new Date());
+
     // Estado unico de la cuadricula (fuente de verdad): se llena al cargar un grupo y lo
     // van mutando tanto los clics en las celdas como el reordenamiento por cambio de fecha,
     // para que ningun cambio se pierda al re-renderizar.
@@ -61,8 +66,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // DIAS_ANTIGUEDAD_MAXIMA días atrás desde hoy. Si el periodo escolar ya traía un "min"
     // más restrictivo (su fecha de inicio, seteada por el JSP), se respeta ese en su lugar.
     if (inputFecha) {
-        var hoy = new Date();
-        var hoyStr = formatearFechaISO(hoy);
         inputFecha.setAttribute('max', hoyStr);
 
         var haceNDias = new Date();
@@ -119,7 +122,45 @@ document.addEventListener('DOMContentLoaded', function () {
         cuerpoTablaAsistencia.appendChild(fila);
     }
 
-    function crearThFecha(fechaTexto, idSesion) {
+    // ==========================================================================
+    // REGLAS DE NEGOCIO DE ASISTENCIA POR FECHA
+    // Fechas pasadas (antes de hoy): no se permite registrar/modificar Presente ni Falta,
+    // solo "Justificar". Fecha de hoy: no se permite Justificar, solo Presente/Falta.
+    // Sin fecha capturada todavia (columna "nueva" antes de elegir fecha): sin restriccion.
+    // ==========================================================================
+    function obtenerRestriccionColumna(fechaIso) {
+        if (!fechaIso) {
+            return 'libre';
+        }
+        if (fechaIso < hoyStr) {
+            return 'pasada';
+        }
+        if (fechaIso === hoyStr) {
+            return 'hoy';
+        }
+        return 'libre';
+    }
+
+    function siguienteEstatusEnCiclo(actual, ciclo) {
+        var idx = ciclo.indexOf(actual);
+        return ciclo[(idx + 1) % ciclo.length];
+    }
+
+    // Calcula, segun la restriccion de la columna, cual seria el proximo estatus al dar
+    // clic en una celda. En una columna pasada, una celda que ya esta en "Presente" queda
+    // bloqueada (ya no se puede quitar la asistencia); el resto solo puede pasar a
+    // "Justificado".
+    function siguienteEstatusPermitido(actual, restriccion) {
+        if (restriccion === 'pasada') {
+            return actual === 'Presente' ? 'Presente' : 'Justificado';
+        }
+        if (restriccion === 'hoy') {
+            return siguienteEstatusEnCiclo(actual, ['Presente', 'Falta']);
+        }
+        return siguienteEstatusEnCiclo(actual, CICLO_ESTATUS);
+    }
+
+    function crearThFecha(fechaTexto, idSesion, restriccion) {
         var th = document.createElement('th');
         th.className = 'col-fecha-asist';
 
@@ -131,15 +172,16 @@ document.addEventListener('DOMContentLoaded', function () {
         var boton = document.createElement('button');
         boton.type = 'button';
         boton.className = 'btn-select-all';
-        boton.title = 'Marcar todos como Presente';
+        boton.title = restriccion === 'pasada' ? 'Marcar todos como Justificado' : 'Marcar todos como Presente';
         boton.setAttribute('data-id-sesion', idSesion);
+        boton.setAttribute('data-restriccion', restriccion);
         boton.textContent = '✓';
         th.appendChild(boton);
 
         return th;
     }
 
-    function crearCeldaAsistencia(idSesion, matricula, estatus) {
+    function crearCeldaAsistencia(idSesion, matricula, estatus, restriccion) {
         var td = document.createElement('td');
         td.className = 'col-fecha-asist';
 
@@ -149,6 +191,7 @@ document.addEventListener('DOMContentLoaded', function () {
         boton.setAttribute('data-estatus', estatus);
         boton.setAttribute('data-id-sesion', idSesion);
         boton.setAttribute('data-matricula', matricula);
+        boton.setAttribute('data-restriccion', restriccion);
         td.appendChild(boton);
 
         var inputOculto = document.createElement('input');
@@ -180,7 +223,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         columnas.forEach(function (col) {
             var estatus = fila.estados[col.id] || 'Falta';
-            tr.appendChild(crearCeldaAsistencia(col.id, fila.matricula, estatus));
+            tr.appendChild(crearCeldaAsistencia(col.id, fila.matricula, estatus, obtenerRestriccionColumna(col.fechaIso)));
         });
 
         var tdTotal = document.createElement('td');
@@ -220,6 +263,31 @@ document.addEventListener('DOMContentLoaded', function () {
         return columnas;
     }
 
+    // Cuando la fecha capturada arriba (columna "nueva") entra o sale de la zona "pasada"
+    // por un cambio de fecha, el estatus ya marcado en cada fila puede dejar de ser valido
+    // (ej. quedo en "Presente" mientras la fecha aun no se elegia y luego el tutor eligio
+    // una fecha pasada). Se corrige aqui en estadoGrid antes de renderizar, para que tanto
+    // la cuadricula como los inputs ocultos que se envian al servidor queden consistentes.
+    function corregirEstatusColumnaNueva(columnas) {
+        var columnaNueva = columnas.find(function (c) { return c.esNueva; });
+        if (!columnaNueva) {
+            return;
+        }
+        var restriccion = obtenerRestriccionColumna(columnaNueva.fechaIso);
+        if (restriccion === 'libre') {
+            return;
+        }
+
+        estadoGrid.filas.forEach(function (fila) {
+            var actual = fila.estados[COLUMNA_NUEVA];
+            if (restriccion === 'pasada' && actual !== 'Presente' && actual !== 'Justificado') {
+                fila.estados[COLUMNA_NUEVA] = 'Justificado';
+            } else if (restriccion === 'hoy' && actual === 'Justificado') {
+                fila.estados[COLUMNA_NUEVA] = 'Falta';
+            }
+        });
+    }
+
     function agruparPorMes(columnas) {
         var grupos = [];
         columnas.forEach(function (col) {
@@ -251,6 +319,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         var columnas = obtenerColumnasOrdenadas();
+        corregirEstatusColumnaNueva(columnas);
         var meses = agruparPorMes(columnas);
 
         var fila1 = document.createElement('tr');
@@ -270,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         var fila2 = document.createElement('tr');
         columnas.forEach(function (col) {
-            fila2.appendChild(crearThFecha(formatearFechaCorta(col.fechaIso), col.id));
+            fila2.appendChild(crearThFecha(formatearFechaCorta(col.fechaIso), col.id, obtenerRestriccionColumna(col.fechaIso)));
         });
         theadCuadricula.appendChild(fila2);
 
@@ -301,11 +370,6 @@ document.addEventListener('DOMContentLoaded', function () {
         huboEdicionColumnaNueva = false;
 
         renderizarDesdeEstado();
-    }
-
-    function siguienteEstatus(actual) {
-        var idx = CICLO_ESTATUS.indexOf(actual);
-        return CICLO_ESTATUS[(idx + 1) % CICLO_ESTATUS.length];
     }
 
     function aplicarEstatus(boton, estatus) {
@@ -386,7 +450,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (boton) {
                 var idSesionBoton = boton.getAttribute('data-id-sesion');
                 var matriculaBoton = boton.getAttribute('data-matricula');
-                var nuevoEstatus = siguienteEstatus(boton.getAttribute('data-estatus'));
+                var restriccionBoton = boton.getAttribute('data-restriccion');
+                var estatusActual = boton.getAttribute('data-estatus');
+                var nuevoEstatus = siguienteEstatusPermitido(estatusActual, restriccionBoton);
+                if (nuevoEstatus === estatusActual) {
+                    return;
+                }
                 aplicarEstatus(boton, nuevoEstatus);
                 actualizarEstadoCelda(idSesionBoton, matriculaBoton, nuevoEstatus);
                 recalcularFila(boton.closest('tr'));
@@ -397,9 +466,17 @@ document.addEventListener('DOMContentLoaded', function () {
             var botonTodos = evento.target.closest('.btn-select-all');
             if (botonTodos) {
                 var idSesion = botonTodos.getAttribute('data-id-sesion');
+                var restriccionColumna = botonTodos.getAttribute('data-restriccion');
                 tablaCuadricula.querySelectorAll('.celda-asist[data-id-sesion="' + idSesion + '"]').forEach(function (b) {
-                    aplicarEstatus(b, 'Presente');
-                    actualizarEstadoCelda(idSesion, b.getAttribute('data-matricula'), 'Presente');
+                    var actual = b.getAttribute('data-estatus');
+                    var destino = restriccionColumna === 'pasada'
+                        ? (actual === 'Presente' ? 'Presente' : 'Justificado')
+                        : 'Presente';
+                    if (destino === actual) {
+                        return;
+                    }
+                    aplicarEstatus(b, destino);
+                    actualizarEstadoCelda(idSesion, b.getAttribute('data-matricula'), destino);
                     recalcularFila(b.closest('tr'));
                 });
                 registrarEdicion(idSesion);

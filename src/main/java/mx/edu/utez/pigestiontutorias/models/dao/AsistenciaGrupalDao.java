@@ -11,6 +11,7 @@ import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -216,6 +217,47 @@ public class AsistenciaGrupalDao {
             porSesion.computeIfAbsent(celda.getIdSesionGrupal(), k -> new ArrayList<>()).add(celda);
         }
 
+        // Blindaje de servidor: las reglas de negocio de asistencia (ver registro-grupal.js)
+        // tambien se aplican aqui, sin confiar en que el estatus que viaja en cada celda no
+        // fue manipulado en el cliente. Se corrige en silencio en vez de rechazar el guardado
+        // completo.
+        // - Fecha de hoy: no se permite "Justificado" (se corrige a "Falta").
+        // - Fecha pasada: si la sesion ya tenia asistencia "Presente" registrada para ese
+        //   alumno, se conserva tal cual (ya no se puede quitar); si no, solo se permite
+        //   "Justificado" (se corrige cualquier otro valor).
+        Map<Integer, LocalDate> fechasPorSesion = obtenerFechasDeSesiones(porSesion.keySet());
+        LocalDate hoy = LocalDate.now();
+        for (Map.Entry<Integer, List<CeldaAsistenciaDTO>> entrySesion : porSesion.entrySet()) {
+            int idSesionGrupal = entrySesion.getKey();
+            LocalDate fechaSesion = fechasPorSesion.get(idSesionGrupal);
+            if (fechaSesion == null) {
+                continue;
+            }
+
+            if (fechaSesion.isBefore(hoy)) {
+                Map<String, String> estatusPrevio = obtenerEstatusExistente(idSesionGrupal);
+                for (CeldaAsistenciaDTO celda : entrySesion.getValue()) {
+                    String previo = estatusPrevio.get(celda.getMatricula());
+                    if (previo == null) {
+                        // Sesion recien creada en este mismo guardado: no habia asistencia
+                        // previa que proteger, se confia en el estatus ya validado en el cliente.
+                        continue;
+                    }
+                    if ("Presente".equals(previo)) {
+                        celda.setEstatus("Presente");
+                    } else if (!"Justificado".equals(celda.getEstatus())) {
+                        celda.setEstatus("Justificado");
+                    }
+                }
+            } else if (fechaSesion.isEqual(hoy)) {
+                for (CeldaAsistenciaDTO celda : entrySesion.getValue()) {
+                    if ("Justificado".equals(celda.getEstatus())) {
+                        celda.setEstatus("Falta");
+                    }
+                }
+            }
+        }
+
         String deleteSql = "DELETE FROM ASISTENCIA WHERE ID_SESION_GRUPAL = ?";
         String insertSql = "INSERT INTO ASISTENCIA (ID_SESION_GRUPAL, MATRICULA, ESTATUS_ASISTENCIA) VALUES (?, ?, ?)";
 
@@ -247,5 +289,57 @@ public class AsistenciaGrupalDao {
             e.printStackTrace();
             return false;
         }
+    }
+
+    // idSesionGrupal -> FECHA, usado por guardarCeldas() para aplicar las reglas de
+    // negocio de asistencia/justificacion segun que tan pasada este cada sesion.
+    private Map<Integer, LocalDate> obtenerFechasDeSesiones(java.util.Set<Integer> idsSesion) {
+        Map<Integer, LocalDate> fechas = new HashMap<>();
+        if (idsSesion == null || idsSesion.isEmpty()) {
+            return fechas;
+        }
+
+        StringBuilder inClause = new StringBuilder();
+        for (int i = 0; i < idsSesion.size(); i++) {
+            if (i > 0) inClause.append(",");
+            inClause.append("?");
+        }
+        String sql = "SELECT ID_SESION_GRUPAL, FECHA FROM SESION_GRUPAL WHERE ID_SESION_GRUPAL IN (" + inClause + ")";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            int idx = 1;
+            for (Integer idSesion : idsSesion) {
+                ps.setInt(idx++, idSesion);
+            }
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    fechas.put(rs.getInt("ID_SESION_GRUPAL"), rs.getDate("FECHA").toLocalDate());
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return fechas;
+    }
+
+    // matricula -> estatus ya guardado en ASISTENCIA para una sesion, usado por
+    // guardarCeldas() para proteger un "Presente" ya registrado en una sesion pasada.
+    private Map<String, String> obtenerEstatusExistente(int idSesionGrupal) {
+        Map<String, String> estatus = new HashMap<>();
+        String sql = "SELECT MATRICULA, ESTATUS_ASISTENCIA FROM ASISTENCIA WHERE ID_SESION_GRUPAL = ?";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idSesionGrupal);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    estatus.put(rs.getString("MATRICULA"), rs.getString("ESTATUS_ASISTENCIA"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return estatus;
     }
 }

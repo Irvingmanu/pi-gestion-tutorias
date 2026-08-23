@@ -101,8 +101,9 @@
                         <div id="contenedorAsistencia" class="mb-4" style="display: none;">
                             <p class="fs-5 fw-bold text-center my-3">Lista de Asistencia</p>
                             <p class="texto-ayuda-cuadricula text-center text-muted mb-3">
-                                Haz clic (o doble clic) sobre cualquier celda de asistencia para alternar su estado
-                                entre Presente (✓), Ausente (X) y Justificado (J).
+                                Haz clic sobre una celda de asistencia para alternar su estado. En sesiones de días
+                                anteriores solo puedes Justificar (J) las faltas; si ya tiene Presente (✓) registrado
+                                no se puede modificar. En la sesión de hoy solo puedes marcar Presente (✓) o Ausente (X).
                             </p>
 
                             <div class="tabla-asistencia-grid-wrap mb-3">
