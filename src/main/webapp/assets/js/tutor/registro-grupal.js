@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var inputAcuerdos = document.getElementById('acuerdos');
     var inputTemas = document.getElementById('temasTratados');
     var inputSoloAsistencia = document.getElementById('inputSoloAsistencia');
+    var btnGuardarListaAsistencia = document.getElementById('btnGuardarListaAsistencia');
 
     // Fecha de "hoy" en ISO, usada tanto para acotar el <input type="date"> como para
     // decidir, columna por columna de la cuadricula, que acciones de asistencia estan
@@ -49,6 +50,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function puedeGuardarSoloAsistencia() {
         return huboEdicionHistorica && !huboEdicionColumnaNueva && camposSuperioresVacios();
+    }
+
+    // Revisa el estado actual de la cuadrícula (no solo la última celda tocada) para saber
+    // si hay alguna sesión histórica marcada como "Justificado".
+    function hayAlgunaSesionJustificada() {
+        if (!estadoGrid) {
+            return false;
+        }
+        return estadoGrid.filas.some(function (fila) {
+            return estadoGrid.sesionesServidor.some(function (s) {
+                return fila.estados[s.idSesionGrupal] === 'Justificado';
+            });
+        });
+    }
+
+    // El botón "Guardar Lista de Asistencia" es un atajo dedicado al guardado parcial:
+    // solo aparece cuando el tutor está justificando asistencia de sesiones ya registradas
+    // (mismo criterio que puedeGuardarSoloAsistencia) y hay al menos un "Justificado" marcado.
+    function actualizarBotonListaAsistencia() {
+        if (!btnGuardarListaAsistencia) {
+            return;
+        }
+        var mostrar = puedeGuardarSoloAsistencia() && hayAlgunaSesionJustificada();
+        btnGuardarListaAsistencia.style.display = mostrar ? '' : 'none';
     }
 
     function formatearFechaISO(fecha) {
@@ -366,6 +391,7 @@ document.addEventListener('DOMContentLoaded', function () {
         huboEdicionColumnaNueva = false;
 
         renderizarDesdeEstado();
+        actualizarBotonListaAsistencia();
     }
 
     function aplicarEstatus(boton, estatus) {
@@ -437,6 +463,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             huboEdicionHistorica = true;
         }
+        actualizarBotonListaAsistencia();
         verificarFormularioGrupal();
     }
 
@@ -499,6 +526,7 @@ document.addEventListener('DOMContentLoaded', function () {
             contenedorAsistencia.style.display = 'none';
             theadCuadricula.innerHTML = '';
             cuerpoTablaAsistencia.innerHTML = '';
+            actualizarBotonListaAsistencia();
             return;
         }
 

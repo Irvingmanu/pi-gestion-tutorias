@@ -112,6 +112,15 @@
                                 <span class="leyenda-item"><span class="leyenda-icono estado-falta"></span> Ausente</span>
                                 <span class="leyenda-item"><span class="leyenda-icono estado-justificado"></span> Justificado (no resta % de asistencia)</span>
                             </div>
+
+                            <!-- Botón dedicado al guardado parcial de asistencia: solo se muestra cuando
+                                 el tutor marcó alguna sesión histórica como "Justificado" (ver
+                                 actualizarBotonListaAsistencia en registro-grupal.js). -->
+                            <div class="d-flex justify-content-end mt-3">
+                                <button type="submit" id="btnGuardarListaAsistencia" class="btn-figma fw-medium fs-6 px-4 py-2" style="display: none;">
+                                    Guardar Lista de Asistencia
+                                </button>
+                            </div>
                         </div>
 
                         <div class="d-flex justify-content-end mt-4">
