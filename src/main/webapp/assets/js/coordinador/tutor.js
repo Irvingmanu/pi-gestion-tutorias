@@ -190,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const btnGuardar = document.getElementById('btnGuardar');
     const contenedorHorarios = document.getElementById('contenedorHorarios');
+    const feedbackHorario = document.getElementById('feedbackHorarioRequerido');
     const inputCorreo = document.getElementById('correo');
     // Ojo: "input, select" a proposito, no "input[required], select[required]". Apellido
     // materno es opcional (sin required) pero SI tiene pattern (letras y espacios); si
@@ -209,8 +210,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        if (!tieneHorarios()) {
+        const hayHorarios = tieneHorarios();
+        if (!hayHorarios) {
             esValido = false;
+        }
+        if (feedbackHorario) {
+            feedbackHorario.style.display = hayHorarios ? 'none' : 'block';
         }
 
         btnGuardar.disabled = !esValido;
