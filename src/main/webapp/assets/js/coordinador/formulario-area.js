@@ -46,6 +46,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 const contenedorMotivos = document.getElementById('motivosContainer');
                 const tieneMotivos = !!contenedorMotivos && contenedorMotivos.querySelectorAll('input[name="motivos[]"]').length > 0;
                 esValido = esValido && tieneMotivos;
+
+                const feedbackMotivoRequerido = document.getElementById('feedbackMotivoRequerido');
+                if (feedbackMotivoRequerido) {
+                    feedbackMotivoRequerido.style.display = tieneMotivos ? 'none' : 'block';
+                }
             }
 
             btnGuardar.disabled = !esValido;

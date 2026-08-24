@@ -9,6 +9,24 @@
 var REGEX_MOTIVO = '^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\\s.,()/-]+$';
 
 document.addEventListener('DOMContentLoaded', function () {
+    var inputNuevoMotivo = document.getElementById('nuevoMotivoInput');
+    var feedbackNuevoMotivo = document.getElementById('feedbackNuevoMotivo');
+    if (inputNuevoMotivo && feedbackNuevoMotivo) {
+        inputNuevoMotivo.addEventListener('input', function () {
+            inputNuevoMotivo.classList.remove('is-invalid');
+            feedbackNuevoMotivo.style.display = 'none';
+        });
+    }
+
+    var inputAgregarMotivo = document.getElementById('inputAgregarMotivo');
+    var feedbackAgregarMotivo = document.getElementById('feedbackAgregarMotivo');
+    if (inputAgregarMotivo && feedbackAgregarMotivo) {
+        inputAgregarMotivo.addEventListener('input', function () {
+            inputAgregarMotivo.classList.remove('is-invalid');
+            feedbackAgregarMotivo.style.display = 'none';
+        });
+    }
+
     var container = document.getElementById('motivosContainer');
     if (!container) {
         return;
@@ -42,6 +60,7 @@ document.addEventListener('DOMContentLoaded', function () {
 function agregarMotivo() {
     var inputNuevo = document.getElementById('nuevoMotivoInput');
     var container = document.getElementById('motivosContainer');
+    var feedback = document.getElementById('feedbackNuevoMotivo');
     if (!inputNuevo || !container) {
         return;
     }
@@ -49,16 +68,22 @@ function agregarMotivo() {
     var valor = inputNuevo.value.trim();
 
     if (!valor) {
+        inputNuevo.classList.remove('is-invalid');
+        if (feedback) feedback.style.display = 'none';
         mostrarAlerta('advertencia', 'Campo vacío', 'Escribe un motivo antes de agregarlo.');
         inputNuevo.focus();
         return;
     }
 
     if (!new RegExp(REGEX_MOTIVO).test(valor)) {
-        mostrarAlerta('error', 'Motivo inválido', 'Solo se permiten letras, números, espacios y . , ( ) / -');
+        inputNuevo.classList.add('is-invalid');
+        if (feedback) feedback.style.display = 'block';
         inputNuevo.focus();
         return;
     }
+
+    inputNuevo.classList.remove('is-invalid');
+    if (feedback) feedback.style.display = 'none';
 
     var existentes = container.querySelectorAll('input[name="motivos[]"]');
     for (var i = 0; i < existentes.length; i++) {
@@ -108,10 +133,13 @@ function validarAgregarMotivo(evento) {
         return true;
     }
 
+    var feedback = document.getElementById('feedbackAgregarMotivo');
     var valor = input.value.trim();
 
     if (!valor) {
         evento.preventDefault();
+        input.classList.remove('is-invalid');
+        if (feedback) feedback.style.display = 'none';
         mostrarAlerta('advertencia', 'Campo vacío', 'Escribe un motivo antes de agregarlo.');
         input.focus();
         return false;
@@ -120,10 +148,13 @@ function validarAgregarMotivo(evento) {
     if (!input.checkValidity()) {
         evento.preventDefault();
         input.classList.add('is-invalid');
-        mostrarAlerta('error', 'Motivo inválido', 'Solo se permiten letras, números, espacios y . , ( ) / -');
+        if (feedback) feedback.style.display = 'block';
         input.focus();
         return false;
     }
+
+    input.classList.remove('is-invalid');
+    if (feedback) feedback.style.display = 'none';
 
     return true;
 }

@@ -90,4 +90,44 @@ document.addEventListener('DOMContentLoaded', function () {
     window.actualizarEstadoGuardar = verificarFormulario;
 
     verificarFormulario();
+
+
+});
+
+document.getElementById('btnAgregarHorario').addEventListener('click', function(e) {
+    e.preventDefault(); // Evita que se agregue inmediatamente
+
+    // (Opcional) Obtener los valores para personalizar el mensaje
+    let dia = document.getElementById('select-dia').value;
+    let horaInicio = document.getElementById('hora-inicio').value;
+    let horaFin = document.getElementById('hora-fin').value;
+
+    // Lanzar la alerta de confirmación
+    Swal.fire({
+        title: '¿Confirmar horario?',
+        text: `¿Estás seguro de agregar el horario de ${dia} de ${horaInicio} a ${horaFin}?`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#f39c12', // Color naranja de tu diseño
+        cancelButtonColor: '#f1f5f9', // Color del botón cancelar
+        confirmButtonText: 'Sí, agregar',
+        cancelButtonText: 'Cancelar',
+        customClass: {
+            cancelButton: 'text-dark'
+        }
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // ==========================================
+            // AQUÍ VA TU LÓGICA ORIGINAL PARA AGREGARLO
+            // (Ej. agregar a la tabla HTML o enviar AJAX)
+            // ==========================================
+
+            // Mensaje opcional de éxito
+            Swal.fire(
+                '¡Agregado!',
+                'El horario ha sido añadido a la lista.',
+                'success'
+            );
+        }
+    });
 });

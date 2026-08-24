@@ -85,7 +85,7 @@ TutoresServlet (forwardAFormulario/resolverMensajeError): esta vista solo los co
                         <label for="apellidoMaterno" class="form-label fs-6 fw-bold">Apellido materno</label>
                         <input type="text" id="apellidoMaterno" name="apellidoMaterno" class="form-control form-control-figma w-100 fs-6"
                                value="${tutorFormulario.apellidoMaterno}"
-                               placeholder="Escribe el apellido materno" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$" required>
+                               placeholder="Escribe el apellido materno" pattern="^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$">
                         <div class="invalid-feedback">Solo se permiten letras y espacios.</div>
                     </div>
 
@@ -184,6 +184,7 @@ TutoresServlet (forwardAFormulario/resolverMensajeError): esta vista solo los co
                             </div>
                         </c:forEach>
                     </div>
+                    <div id="feedbackHorarioRequerido" class="invalid-feedback" style="display:none;">Es necesario agregar al menos un horario de atención.</div>
                 </div>
 
             </div>
