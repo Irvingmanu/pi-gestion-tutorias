@@ -4,6 +4,7 @@ import com.lowagie.text.*;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
+import mx.edu.utez.pigestiontutorias.models.AtencionAlumnoDTO;
 import mx.edu.utez.pigestiontutorias.models.AvanceTutorGrupal;
 import mx.edu.utez.pigestiontutorias.models.CanalizacionAlumnoDTO;
 import mx.edu.utez.pigestiontutorias.models.ReporteExportDatos;
@@ -29,6 +30,7 @@ public class ReportePdfBuilder {
     private final Font fuenteSeccion = new Font(Font.HELVETICA, 13, Font.BOLD, AZUL_MARINO);
     private final Font fuenteEncabezadoTabla = new Font(Font.HELVETICA, 9, Font.BOLD, Color.WHITE);
     private final Font fuenteCelda = new Font(Font.HELVETICA, 9, Font.NORMAL, Color.BLACK);
+    private final Font fuenteEtiquetaAlumno = new Font(Font.HELVETICA, 9, Font.BOLD, AZUL_MARINO);
 
     public void generar(OutputStream salida, ReporteExportDatos datos) throws DocumentException {
         Document documento = new Document(PageSize.A4, 36, 36, 54, 36);
@@ -38,6 +40,7 @@ public class ReportePdfBuilder {
         agregarEncabezado(documento, datos);
         agregarResumenEjecutivo(documento, datos);
         agregarTutoriasGrupales(documento, datos);
+        agregarAtenciones(documento, datos);
         agregarCanalizaciones(documento, datos);
 
         documento.close();
@@ -56,15 +59,57 @@ public class ReportePdfBuilder {
         Paragraph filtros = new Paragraph();
         filtros.setFont(fuenteSubtitulo);
         filtros.setAlignment(Element.ALIGN_CENTER);
-        filtros.add("Periodo: " + datos.getTituloPeriodo() + "\n");
-        filtros.add("Carrera: " + orTodas(datos.getNombreCarrera())
-                + "  |  Cuatrimestre: " + orTodos(datos.getNombreCuatrimestre())
-                + "  |  Grupo: " + orTodos(datos.getNombreGrupo())
-                + "  |  Tutor: " + orTodos(datos.getNombreTutor())
-                + (datos.getNombreAlumno() != null && !datos.getNombreAlumno().isBlank()
-                ? "  |  Alumno: " + datos.getNombreAlumno() : ""));
+        filtros.add("Periodo: " + datos.getTituloPeriodo());
+        // La linea de Carrera/Cuatrimestre/Grupo/Tutor solo aporta en el reporte agregado: en el
+        // reporte de un alumno especifico siempre queda en "Todas/Todos" y el bloque "Datos del
+        // Alumno" de abajo ya cubre esa informacion, asi que se omite para no duplicarla.
+        if (datos.getDatosAlumno() == null) {
+            filtros.add("\nCarrera: " + orTodas(datos.getNombreCarrera())
+                    + "  |  Cuatrimestre: " + orTodos(datos.getNombreCuatrimestre())
+                    + "  |  Grupo: " + orTodos(datos.getNombreGrupo())
+                    + "  |  Tutor: " + orTodos(datos.getNombreTutor())
+                    + (datos.getNombreAlumno() != null && !datos.getNombreAlumno().isBlank()
+                    ? "  |  Alumno: " + datos.getNombreAlumno() : ""));
+        }
         filtros.setSpacingAfter(16f);
         documento.add(filtros);
+
+        agregarDatosAlumno(documento, datos);
+    }
+
+    // Ficha academica del alumno filtrado (buscador de alumnos del dashboard): nombre completo +
+    // matricula, carrera, nivel, cuatrimestre-grupo y generacion, resueltos server-side a partir
+    // de su trayectoria (ver ReportesServlet/ReportesGlobalesServlet.resolverDatosAlumno). No se
+    // agrega nada cuando no hay alumno filtrado (reporte agregado normal).
+    private void agregarDatosAlumno(Document documento, ReporteExportDatos datos) throws DocumentException {
+        ReporteExportDatos.DatosAcademicosAlumno da = datos.getDatosAlumno();
+        if (da == null) return;
+
+        documento.add(nuevoTituloSeccion("Datos del Alumno"));
+
+        PdfPTable tabla = new PdfPTable(2);
+        tabla.setWidthPercentage(85);
+        tabla.setHorizontalAlignment(Element.ALIGN_CENTER);
+        tabla.setWidths(new float[]{1.3f, 2.4f});
+        tabla.setSpacingAfter(14f);
+
+        String nombreMatricula = (da.getNombreCompleto() != null ? da.getNombreCompleto() : "")
+                + (da.getMatricula() != null && !da.getMatricula().isBlank() ? " (" + da.getMatricula() + ")" : "");
+        agregarFilaAlumno(tabla, "Alumno", nombreMatricula);
+        agregarFilaAlumno(tabla, "Carrera", orTodas(da.getCarrera()));
+        agregarFilaAlumno(tabla, "Nivel", orTodos(da.getNivel()));
+        agregarFilaAlumno(tabla, "Cuatrimestre y Grupo", orTodos(da.getCuatrimestreGrupo()));
+        agregarFilaAlumno(tabla, "Generación", orTodos(da.getGeneracion()));
+
+        documento.add(tabla);
+    }
+
+    private void agregarFilaAlumno(PdfPTable tabla, String etiqueta, String valor) {
+        PdfPCell celdaEtiqueta = new PdfPCell(new Phrase(etiqueta, fuenteEtiquetaAlumno));
+        celdaEtiqueta.setBackgroundColor(new Color(232, 243, 240));
+        celdaEtiqueta.setPadding(5f);
+        tabla.addCell(celdaEtiqueta);
+        tabla.addCell(celdaTexto(valor));
     }
 
     // Seccion de metricas y graficos (resumen ejecutivo): las mismas 4 tarjetas + los datos
@@ -168,6 +213,37 @@ public class ReportePdfBuilder {
                 tabla.addCell(celdaTexto(a.getGrupoAsignado()));
                 tabla.addCell(celdaValor(a.getRealizadas() + " de " + a.getObjetivo()));
                 tabla.addCell(celdaTexto(traducirEstatusGrupal(a.getEstatus())));
+            }
+        }
+        documento.add(tabla);
+    }
+
+    // Tabla paginada del detalle de tutorías individuales/espontaneas (misma info que el modal
+    // "Alumnos Atendidos": temas tratados, acuerdos y el vinculo directo a un area de apoyo
+    // cuando la sesion origino una canalizacion).
+    private void agregarAtenciones(Document documento, ReporteExportDatos datos) throws DocumentException {
+        documento.add(nuevoTituloSeccion("Detalle de Tutorías Individuales"));
+
+        PdfPTable tabla = new PdfPTable(7);
+        tabla.setWidthPercentage(100);
+        tabla.setWidths(new float[]{1.8f, 1f, 1.2f, 0.9f, 2f, 2f, 2f});
+        tabla.setHeaderRows(1);
+        agregarCabecera(tabla, "Alumno", "Tipo", "Fecha", "Hora", "Temas Tratados", "Acuerdos", "Vínculo Directo");
+
+        if (datos.getAtenciones().isEmpty()) {
+            PdfPCell vacio = celdaTexto("No hay tutorías individuales registradas con los filtros seleccionados.");
+            vacio.setColspan(7);
+            tabla.addCell(vacio);
+        } else {
+            for (AtencionAlumnoDTO a : datos.getAtenciones()) {
+                tabla.addCell(celdaTexto(a.getNombreAlumno()));
+                tabla.addCell(celdaTexto(a.getTipo()));
+                tabla.addCell(celdaTexto(a.getFecha() != null ? a.getFecha().toLocalDate().format(FORMATO_FECHA) : ""));
+                tabla.addCell(celdaTexto(a.getHora()));
+                tabla.addCell(celdaTexto(a.getTemasTratados()));
+                tabla.addCell(celdaTexto(a.getAcuerdos()));
+                tabla.addCell(celdaTexto(a.getVinculoDirecto() != null && !a.getVinculoDirecto().isBlank()
+                        ? a.getVinculoDirecto() : "N/A"));
             }
         }
         documento.add(tabla);

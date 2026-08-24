@@ -20,12 +20,9 @@ document.addEventListener('DOMContentLoaded', function () {
     var cuerpoTablaAsistencia = document.getElementById('cuerpoTablaAsistencia');
     var tablaCuadricula = document.getElementById('tablaCuadricula');
     var inputFecha = document.getElementById('fecha');
-    var inputHora = document.getElementById('hora');
     var inputAcuerdos = document.getElementById('acuerdos');
     var inputTemas = document.getElementById('temasTratados');
     var inputSoloAsistencia = document.getElementById('inputSoloAsistencia');
-    var HORA_MIN = '07:00';
-    var HORA_MAX = '21:00';
 
     // Fecha de "hoy" en ISO, usada tanto para acotar el <input type="date"> como para
     // decidir, columna por columna de la cuadricula, que acciones de asistencia estan
@@ -39,14 +36,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Se activan cuando el tutor da clic en alguna celda de la cuadrícula, para distinguir
     // "solo vino a justificar/corregir asistencia de sesiones ya registradas" (guardado
-    // parcial, sin exigir Fecha/Hora/Acuerdos/Temas) de "está registrando una sesión nueva"
+    // parcial, sin exigir Fecha/Acuerdos/Temas) de "está registrando una sesión nueva"
     // (donde esos campos siguen siendo obligatorios).
     var huboEdicionHistorica = false;
     var huboEdicionColumnaNueva = false;
 
     function camposSuperioresVacios() {
         return !(inputFecha && inputFecha.value)
-            && !(inputHora && inputHora.value)
             && !(inputAcuerdos && inputAcuerdos.value.trim())
             && !(inputTemas && inputTemas.value.trim());
     }
@@ -650,15 +646,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
-            // Validación de horario permitido (7:00 am - 9:00 pm)
-            if (inputHora && inputHora.value) {
-                if (inputHora.value < HORA_MIN || inputHora.value > HORA_MAX) {
-                    inputHora.classList.add('is-invalid');
-                    mostrarAlerta('advertencia', 'Horario no permitido', 'Las tutorías solo pueden agendarse entre las 7:00 am y las 9:00 pm.');
-                    return;
-                }
-            }
-
             mostrarConfirmacion(
                 'advertencia',
                 '¿Registrar tutoría grupal?',
@@ -693,8 +680,6 @@ document.addEventListener('DOMContentLoaded', function () {
         mostrarAlerta('advertencia', 'Fecha inválida', 'No se pueden registrar tutorías con fecha futura.');
     } else if (errorUrl === 'fecha_fuera_rango_15_dias') {
         mostrarAlerta('advertencia', 'Fecha inválida', 'Solo se permite registrar sesiones de tutoría con un máximo de 15 días de antigüedad.');
-    } else if (errorUrl === 'horario_no_permitido') {
-        mostrarAlerta('advertencia', 'Horario no permitido', 'Las tutorías solo pueden agendarse entre las 7:00 am y las 9:00 pm.');
     }
 
     if (exito || errorUrl) {

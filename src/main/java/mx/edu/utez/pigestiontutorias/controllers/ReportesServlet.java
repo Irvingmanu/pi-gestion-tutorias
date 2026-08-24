@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+import mx.edu.utez.pigestiontutorias.models.Alumno;
 import mx.edu.utez.pigestiontutorias.models.AlumnoBusquedaDTO;
 import mx.edu.utez.pigestiontutorias.models.AtencionAlumnoDTO;
 import mx.edu.utez.pigestiontutorias.models.AvanceTutorGrupal;
@@ -18,6 +19,7 @@ import mx.edu.utez.pigestiontutorias.models.ReporteExportDatos;
 import mx.edu.utez.pigestiontutorias.models.SesionGrupal;
 import mx.edu.utez.pigestiontutorias.models.SolicitudPendienteDTO;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
+import mx.edu.utez.pigestiontutorias.models.TrayectoriaGrupoDTO;
 import mx.edu.utez.pigestiontutorias.models.dao.AlumnoDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.CanalizacionDao;
 import mx.edu.utez.pigestiontutorias.models.dao.GrupoDao;
@@ -635,8 +637,39 @@ public class ReportesServlet extends HttpServlet {
                 avanceGrupal, atenciones, canalizaciones, tituloPeriodo,
                 request.getParameter("nombreCarrera"), request.getParameter("nombreCuatrimestre"),
                 request.getParameter("nombreGrupo"), nombreTutor, request.getParameter("nombreAlumno"),
+                resolverDatosAlumno(matricula),
                 decodificarImagenBase64(request.getParameter("imagenPastel")),
                 decodificarImagenBase64(request.getParameter("imagenBarras")));
+    }
+
+    // Datos academicos completos del alumno filtrado (encabezado enriquecido del Excel/PDF):
+    // nombre + matricula vienen de ALUMNO, carrera/nivel/cuatrimestre-grupo/generacion del
+    // renglon vigente (FECHA_FIN IS NULL) de su trayectoria (ALUMNO_GRUPO_HISTORICO), la misma
+    // fuente que ya usa la seccion "Trayectoria academica" del coordinador.
+    private ReporteExportDatos.DatosAcademicosAlumno resolverDatosAlumno(String matricula) {
+        if (matricula == null || matricula.isBlank()) return null;
+
+        Alumno alumno = alumnoDao.getById(matricula);
+        if (alumno == null) return null;
+
+        List<TrayectoriaGrupoDTO> trayectoria = alumnoDao.getTrayectoriaPorAlumno(matricula);
+        TrayectoriaGrupoDTO actual = trayectoria.stream()
+                .filter(t -> t.getFechaFin() == null)
+                .findFirst()
+                .orElse(trayectoria.isEmpty() ? null : trayectoria.get(trayectoria.size() - 1));
+
+        String nombreCompleto = alumno.getNombres() + " " + alumno.getApellidos();
+        String nivel = actual != null ? actual.getNivel() : null;
+        // "Carrera" combina nivel + nombre (ej. "TSU en Contabilidad"), como se ve en el resto
+        // del sistema; el nivel tambien se expone por separado (ej. "TSU").
+        String carrera = actual != null
+                ? (nivel != null && !nivel.isBlank() ? nivel + " en " + actual.getNombreCarrera() : actual.getNombreCarrera())
+                : null;
+        String cuatrimestreGrupo = actual != null ? actual.getCuatrimestre() + "° " + actual.getLetra() : null;
+        String generacion = actual != null ? actual.getGeneracion() : null;
+
+        return new ReporteExportDatos.DatosAcademicosAlumno(
+                matricula, nombreCompleto, carrera, nivel, cuatrimestreGrupo, generacion);
     }
 
     private String nombreArchivoExportacion(String extension) {

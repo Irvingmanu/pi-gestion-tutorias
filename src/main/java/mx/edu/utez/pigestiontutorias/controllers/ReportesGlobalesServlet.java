@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import com.lowagie.text.DocumentException;
+import mx.edu.utez.pigestiontutorias.models.Alumno;
 import mx.edu.utez.pigestiontutorias.models.AlumnoBusquedaDTO;
 import mx.edu.utez.pigestiontutorias.models.AtencionAlumnoDTO;
 import mx.edu.utez.pigestiontutorias.models.AvanceTutorGrupal;
@@ -612,11 +613,24 @@ public class ReportesGlobalesServlet extends HttpServlet {
 
         // El modal/hoja de Tutorías Grupales no aplica los filtros de carrera/cuatrimestre/tutor
         // (ver responderAvanceGrupal): siempre es el avance de todos los tutores en el periodo vigente.
+        // Excepcion: si hay un alumno filtrado (buscador de alumnos del dashboard), el reporte
+        // descargado debe acotarse a las tutorias grupales del tutor de ESE alumno unicamente
+        // -- de lo contrario el Excel/PDF mezclaba el avance de tutores ajenos al alumno elegido.
         PeriodoEscolar periodoVigente = periodoDao.getPeriodoVigente();
         List<AvanceTutorGrupal> avanceGrupal = periodoVigente != null
                 ? sesionGrupalDao.getAvancePorPeriodo(periodoVigente.getIdPeriodo(), periodoVigente.getFechaInicio(),
                 periodoVigente.getFechaFin(), periodoVigente.getAsistenciasGrupales())
                 : Collections.emptyList();
+
+        ReporteExportDatos.DatosAcademicosAlumno datosAlumno = null;
+        if (matricula != null && !matricula.isBlank()) {
+            var alumnoFiltrado = alumnoDAO.getById(matricula);
+            Integer idGrupoAlumno = alumnoFiltrado != null ? alumnoFiltrado.getIdGrupo() : null;
+            avanceGrupal = idGrupoAlumno != null
+                    ? avanceGrupal.stream().filter(a -> a.getIdGrupo() == idGrupoAlumno).toList()
+                    : Collections.emptyList();
+            datosAlumno = resolverDatosAlumno(matricula, alumnoFiltrado);
+        }
 
         List<AtencionAlumnoDTO> atenciones = sesionIndividualDao.getAtencionesIndividuales(
                 idTutor, idCarrera, cuatrimestre, letra, desde, hasta, matricula);
@@ -633,9 +647,36 @@ public class ReportesGlobalesServlet extends HttpServlet {
                 avanceGrupal, atenciones, canalizaciones, tituloPeriodo,
                 request.getParameter("nombreCarrera"), request.getParameter("nombreCuatrimestre"),
                 request.getParameter("nombreGrupo"), request.getParameter("nombreTutor"),
-                request.getParameter("nombreAlumno"),
+                request.getParameter("nombreAlumno"), datosAlumno,
                 decodificarImagenBase64(request.getParameter("imagenPastel")),
                 decodificarImagenBase64(request.getParameter("imagenBarras")));
+    }
+
+    // Datos academicos completos del alumno filtrado (encabezado enriquecido del Excel/PDF):
+    // nombre + matricula vienen de ALUMNO, carrera/nivel/cuatrimestre-grupo/generacion del
+    // renglon vigente (FECHA_FIN IS NULL) de su trayectoria (ALUMNO_GRUPO_HISTORICO), la misma
+    // fuente que ya usa la seccion "Trayectoria academica" de esta misma pantalla.
+    private ReporteExportDatos.DatosAcademicosAlumno resolverDatosAlumno(String matricula, Alumno alumno) {
+        if (alumno == null) return null;
+
+        List<TrayectoriaGrupoDTO> trayectoria = alumnoDAO.getTrayectoriaPorAlumno(matricula);
+        TrayectoriaGrupoDTO actual = trayectoria.stream()
+                .filter(t -> t.getFechaFin() == null)
+                .findFirst()
+                .orElse(trayectoria.isEmpty() ? null : trayectoria.get(trayectoria.size() - 1));
+
+        String nombreCompleto = alumno.getNombres() + " " + alumno.getApellidos();
+        String nivel = actual != null ? actual.getNivel() : null;
+        // "Carrera" combina nivel + nombre (ej. "TSU en Contabilidad"), como se ve en el resto
+        // del sistema; el nivel tambien se expone por separado (ej. "TSU").
+        String carrera = actual != null
+                ? (nivel != null && !nivel.isBlank() ? nivel + " en " + actual.getNombreCarrera() : actual.getNombreCarrera())
+                : null;
+        String cuatrimestreGrupo = actual != null ? actual.getCuatrimestre() + "° " + actual.getLetra() : null;
+        String generacion = actual != null ? actual.getGeneracion() : null;
+
+        return new ReporteExportDatos.DatosAcademicosAlumno(
+                matricula, nombreCompleto, carrera, nivel, cuatrimestreGrupo, generacion);
     }
 
     // Las graficas (Chart.js) solo existen en el navegador: el JS las captura con

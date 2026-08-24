@@ -89,6 +89,46 @@ public class ReportesDao {
         }
     }
 
+    // Filtros opcionales de tutor/carrera/cuatrimestre/letra/matricula para las consultas sobre
+    // CANALIZACION. A diferencia de agregarFiltrosAlumno (que exige una asignacion activa sobre
+    // el grupo ACTUAL del alumno via ASIGNACION_TUTOR), el filtro de tutor aqui se resuelve
+    // contra quien realmente registro la SESION_INDIVIDUAL (Programada o Espontanea) que origino
+    // la canalizacion -- mismo criterio que ya usa CanalizacionDao.getCanalizacionesDetalladas
+    // para el modal "Alumnos Canalizados". Con ASIGNACION_TUTOR, una canalizacion de una tutoria
+    // espontanea atendida por un tutor distinto al asignado al grupo del alumno quedaba excluida
+    // del conteo/grafica/exportacion, aunque si aparecia en ese modal. Se usa EXISTS (no JOIN)
+    // para no duplicar filas si una canalizacion llegara a quedar referenciada por mas de una
+    // sesion.
+    private void agregarFiltrosCanalizacion(StringBuilder sql, List<Object> params, String aliasAlumno,
+                                            String aliasCanalizacion, Integer idTutor, Integer idCarrera,
+                                            Integer cuatrimestre, String letra, String matricula) {
+        if (idTutor != null) {
+            sql.append(" AND EXISTS (SELECT 1 FROM SESION_INDIVIDUAL si " +
+                    "WHERE si.ID_CANALIZACION = ").append(aliasCanalizacion).append(".ID_CANALIZACION AND si.ID_TUTOR = ?) ");
+            params.add(idTutor);
+        }
+        if (idCarrera != null || cuatrimestre != null || (letra != null && !letra.isBlank())) {
+            sql.append(" AND EXISTS (SELECT 1 FROM GRUPO g2 WHERE g2.ID_GRUPO = ").append(aliasAlumno).append(".ID_GRUPO ");
+            if (idCarrera != null) {
+                sql.append(" AND g2.ID_CARRERA = ? ");
+                params.add(idCarrera);
+            }
+            if (cuatrimestre != null) {
+                sql.append(" AND g2.CUATRIMESTRE = ? ");
+                params.add(cuatrimestre);
+            }
+            if (letra != null && !letra.isBlank()) {
+                sql.append(" AND g2.LETRA = ? ");
+                params.add(letra);
+            }
+            sql.append(") ");
+        }
+        if (matricula != null && !matricula.isBlank()) {
+            sql.append(" AND ").append(aliasAlumno).append(".MATRICULA = ? ");
+            params.add(matricula);
+        }
+    }
+
     private int ejecutarConteo(Connection con, String sql, List<Object> params) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             aplicarParametros(ps, params);
@@ -157,7 +197,7 @@ public class ReportesDao {
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra, matricula);
+        agregarFiltrosCanalizacion(sql, params, "a", "c", idTutor, idCarrera, cuatrimestre, letra, matricula);
 
         return ejecutarConteo(con, sql.toString(), params);
     }
@@ -273,7 +313,7 @@ public class ReportesDao {
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra, matricula);
+        agregarFiltrosCanalizacion(sql, params, "a", "c", idTutor, idCarrera, cuatrimestre, letra, matricula);
         sql.append(" GROUP BY ar.NOMBRE ORDER BY TOTAL DESC");
 
         try (PreparedStatement ps = con.prepareStatement(sql.toString())) {
@@ -306,7 +346,7 @@ public class ReportesDao {
         List<Object> params = new ArrayList<>();
         params.add(desde);
         params.add(hasta);
-        agregarFiltrosAlumno(sql, params, "a", idTutor, idCarrera, cuatrimestre, letra, matricula);
+        agregarFiltrosCanalizacion(sql, params, "a", "c", idTutor, idCarrera, cuatrimestre, letra, matricula);
         sql.append(" ORDER BY c.FECHA_CANALIZACION DESC");
 
         try (PreparedStatement ps = con.prepareStatement(sql.toString())) {

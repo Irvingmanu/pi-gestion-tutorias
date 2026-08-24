@@ -171,7 +171,6 @@ public class SesionGrupalServlet extends HttpServlet {
 
         String idGrupoStr = request.getParameter("idGrupo");
         String fechaStr = request.getParameter("fecha");
-        String hora = request.getParameter("hora");
         String acuerdos = request.getParameter("acuerdos");
         String temas = request.getParameter("temas");
         String asesorias = request.getParameter("asesorias");
@@ -187,7 +186,6 @@ public class SesionGrupalServlet extends HttpServlet {
 
         if (idGrupoStr == null || idGrupoStr.isBlank()
                 || fechaStr == null || fechaStr.isBlank()
-                || hora == null || hora.isBlank()
                 || acuerdos == null || acuerdos.isBlank()
                 || temas == null || temas.isBlank()) {
             response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=campos_incompletos");
@@ -224,21 +222,6 @@ public class SesionGrupalServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=fecha_fuera_periodo");
             return;
         }
-        // Blindaje de servidor: la hora debe estar dentro del horario académico permitido (7:00 - 21:00)
-        java.time.LocalTime horaSesion;
-        try {
-            horaSesion = java.time.LocalTime.parse(hora.trim());
-        } catch (java.time.format.DateTimeParseException e) {
-            response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=datos_invalidos");
-            return;
-        }
-        java.time.LocalTime horaMin = java.time.LocalTime.of(7, 0);
-        java.time.LocalTime horaMax = java.time.LocalTime.of(21, 0);
-        if (horaSesion.isBefore(horaMin) || horaSesion.isAfter(horaMax)) {
-            response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=horario_no_permitido");
-            return;
-        }
-
         // Blindaje de servidor: el grupo enviado debe ser uno de los que el tutor
         // realmente tiene asignados, sin confiar en que el <select> del formulario
         // no fue manipulado.
@@ -254,7 +237,9 @@ public class SesionGrupalServlet extends HttpServlet {
         sesion.setIdGrupo(idGrupo);
         sesion.setIdTutor(tutor.getNumeroEmpleado());
         sesion.setFecha(fecha);
-        sesion.setHora(hora.trim());
+        // El tutor ya no captura la hora manualmente: se registra la hora real
+        // del servidor en el momento en que se guarda la sesion.
+        sesion.setHora(java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
         sesion.setTemasTratados(temas.trim());
         sesion.setAcuerdos(acuerdos.trim());
         sesion.setAsesoriasGrupales(asesorias);

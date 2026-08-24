@@ -116,16 +116,23 @@ public class ReporteExcelBuilder {
         filaPeriodo.getCell(0).setCellStyle(estiloEtiqueta);
         celda(filaPeriodo, 1, datos.getTituloPeriodo());
 
-        Row filaFiltros = nuevaFila(hoja, i++);
-        celda(filaFiltros, 0, "Filtros:");
-        filaFiltros.getCell(0).setCellStyle(estiloEtiqueta);
-        celda(filaFiltros, 1, "Carrera: " + orTodas(datos.getNombreCarrera())
-                + " | Cuatrimestre: " + orTodos(datos.getNombreCuatrimestre())
-                + " | Grupo: " + orTodos(datos.getNombreGrupo())
-                + " | Tutor: " + orTodos(datos.getNombreTutor())
-                + (datos.getNombreAlumno() != null && !datos.getNombreAlumno().isBlank()
-                ? " | Alumno: " + datos.getNombreAlumno() : ""));
+        // La fila de Carrera/Cuatrimestre/Grupo/Tutor solo aporta en el reporte agregado: en el
+        // reporte de un alumno especifico siempre queda en "Todas/Todos" y el bloque "Datos del
+        // Alumno" de abajo ya cubre esa informacion, asi que se omite para no duplicarla.
+        if (datos.getDatosAlumno() == null) {
+            Row filaFiltros = nuevaFila(hoja, i++);
+            celda(filaFiltros, 0, "Filtros:");
+            filaFiltros.getCell(0).setCellStyle(estiloEtiqueta);
+            celda(filaFiltros, 1, "Carrera: " + orTodas(datos.getNombreCarrera())
+                    + " | Cuatrimestre: " + orTodos(datos.getNombreCuatrimestre())
+                    + " | Grupo: " + orTodos(datos.getNombreGrupo())
+                    + " | Tutor: " + orTodos(datos.getNombreTutor())
+                    + (datos.getNombreAlumno() != null && !datos.getNombreAlumno().isBlank()
+                    ? " | Alumno: " + datos.getNombreAlumno() : ""));
+        }
         i++;
+
+        i = agregarDatosAlumno(hoja, datos, i, estiloEncabezado, estiloEtiqueta);
 
         encabezados(hoja, i++, estiloEncabezado, "Indicador", "Cantidad");
         celda(nuevaFila(hoja, i), 0, "Alumnos Atendidos");
@@ -164,6 +171,38 @@ public class ReporteExcelBuilder {
                 "Gráfica: Estado de Solicitudes de Asesoría");
 
         autoajustarColumnas(hoja, 2);
+    }
+
+    // Ficha academica del alumno filtrado (buscador de alumnos del dashboard): nombre completo +
+    // matricula, carrera, nivel, cuatrimestre-grupo y generacion, resueltos server-side a partir
+    // de su trayectoria (ver ReportesServlet/ReportesGlobalesServlet.resolverDatosAlumno). Si no
+    // hay alumno filtrado no se agrega nada y se devuelve el mismo indice de fila recibido.
+    private int agregarDatosAlumno(Sheet hoja, ReporteExportDatos datos, int indiceFila,
+                                   CellStyle estiloEncabezado, CellStyle estiloEtiqueta) {
+        ReporteExportDatos.DatosAcademicosAlumno da = datos.getDatosAlumno();
+        if (da == null) return indiceFila;
+
+        int i = indiceFila;
+
+        encabezados(hoja, i++, estiloEncabezado, "Datos del Alumno", "");
+
+        String nombreMatricula = (da.getNombreCompleto() != null ? da.getNombreCompleto() : "")
+                + (da.getMatricula() != null && !da.getMatricula().isBlank() ? " (" + da.getMatricula() + ")" : "");
+        i = filaEtiquetaValor(hoja, i, estiloEtiqueta, "Alumno:", nombreMatricula);
+        i = filaEtiquetaValor(hoja, i, estiloEtiqueta, "Carrera:", orTodas(da.getCarrera()));
+        i = filaEtiquetaValor(hoja, i, estiloEtiqueta, "Nivel:", orTodos(da.getNivel()));
+        i = filaEtiquetaValor(hoja, i, estiloEtiqueta, "Cuatrimestre y Grupo:", orTodos(da.getCuatrimestreGrupo()));
+        i = filaEtiquetaValor(hoja, i, estiloEtiqueta, "Generación:", orTodos(da.getGeneracion()));
+
+        return i + 1;
+    }
+
+    private int filaEtiquetaValor(Sheet hoja, int indiceFila, CellStyle estiloEtiqueta, String etiqueta, String valor) {
+        Row fila = nuevaFila(hoja, indiceFila);
+        celda(fila, 0, etiqueta);
+        fila.getCell(0).setCellStyle(estiloEtiqueta);
+        celda(fila, 1, valor);
+        return indiceFila + 1;
     }
 
     // Inserta la imagen (PNG capturada del canvas de Chart.js en el navegador) debajo de las
@@ -227,7 +266,7 @@ public class ReporteExcelBuilder {
         int i = 0;
 
         encabezados(hoja, i++, estiloEncabezado, "Tipo", "Fecha", "Hora", "Grupo", "Matrícula", "Alumno",
-                "Estado", "Temas Tratados", "Acuerdos");
+                "Estado", "Temas Tratados", "Acuerdos", "Vínculo Directo");
         for (AtencionAlumnoDTO a : datos.getAtenciones()) {
             Row fila = nuevaFila(hoja, i++);
             celda(fila, 0, a.getTipo());
@@ -239,9 +278,10 @@ public class ReporteExcelBuilder {
             celda(fila, 6, a.getEstado());
             celda(fila, 7, a.getTemasTratados());
             celda(fila, 8, a.getAcuerdos());
+            celda(fila, 9, a.getVinculoDirecto() != null && !a.getVinculoDirecto().isBlank() ? a.getVinculoDirecto() : "N/A");
         }
 
-        autoajustarColumnas(hoja, 9);
+        autoajustarColumnas(hoja, 10);
     }
 
     // Hoja 4: lista completa de alumnos canalizados a areas de apoyo (mismos filtros que el

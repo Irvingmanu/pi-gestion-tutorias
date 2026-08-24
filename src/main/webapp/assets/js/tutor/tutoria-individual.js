@@ -195,6 +195,24 @@ document.addEventListener('DOMContentLoaded', function () {
         // ==========================================================================
         var selectGrupo = document.getElementById('grupoSelector');
         var feedbackAlumno = document.getElementById('alumnoEstado');
+        var inputTemasEspontanea = document.getElementById('temasTratados');
+        var inputAcuerdosEspontanea = document.getElementById('acuerdos');
+
+        // Temas Tratados y Acuerdos quedan bloqueados (ver "disabled" en el JSP) hasta que
+        // el tutor eligió tanto el Grupo como el Alumno; un campo disabled no viaja en el
+        // POST, pero mientras tanto tampoco puede volverse válido el <select> de alumno
+        // (también required), así que el formulario no se puede enviar en ese estado.
+        function actualizarCamposPorGrupoAlumno() {
+            var hayGrupoYAlumno = !!(selectGrupo && selectGrupo.value)
+                && !!($alumnoBuscador && $alumnoBuscador.val());
+
+            if (inputTemasEspontanea) {
+                inputTemasEspontanea.disabled = !hayGrupoYAlumno;
+            }
+            if (inputAcuerdosEspontanea) {
+                inputAcuerdosEspontanea.disabled = !hayGrupoYAlumno;
+            }
+        }
         // Guardado defensivo: si el CDN de jQuery/Select2 no cargó (ej. red bloqueada),
         // el resto del formulario (fecha, hora, temas, etc.) debe seguir funcionando.
         var $alumnoBuscador = (typeof jQuery !== 'undefined' && jQuery.fn.select2)
@@ -207,6 +225,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 width: '100%'
             });
         }
+
+        actualizarCamposPorGrupoAlumno();
 
         // Parche Bootstrap <-> Select2: el <select> real queda oculto (display:none)
         // tras el widget de Select2, así que Bootstrap no puede pintarle su borde rojo
@@ -305,6 +325,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     limpiarAlumnoInvalido();
                 }
 
+                actualizarCamposPorGrupoAlumno();
                 verificarFormularioEspontanea();
             });
 

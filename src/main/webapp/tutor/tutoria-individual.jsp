@@ -180,14 +180,17 @@
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
                                 <label for="temasTratados" class="form-label fs-6 fw-bold">Temas Tratados</label>
+                                <!-- Bloqueado hasta elegir Grupo y Alumno (ver actualizarCamposPorGrupoAlumno en
+                                     tutoria-individual.js): evita que el tutor redacte temas/acuerdos de una
+                                     sesion que todavia no tiene a quien pertenece. -->
                                 <textarea id="temasTratados" name="temasTratados" class="form-control form-control-figma fs-6"
-                                          rows="3" placeholder="Describe los temas tratados en la sesión" required>${temasEnviados}</textarea>
+                                          rows="3" placeholder="Selecciona primero el grupo y el alumno" required disabled>${temasEnviados}</textarea>
                                 <div class="invalid-feedback">Este campo es obligatorio.</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="acuerdos" class="form-label fs-6 fw-bold">Acuerdos</label>
                                 <textarea id="acuerdos" name="acuerdos" class="form-control form-control-figma fs-6"
-                                          rows="3" placeholder="Describe los acuerdos alcanzados" required>${acuerdosEnviados}</textarea>
+                                          rows="3" placeholder="Selecciona primero el grupo y el alumno" required disabled>${acuerdosEnviados}</textarea>
                                 <div class="invalid-feedback">Este campo es obligatorio.</div>
                             </div>
                         </div>

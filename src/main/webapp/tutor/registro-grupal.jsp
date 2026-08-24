@@ -40,7 +40,7 @@
                     <!-- novalidate: quitamos los mensajes nativos del navegador, igual que en coordinador -->
                     <form id="formRegistroGrupal" class="needs-validation" action="${pageContext.request.contextPath}/tutoria-grupal" method="post" novalidate>
                         <!-- Bandera para el guardado parcial: cuando el tutor solo justifica/corrige
-                             asistencia de sesiones ya registradas (sin llenar Fecha/Hora/Acuerdos/Temas
+                             asistencia de sesiones ya registradas (sin llenar Fecha/Acuerdos/Temas
                              ni tocar la columna "Sesión actual"), registro-grupal.js la pone en "true"
                              para que el servidor NO cree una sesión nueva y solo actualice la asistencia. -->
                         <input type="hidden" id="inputSoloAsistencia" name="soloAsistencia" value="false">
@@ -60,18 +60,12 @@
                                 </select>
                                 <div class="invalid-feedback">Selecciona un grupo.</div>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-6">
                                 <label for="fecha" class="form-label fs-6 fw-bold">Fecha</label>
                                 <input type="date" id="fecha" name="fecha" class="form-control form-control-figma w-100 fs-6"
                                        <c:if test="${not empty periodoVigente}">min="<fmt:formatDate value="${periodoVigente.fechaInicio}" pattern="yyyy-MM-dd"/>"</c:if>
                                        required>
                                 <div class="invalid-feedback">Selecciona una fecha válida.</div>
-                            </div>
-                            <div class="col-md-3">
-                                <label for="hora" class="form-label fs-6 fw-bold">Hora</label>
-                                <input type="time" id="hora" name="hora" class="form-control form-control-figma w-100 fs-6"
-                                       min="07:00" max="21:00" required>
-                                <div class="invalid-feedback">El horario debe ser de 7:00 am a 9:00 pm.</div>
                             </div>
                         </div>
 
