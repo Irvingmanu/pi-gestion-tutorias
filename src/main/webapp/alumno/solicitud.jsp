@@ -50,13 +50,15 @@
 
         <div class="form-wrap-figma" style="max-width: 50%;">
 
-            <form method="post" action="${pageContext.request.contextPath}/solicitudes" id="formSolicitud">
+            <form method="post" action="${pageContext.request.contextPath}/solicitudes" id="formSolicitud"
+                  class="needs-validation" novalidate>
                 <input type="hidden" name="accion" value="crear">
 
                 <div class="mb-3">
                     <label for="asunto" class="form-label fw-bold">Asunto</label>
                     <input type="text" class="form-control form-control-figma" id="asunto" name="asunto"
                            maxlength="150" required>
+                    <div class="invalid-feedback">Escribe el asunto de tu solicitud.</div>
                 </div>
 
                 <div class="row g-3 mb-3">
@@ -65,6 +67,7 @@
                         <select id="fechaPropuesta" name="fechaPropuesta" class="form-select form-control-figma" required>
                             <option value="" selected disabled>Seleccione un día</option>
                         </select>
+                        <div class="invalid-feedback">Selecciona un día disponible.</div>
                     </div>
                     <div class="col-md-4">
                         <label for="duracionPropuesta" class="form-label fw-bold">Duración</label>
@@ -73,12 +76,14 @@
                             <option value="1">1 hora</option>
                             <option value="2">2 horas</option>
                         </select>
+                        <div class="invalid-feedback">Selecciona la duración.</div>
                     </div>
                     <div class="col-md-4">
                         <label for="horaPropuesta" class="form-label fw-bold">Hora de inicio</label>
                         <select id="horaPropuesta" name="horaPropuesta" class="form-select form-control-figma" required disabled>
                             <option value="" selected disabled>Seleccione la duración primero</option>
                         </select>
+                        <div class="invalid-feedback">Selecciona una hora disponible.</div>
                     </div>
                 </div>
 
@@ -86,12 +91,13 @@
                     <label for="descripcion" class="form-label fw-bold">Descripción</label>
                     <textarea class="form-control form-control-figma" id="descripcion" name="descripcion"
                               rows="4" required></textarea>
+                    <div class="invalid-feedback">Describe brevemente el motivo de tu solicitud.</div>
                 </div>
 
                 <div class="d-flex justify-content-end gap-2">
                     <a href="${pageContext.request.contextPath}/agenda"
                        class="btn btn-cancelar-figma">Cancelar</a>
-                    <button type="submit" class="btn btn-figma" id="btnEnviarSolicitud">Enviar</button>
+                    <button type="submit" class="btn btn-figma" id="btnEnviarSolicitud" disabled>Enviar</button>
                 </div>
             </form>
 
@@ -101,10 +107,12 @@
 
 </div>
 
+<jsp:include page="../includes/cargando.jsp" />
 <jsp:include page="../includes/alertas.jsp" />
 
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/cargando.js"></script>
 
 <!-- Puente entre EL y el JS externo: valores calculados por el servidor -->
 <script>

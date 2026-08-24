@@ -157,15 +157,14 @@
 
                     <div class="mb-4">
                         <label class="campo-label fs-6 fw-bold" for="nombre">Nombre del periodo</label>
-                        <!-- Solo letras, numeros, espacios y guion (-); el oninput bloquea
-                             cualquier otro signo mientras se escribe, igual que en
-                             matricula/telefono de formulario-alumno.jsp. -->
+                        <!-- Readonly: se autocompleta a partir de la Fecha de inicio elegida
+                             (ver actualizarNombreAutomatico() en periodos.js). El coordinador
+                             ya no lo captura a mano, para que siempre quede en el formato
+                             "Mes - Mes Año" que espera el resto del sistema. -->
                         <input type="text" id="nombre" name="nombre" class="form-control form-control-figma w-100 fs-6"
-                               placeholder="Ej. Septiembre - Diciembre 2026" maxlength="50"
+                               placeholder="Se genera al elegir la fecha de inicio" maxlength="50"
                                pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-]+$"
-                               title="Solo se permiten letras, números, espacios y guion (-)"
-                               oninput="this.value = this.value.replace(/[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-]/g, '')"
-                               data-msg-requerido="Ingresa un nombre para el periodo." required>
+                               data-msg-requerido="Selecciona una fecha de inicio válida para generar el nombre." readonly required>
                         <div class="invalid-feedback">Solo se permiten letras, números, espacios y guion (-).</div>
                     </div>
 
@@ -175,7 +174,14 @@
                             <input type="date" id="fechaInicio" name="fechaInicio" class="form-control form-control-figma w-100 fs-6"
                                    style="cursor: pointer;" onclick="this.showPicker()"
                                    data-msg-requerido="Selecciona la fecha de inicio." required>
-                            <div class="invalid-feedback">Selecciona la fecha de inicio.</div>
+                            <!-- Texto inicial = mensaje del candado de mes (unico motivo de
+                                 invalidez de este campo aparte de "obligatorio"); ver
+                                 actualizarValidezFechas() en periodos.js. -->
+                            <div class="invalid-feedback">Los cuatrimestres solo pueden iniciar en Enero, Mayo o Septiembre.</div>
+                            <!-- Siempre visible (no depende de is-invalid): para que el
+                                 coordinador vea la regla de entrada ANTES de equivocarse, en
+                                 vez de enterarse solo despues de que el campo se le limpie solo. -->
+                            <div class="form-text text-danger mb-0">Solo se puede iniciar en Enero, Mayo o Septiembre.</div>
                         </div>
                         <div class="col-md-6">
                             <label class="campo-label fs-6 fw-bold" for="fechaFin">Fecha de fin</label>
@@ -219,10 +225,12 @@
     <input type="hidden" name="idPeriodo" id="inputReactivarPeriodo">
 </form>
 
+<jsp:include page="../includes/cargando.jsp" />
 <jsp:include page="../includes/alertas.jsp" />
 
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/cargando.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/periodos.js"></script>
 </body>
 </html>

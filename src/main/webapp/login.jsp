@@ -90,7 +90,9 @@
 
 </div>
 
+<jsp:include page="includes/cargando.jsp" />
 <script src="assets/js/bootstrap.js"></script>
+<script src="assets/js/cargando.js"></script>
 <script src="assets/js/auth.js"></script>
 <script>
     (() => {

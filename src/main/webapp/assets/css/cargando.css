@@ -1,0 +1,32 @@
+/* Overlay global de "cargando" (ver includes/cargando.jsp + assets/js/cargando.js). */
+
+.overlay-cargando {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.65);
+    /* Por encima de los modales de Bootstrap (backdrop ~1050, modal ~1055) para que
+       tape tambien una confirmacion que se esta cerrando al mandar el formulario. */
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+}
+
+.overlay-cargando.mostrando {
+    display: flex;
+}
+
+.spinner-cargando {
+    width: 3rem;
+    height: 3rem;
+    border: 0.35rem solid #d9e7e2;
+    border-top-color: var(--utez-green, #008b74);
+    border-radius: 50%;
+    animation: girar-cargando 0.7s linear infinite;
+}
+
+@keyframes girar-cargando {
+    to {
+        transform: rotate(360deg);
+    }
+}

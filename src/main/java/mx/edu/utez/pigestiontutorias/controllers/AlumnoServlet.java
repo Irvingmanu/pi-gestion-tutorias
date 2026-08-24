@@ -395,10 +395,10 @@ public class AlumnoServlet extends HttpServlet {
             boolean esPrimerCuatrimestre = grupo.getCuatrimestre() == 1;
 
             List<Alumno> alumnosValidos = new ArrayList<>();
-            // Numero de fila REAL del Excel (no el indice 0-based de POI) de cada fila
-            // descartada, para que el coordinador sepa exactamente cuales corregir en vez
-            // de solo un conteo ("se omitieron 10 filas" sin decir cuales de las 50).
-            List<Integer> filasInvalidas = new ArrayList<>();
+            // Un mensaje por cada fila descartada ("Fila 6: el correo 'x' ya está
+            // registrado."), no solo el numero de renglon, para que el coordinador corrija
+            // de una sola pasada en vez de adivinar o volver a intentar a ciegas.
+            List<String> filasInvalidas = new ArrayList<>();
 
             // Detectan duplicados DENTRO del mismo archivo (la validacion contra la BD, via
             // alumnoDAO.existeX, solo detecta duplicados contra registros ya guardados).
@@ -425,7 +425,7 @@ public class AlumnoServlet extends HttpServlet {
                         } else {
                             // Reingreso (cuatrimestre >= 2): la matricula es obligatoria. NO
                             // se autogenera nada; alumno.setMatricula(null) hace que
-                            // esFilaAlumnoValida() descarte la fila (cuenta en filasConError)
+                            // validarFilaAlumno() descarte la fila (cuenta en filasInvalidas)
                             // en vez de arriesgarse a duplicar/perder el historial academico
                             // del alumno con una matricula inventada.
                             matricula = null;
@@ -450,19 +450,20 @@ public class AlumnoServlet extends HttpServlet {
 
                     // Columna G: Telefono real del archivo (10 digitos), ya no se genera
                     // ningun placeholder. Se normaliza quitando espacios/guiones antes de
-                    // validar el formato en esFilaAlumnoValida (REGEX_TELEFONO).
+                    // validar el formato en validarFilaAlumno (REGEX_TELEFONO).
                     String telefono = obtenerTexto(fila.getCell(6));
                     alumno.setTelefono(telefono != null ? telefono.replaceAll("[^0-9]", "") : null);
 
                     alumno.setIdGrupo(idGrupo);
 
-                    if (esFilaAlumnoValida(alumno, matriculasEnLote, correosEnLote, telefonosEnLote)) {
+                    String motivo = validarFilaAlumno(alumno, matriculasEnLote, correosEnLote, telefonosEnLote);
+                    if (motivo == null) {
                         alumnosValidos.add(alumno);
                     } else {
                         // f es el indice 0-based de POI (fila 0 = encabezados de Excel, fila
                         // 1 = primera fila de datos = renglon 2 del Excel); f+1 lo convierte
                         // al numero de renglon tal cual lo ve el coordinador en la hoja.
-                        filasInvalidas.add(f + 1);
+                        filasInvalidas.add("Fila " + (f + 1) + ": " + motivo);
                     }
                 }
             }
@@ -496,25 +497,56 @@ public class AlumnoServlet extends HttpServlet {
     // Blindaje de servidor: valida formato de cada campo y descarta duplicados, tanto
     // contra la BD (alumnoDAO.existeX) como dentro del propio archivo (matriculasEnLote/
     // correosEnLote/telefonosEnLote), antes de dejar pasar la fila al batch de insercion.
-    private boolean esFilaAlumnoValida(Alumno alumno, Set<String> matriculasEnLote, Set<String> correosEnLote, Set<String> telefonosEnLote) {
-        if (esTextoVacio(alumno.getNombres()) || !alumno.getNombres().matches(REGEX_NOMBRE) || alumno.getNombres().length() > MAX_NOMBRES) return false;
-        if (esTextoVacio(alumno.getApellidoPaterno()) || !alumno.getApellidoPaterno().matches(REGEX_NOMBRE) || alumno.getApellidoPaterno().length() > MAX_APELLIDO) return false;
+    // Regresa null si la fila es valida, o el motivo exacto (para filasInvalidas) si no.
+    private String validarFilaAlumno(Alumno alumno, Set<String> matriculasEnLote, Set<String> correosEnLote, Set<String> telefonosEnLote) {
+        if (esTextoVacio(alumno.getNombres()) || !alumno.getNombres().matches(REGEX_NOMBRE) || alumno.getNombres().length() > MAX_NOMBRES) {
+            return "el nombre '" + alumno.getNombres() + "' es inválido o está vacío.";
+        }
+        if (esTextoVacio(alumno.getApellidoPaterno()) || !alumno.getApellidoPaterno().matches(REGEX_NOMBRE) || alumno.getApellidoPaterno().length() > MAX_APELLIDO) {
+            return "el apellido paterno '" + alumno.getApellidoPaterno() + "' es inválido o está vacío.";
+        }
         // Apellido Materno (columna D) es obligatorio en la carga masiva (a diferencia del
         // alta individual, donde formulario-alumno.jsp si lo deja opcional): una fila con
         // esa celda vacia se descarta igual que si le faltara el Apellido Paterno.
-        if (esTextoVacio(alumno.getApellidoMaterno()) || !alumno.getApellidoMaterno().matches(REGEX_NOMBRE) || alumno.getApellidoMaterno().length() > MAX_APELLIDO) return false;
-        if (alumno.getMatricula() == null || !alumno.getMatricula().matches(REGEX_MATRICULA)) return false;
-        if (alumno.getCorreoInstitucional() == null || !alumno.getCorreoInstitucional().matches(REGEX_CORREO) || alumno.getCorreoInstitucional().length() > MAX_CORREO) return false;
-        if (alumno.getTelefono() == null || !alumno.getTelefono().matches(REGEX_TELEFONO)) return false;
-        if (alumno.getIdGenero() == null) return false;
+        if (esTextoVacio(alumno.getApellidoMaterno()) || !alumno.getApellidoMaterno().matches(REGEX_NOMBRE) || alumno.getApellidoMaterno().length() > MAX_APELLIDO) {
+            return "el apellido materno '" + alumno.getApellidoMaterno() + "' es inválido o está vacío (es obligatorio en la carga masiva).";
+        }
+        if (alumno.getMatricula() == null) {
+            return "falta la matrícula (obligatoria para alumnos de 2° cuatrimestre en adelante, ya que ya tienen una de su generación original).";
+        }
+        if (!alumno.getMatricula().matches(REGEX_MATRICULA)) {
+            return "la matrícula '" + alumno.getMatricula() + "' no tiene el formato válido (10 caracteres alfanuméricos).";
+        }
+        if (alumno.getCorreoInstitucional() == null || !alumno.getCorreoInstitucional().matches(REGEX_CORREO) || alumno.getCorreoInstitucional().length() > MAX_CORREO) {
+            return "el correo '" + alumno.getCorreoInstitucional() + "' no es válido (debe terminar en @utez.edu.mx).";
+        }
+        if (alumno.getTelefono() == null || !alumno.getTelefono().matches(REGEX_TELEFONO)) {
+            return "el teléfono '" + alumno.getTelefono() + "' debe tener exactamente 10 dígitos.";
+        }
+        if (alumno.getIdGenero() == null) {
+            return "el género no coincide con ninguno del catálogo (usa Masculino, Femenino u Otro).";
+        }
 
-        if (!matriculasEnLote.add(alumno.getMatricula())) return false;
-        if (!correosEnLote.add(alumno.getCorreoInstitucional().toLowerCase(Locale.ROOT))) return false;
-        if (!telefonosEnLote.add(alumno.getTelefono())) return false;
+        if (!matriculasEnLote.add(alumno.getMatricula())) {
+            return "la matrícula '" + alumno.getMatricula() + "' está repetida dentro del mismo archivo.";
+        }
+        if (!correosEnLote.add(alumno.getCorreoInstitucional().toLowerCase(Locale.ROOT))) {
+            return "el correo '" + alumno.getCorreoInstitucional() + "' está repetido dentro del mismo archivo.";
+        }
+        if (!telefonosEnLote.add(alumno.getTelefono())) {
+            return "el teléfono '" + alumno.getTelefono() + "' está repetido dentro del mismo archivo.";
+        }
 
-        if (alumnoDAO.existeMatricula(alumno.getMatricula())) return false;
-        if (alumnoDAO.existeCorreo(alumno.getCorreoInstitucional())) return false;
-        return !alumnoDAO.existeTelefono(alumno.getTelefono());
+        if (alumnoDAO.existeMatricula(alumno.getMatricula())) {
+            return "la matrícula '" + alumno.getMatricula() + "' ya está registrada en el sistema.";
+        }
+        if (alumnoDAO.existeCorreo(alumno.getCorreoInstitucional())) {
+            return "el correo '" + alumno.getCorreoInstitucional() + "' ya está registrado en el sistema.";
+        }
+        if (alumnoDAO.existeTelefono(alumno.getTelefono())) {
+            return "el teléfono '" + alumno.getTelefono() + "' ya está registrado en el sistema.";
+        }
+        return null;
     }
 
     private static boolean esTextoVacio(String texto) {

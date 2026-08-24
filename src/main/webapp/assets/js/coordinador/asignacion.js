@@ -23,6 +23,8 @@ document.addEventListener('DOMContentLoaded', function () {
         mostrarAlerta('error', 'Error en la Asignación', 'Esta asignación ya existe en la base de datos.');
     } else if (error === 'grupo_asignado') {
         mostrarAlerta('error', 'Grupo ya asignado', 'Este grupo ya tiene un tutor asignado en ese cuatrimestre y periodo escolar.');
+    } else if (error === 'asignacion_con_pendientes') {
+        mostrarAlerta('error', 'No se puede remover', 'No se puede remover al tutor de este grupo porque aún tiene sesiones o solicitudes pendientes con estos alumnos.');
     }
 
     if (exito || error) {

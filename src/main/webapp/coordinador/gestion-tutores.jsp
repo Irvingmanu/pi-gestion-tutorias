@@ -33,6 +33,24 @@
             Gestión de Tutores
         </div>
 
+        <!-- ==================== CARGA MASIVA: filas invalidas de la ultima subida ====================
+             TutoresServlet.procesarCargaMasivaTutores() guarda esta lista en SESSION (no en
+             la URL) cuando alguna fila del Excel se descarta. Cada elemento ya es el mensaje
+             completo con el motivo exacto (ej. "Fila 6: la academia 'Contabilidad' no existe
+             en el catálogo."), no solo el numero de renglon, para que el coordinador corrija
+             de una sola pasada. Se expone a JS via window.filasInvalidasTutoresExcel (ver el
+             bloque de toasts en tutor.js) y se borra de la sesion aqui mismo, para que no
+             vuelva a salir si el coordinador recarga la pagina despues. Mismo patron que
+             filasInvalidasExcel en gestion-grupos.jsp, salvo que aqui cada elemento es un
+             mensaje (String), no un numero, asi que va entre comillas dobles y escapado con
+             fn:replace por si el texto original (nombre, correo, etc.) trae una comilla. -->
+        <c:if test="${not empty sessionScope.filasInvalidasTutoresExcel}">
+            <script>
+                window.filasInvalidasTutoresExcel = [<c:forEach var="fila" items="${sessionScope.filasInvalidasTutoresExcel}" varStatus="st">"${fn:replace(fila, '"', '\\"')}"${st.last ? '' : ', '}</c:forEach>];
+            </script>
+            <c:remove var="filasInvalidasTutoresExcel" scope="session" />
+        </c:if>
+
         <!-- Buscar tutor / Filtro Academia / Nuevo Tutor -->
         <div class="row mb-3">
             <div class="col-12 d-flex justify-content-between align-items-end">
@@ -54,12 +72,17 @@
                     </select>
                 </div>
 
-                <!-- 3. Acciones (Nuevo Tutor) -->
+                <!-- 3. Acciones (Nuevo Tutor / Carga Masiva) -->
                 <div class="d-flex align-items-end gap-3">
                     <!-- Nuevo Tutor -->
                     <div class="text-center">
                         <label class="campo-label fs-6 d-block">Nuevo Tutor</label>
                         <a href="${pageContext.request.contextPath}/gestion-tutores?accion=nuevo" class="btn-figma text-decoration-none d-block">Agregar</a>
+                    </div>
+                    <!-- Carga Masiva -->
+                    <div class="text-center">
+                        <label class="campo-label fs-6 d-block">Carga Masiva</label>
+                        <button type="button" class="btn-figma d-block" data-bs-toggle="modal" data-bs-target="#modalCargaMasivaTutores">Carga Masiva</button>
                     </div>
                 </div>
             </div>
@@ -148,6 +171,54 @@
 
     </div>
 
+    <!-- ==================== MODAL: CARGA MASIVA DE TUTORES ====================
+         Columnas esperadas, fila 1 = encabezados, datos desde fila 2:
+         A) Nombres  B) Apellido paterno  C) Apellido materno (opcional)
+         D) Correo institucional (opcional: si viene vacio se autogenera con
+            primerNombre+apellidoPaterno+"@utez.edu.mx"; si viene lleno debe terminar en
+            @utez.edu.mx)  E) Telefono (10 digitos)
+         F) Nombre de la Academia (texto, se traduce a ID_ACADEMIA)
+         G) Horarios (opcional): "Dia:HH:mm-HH:mm" separados por coma, ej.
+            "Lunes:08:00-09:00, Miercoles:10:00-11:00". La NOMINA nunca se captura aqui:
+            se asigna automaticamente. Ver TutoresServlet#procesarCargaMasivaTutores. -->
+    <div class="modal fade" id="modalCargaMasivaTutores" tabindex="-1" aria-labelledby="modalCargaMasivaTutoresLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="formCargaMasivaTutores" action="${pageContext.request.contextPath}/gestion-tutores" method="POST" enctype="multipart/form-data">
+                    <input type="hidden" name="accion" value="cargaMasivaTutores">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalCargaMasivaTutoresLabel">Carga Masiva de Tutores</h5>
+                        <button type="button" class="btn-close" id="btnCerrarCargaMasivaTutores" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fs-6 fw-bold" for="cargaMasivaTutoresArchivo">Archivo Excel (.xlsx, .xls)</label>
+                            <input type="file" id="cargaMasivaTutoresArchivo" name="archivoExcel" class="form-control form-control-figma w-100 fs-6"
+                                   accept=".xlsx,.xls" required>
+                            <div class="form-text">
+                                Columnas: A) Nombres &middot; B) Apellido paterno &middot; C) Apellido materno (opcional) &middot;
+                                D) Correo institucional (opcional) &middot; E) Teléfono (10 dígitos) &middot;
+                                F) Nombre de la Academia &middot; G) Horarios (opcional). La primera fila es de encabezados.
+                                <br>
+                                <strong>Correo:</strong> si lo dejas vacío se autogenera con el primer nombre + apellido paterno
+                                (ej. "Juan Pérez" → juanperez@utez.edu.mx); si lo escribes, debe terminar en @utez.edu.mx.
+                                <br>
+                                <strong>Horarios:</strong> formato "Día:HH:mm-HH:mm", varios separados por coma
+                                (ej. "Lunes:08:00-09:00, Miércoles:10:00-11:00"). Si el formato no es exacto, esa fila completa se descarta.
+                                <br>
+                                La nómina se asigna automáticamente, no se captura en el archivo.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-cancelar-figma" id="btnCancelarCargaMasivaTutores">Cancelar</button>
+                        <button type="submit" class="btn-figma">Subir archivo</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <form id="formEliminarTutor" action="${pageContext.request.contextPath}/gestion-tutores" method="POST" style="display:none;">
         <input type="hidden" name="accion" value="eliminar">
         <input type="hidden" name="nomina" id="inputEliminarNomina">
@@ -158,10 +229,12 @@
         <input type="hidden" name="nomina" id="inputReactivarNomina">
     </form>
 
+    <jsp:include page="../includes/cargando.jsp" />
     <jsp:include page="../includes/alertas.jsp" />
 
     <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
     <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+    <script src="${pageContext.request.contextPath}/assets/js/cargando.js"></script>
     <script src="${pageContext.request.contextPath}/assets/js/coordinador/tutor.js"></script>
 </body>
 </html>

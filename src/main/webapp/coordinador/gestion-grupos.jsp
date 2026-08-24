@@ -39,13 +39,17 @@
 
         <!-- ==================== CARGA MASIVA: filas invalidas de la ultima subida ====================
              AlumnoServlet.procesarCargaMasivaAlumnos() guarda esta lista en SESSION (no en
-             la URL, para no saturarla con una lista larga de numeros de fila) cuando alguna
-             fila del Excel se descarta. Se expone a JS via window.filasInvalidasExcel (ver
-             el bloque de toasts en alumnos.js) y se borra de la sesion aqui mismo, para que
-             no vuelva a salir si el coordinador recarga la pagina despues. -->
+             la URL) cuando alguna fila del Excel se descarta. Cada elemento ya es el mensaje
+             completo con el motivo exacto (ej. "Fila 6: el correo 'x' ya está registrado en
+             el sistema."), no solo el numero de renglon, para que el coordinador corrija de
+             una sola pasada. Se expone a JS via window.filasInvalidasExcel (ver el bloque de
+             toasts en alumnos.js) y se borra de la sesion aqui mismo, para que no vuelva a
+             salir si el coordinador recarga la pagina despues. Cada elemento va entre
+             comillas dobles y escapado con fn:replace por si el texto original (nombre,
+             correo, etc.) trae una comilla. -->
         <c:if test="${not empty sessionScope.filasInvalidasExcel}">
             <script>
-                window.filasInvalidasExcel = [<c:forEach var="fila" items="${sessionScope.filasInvalidasExcel}" varStatus="st">${fila}${st.last ? '' : ', '}</c:forEach>];
+                window.filasInvalidasExcel = [<c:forEach var="fila" items="${sessionScope.filasInvalidasExcel}" varStatus="st">"${fn:replace(fila, '"', '\\"')}"${st.last ? '' : ', '}</c:forEach>];
             </script>
             <c:remove var="filasInvalidasExcel" scope="session" />
         </c:if>
@@ -378,6 +382,7 @@
     <input type="hidden" name="matricula" id="inputReactivarMatricula">
 </form>
 
+<jsp:include page="../includes/cargando.jsp" />
 <jsp:include page="../includes/alertas.jsp" />
 
 <script>
@@ -404,6 +409,7 @@
 </script>
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/cargando.js"></script>
 <!-- Select2 (buscador de "Grupo" en el modal Carga Masiva): jQuery debe cargar antes que
      Select2, y ambos antes que alumnos.js, que los usa. -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

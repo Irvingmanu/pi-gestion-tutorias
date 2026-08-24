@@ -62,6 +62,20 @@ public class AsignacionServlet extends HttpServlet {
 
         if ("eliminar".equals(accion)) {
             int idAsignacion = Integer.parseInt(request.getParameter("id_asignacion"));
+
+            AsignacionTutor asignacion = asignacionTutorDao.getById(idAsignacion);
+            if (asignacion == null) {
+                response.sendRedirect(request.getContextPath() + "/asignacion?error=true");
+                return;
+            }
+
+            // Blindaje: no se puede desasignar si el tutor todavia tiene sesiones o
+            // solicitudes pendientes con alumnos de ESE grupo en especifico.
+            if (asignacionTutorDao.tienePendientesEnGrupo(asignacion.getIdTutor(), asignacion.getIdGrupo())) {
+                response.sendRedirect(request.getContextPath() + "/asignacion?error=asignacion_con_pendientes");
+                return;
+            }
+
             boolean eliminado = asignacionTutorDao.delete(idAsignacion);
             String parametro = eliminado ? "exito=eliminado" : "error=true";
             response.sendRedirect(request.getContextPath() + "/asignacion?" + parametro);

@@ -187,8 +187,10 @@
 </form>
 
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
+<jsp:include page="../includes/cargando.jsp" />
 <jsp:include page="../includes/alertas.jsp" />
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/cargando.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/asignacion.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/formulario-asignacion.js"></script>
 

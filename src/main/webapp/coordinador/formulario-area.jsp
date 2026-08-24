@@ -320,10 +320,12 @@
 
 </div>
 
+<jsp:include page="../includes/cargando.jsp" />
 <jsp:include page="../includes/alertas.jsp" />
 
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/cargando.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/motivos.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/areas.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/coordinador/formulario-area.js"></script>

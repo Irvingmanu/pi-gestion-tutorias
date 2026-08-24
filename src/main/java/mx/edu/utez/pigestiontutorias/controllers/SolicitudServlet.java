@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import mx.edu.utez.pigestiontutorias.models.*;
 import mx.edu.utez.pigestiontutorias.models.dao.*;
+import org.apache.commons.text.StringEscapeUtils;
 
 import java.io.IOException;
 import java.sql.Date;
@@ -196,8 +197,8 @@ public class SolicitudServlet extends HttpServlet {
             Solicitud solicitud = new Solicitud();
             solicitud.setMatricula(alumno.getMatricula());
             solicitud.setIdTutor(idTutor);
-            solicitud.setAsunto(request.getParameter("asunto"));
-            solicitud.setDescripcion(request.getParameter("descripcion"));
+            solicitud.setAsunto(sanitizarTexto(request.getParameter("asunto")));
+            solicitud.setDescripcion(sanitizarTexto(request.getParameter("descripcion")));
             solicitud.setFechaPropuesta(Date.valueOf(fechaPropuesta));
 
             String duracionStr = request.getParameter("duracion");
@@ -311,6 +312,15 @@ public class SolicitudServlet extends HttpServlet {
 
         // Acción no reconocida: regresamos a la lista por seguridad
         response.sendRedirect(request.getContextPath() + "/solicitudes");
+    }
+
+    // Escapa (no elimina) cualquier caracter con significado HTML antes de guardar texto
+    // libre del alumno (Asunto/Descripcion): un "<script>" queda como "&lt;script&gt;", asi
+    // que nunca se puede interpretar como markup/JS al re-mostrarlo, sin arriesgar el bypass
+    // tipico de un regex de "quitar etiquetas".
+    private String sanitizarTexto(String valor) {
+        if (valor == null) return null;
+        return StringEscapeUtils.escapeHtml4(valor.trim());
     }
 
     // -----------------------------------------------------------------

@@ -79,6 +79,13 @@
             <version>2.0.13</version>
         </dependency>
 
+        <!-- Sanitizacion de entradas de texto libre (Asunto/Descripcion de Solicitud) -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-text</artifactId>
+            <version>1.12.0</version>
+        </dependency>
+
         <!-- Correos -->
         <dependency>
             <groupId>jakarta.mail</groupId>

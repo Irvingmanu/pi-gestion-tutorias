@@ -14,6 +14,7 @@
 </head>
 <body>
 
+<jsp:include page="../includes/cargando.jsp" />
 <jsp:include page="../includes/alertas.jsp" />
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
@@ -115,6 +116,7 @@
 </script>
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/cargando.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/logout.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/cambiar-password-modal.js"></script>
 </body>

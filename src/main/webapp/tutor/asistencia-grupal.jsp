@@ -131,7 +131,9 @@
     </div>
 </div>
 
+<jsp:include page="../includes/cargando.jsp" />
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/cargando.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 </body>
 </html>

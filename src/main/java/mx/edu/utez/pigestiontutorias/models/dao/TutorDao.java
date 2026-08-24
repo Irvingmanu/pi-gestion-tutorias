@@ -2,12 +2,14 @@ package mx.edu.utez.pigestiontutorias.models.dao;
 
 import mx.edu.utez.pigestiontutorias.models.Academia;
 import mx.edu.utez.pigestiontutorias.models.Tutor;
+import mx.edu.utez.pigestiontutorias.utils.PasswordUtil;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,7 +38,7 @@ public class TutorDao implements Dao<Tutor, Integer> {
                 psTutor.setString(5, entidad.getCorreoInstitucional());
                 psTutor.setString(6, entidad.getTelefono());
                 psTutor.setInt(7, entidad.getIdAcademia());
-                psTutor.setString(8, pass);
+                psTutor.setString(8, PasswordUtil.hash(pass));
                 psTutor.executeUpdate();
             }
 
@@ -51,6 +53,63 @@ public class TutorDao implements Dao<Tutor, Integer> {
                 try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
             }
             return false;
+        } finally {
+            if (con != null) {
+                try { con.close(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+        }
+    }
+
+    // Carga masiva de tutores (Excel, ver TutoresServlet#procesarCargaMasivaTutores): mismo
+    // patron que AlumnoDAO#crearMasivo, un solo batch/commit para TUTOR y, por cada tutor
+    // con horarios, un batch de HORARIO_ATENCION (reutilizando insertarHorarios, el mismo
+    // metodo que ya usa el alta individual). NUMERO_EMPLEADO ya viene asignado desde el
+    // servlet (autogenerado secuencialmente antes de llegar aqui: la nomina nunca se pide en
+    // el Excel), asi que no hace falta leer generated keys.
+    public int crearMasivo(List<Tutor> tutores) {
+        if (tutores == null || tutores.isEmpty()) return 0;
+
+        String sqlTutor = "INSERT INTO TUTOR(NUMERO_EMPLEADO, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, CORREO_INSTITUCIONAL, TELEFONO, ID_ACADEMIA, PASS) " +
+                "VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
+
+        Connection con = null;
+        try {
+            con = SQLConnector.getConnection();
+            con.setAutoCommit(false);
+
+            int insertados = 0;
+            try (PreparedStatement ps = con.prepareStatement(sqlTutor)) {
+                for (Tutor t : tutores) {
+                    ps.setInt(1, t.getNumeroEmpleado());
+                    ps.setString(2, t.getNombres());
+                    ps.setString(3, t.getApellidoPaterno());
+                    ps.setString(4, t.getApellidoMaterno());
+                    ps.setString(5, t.getCorreoInstitucional());
+                    ps.setString(6, t.getTelefono());
+                    ps.setInt(7, t.getIdAcademia());
+                    ps.setString(8, PasswordUtil.hash("Tut@" + t.getNumeroEmpleado()));
+                    ps.addBatch();
+                }
+
+                int[] resultados = ps.executeBatch();
+                for (int resultado : resultados) {
+                    if (resultado > 0 || resultado == Statement.SUCCESS_NO_INFO) insertados++;
+                }
+            }
+
+            for (Tutor t : tutores) {
+                insertarHorarios(con, t.getNumeroEmpleado(), t.getHorariosDispo());
+            }
+
+            con.commit();
+            return insertados;
+        } catch (SQLException e) {
+            System.err.println("Error en la carga masiva de tutores: " + e.getMessage());
+            e.printStackTrace();
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            return 0;
         } finally {
             if (con != null) {
                 try { con.close(); } catch (SQLException ex) { ex.printStackTrace(); }
@@ -212,7 +271,7 @@ public class TutorDao implements Dao<Tutor, Integer> {
     // pintar la columna "Grupo" sin una consulta aparte por cada fila de la tabla.
     public List<Tutor> getAllConGrupo() {
         Map<Integer, Tutor> tutoresPorNomina = new LinkedHashMap<>();
-        String sql = "SELECT t.*, car.NOMBRE AS NOMBRE_CARRERA, g.CUATRIMESTRE, g.LETRA " +
+        String sql = "SELECT t.*, car.NOMBRE AS NOMBRE_CARRERA, g.CUATRIMESTRE, g.LETRA, g.GENERACION " +
                 "FROM TUTOR t " +
                 "LEFT JOIN ASIGNACION_TUTOR a ON a.ID_TUTOR = t.NUMERO_EMPLEADO AND a.ESTADO = 'S' " +
                 "LEFT JOIN GRUPO g ON g.ID_GRUPO = a.ID_GRUPO AND g.ESTADO = 'S' " +
@@ -234,7 +293,13 @@ public class TutorDao implements Dao<Tutor, Integer> {
 
                 String nombreCarrera = rs.getString("NOMBRE_CARRERA");
                 if (nombreCarrera != null) {
-                    tutor.getGruposAsignados().add(nombreCarrera + " " + rs.getInt("CUATRIMESTRE") + "°" + rs.getString("LETRA"));
+                    // Mismo formato que gestion-grupos.jsp/alumnos.js: "Carrera - Cuatri° Letra
+                    // (Gen AAAA-AAAA)", para que el coordinador identifique la generacion sin
+                    // tener que ir a buscarla a la otra pantalla.
+                    String generacion = rs.getString("GENERACION");
+                    String etiquetaGeneracion = (generacion != null && !generacion.isBlank()) ? generacion : "Sin generación";
+                    tutor.getGruposAsignados().add(nombreCarrera + " - " + rs.getInt("CUATRIMESTRE") + "° "
+                            + rs.getString("LETRA") + " (Gen " + etiquetaGeneracion + ")");
                 }
             }
         } catch (SQLException e) {
@@ -371,6 +436,34 @@ public class TutorDao implements Dao<Tutor, Integer> {
         }
     }
 
+    // Blindaje: un tutor NO puede eliminarse (dar de baja) si todavia tiene responsabilidades
+    // activas o pendientes en el sistema: grupos asignados, solicitudes sin atender, o
+    // sesiones (individuales/grupales) agendadas. Se revisa cada tabla por separado (SELECT
+    // COUNT(1) ... AND ROWNUM = 1) y se corta en cuanto una da positivo, en vez de un solo
+    // JOIN gigante, para que cada consulta sea rapida y facil de leer por separado.
+    public boolean tienePendientes(int numeroEmpleado) {
+        return existeRegistro("SELECT COUNT(1) FROM ASIGNACION_TUTOR WHERE ID_TUTOR = ? AND ESTADO = 'S' AND ROWNUM = 1", numeroEmpleado)
+                || existeRegistro("SELECT COUNT(1) FROM SOLICITUD_TUTORIA WHERE ID_TUTOR = ? AND ESTATUS = 'Pendiente' AND ROWNUM = 1", numeroEmpleado)
+                || existeRegistro("SELECT COUNT(1) FROM SESION_INDIVIDUAL WHERE ID_TUTOR = ? AND ESTADO = 'Pendiente' AND ROWNUM = 1", numeroEmpleado)
+                || existeRegistro("SELECT COUNT(1) FROM SESION_GRUPAL WHERE ID_TUTOR = ? AND ESTADO = 'Pendiente' AND ROWNUM = 1", numeroEmpleado);
+    }
+
+    private boolean existeRegistro(String sql, int idTutor) {
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idTutor);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al validar pendientes del tutor: " + e.getMessage());
+            e.printStackTrace();
+            // Ante un error de BD, se asume que SI tiene pendientes: mejor bloquear de mas
+            // una eliminacion que arriesgar borrar a un tutor con responsabilidades activas.
+            return true;
+        }
+    }
+
     // Reactiva a un tutor dado de baja y restaura su acceso al sistema.
     public boolean reactivar(int numeroEmpleado) {
         String sql = "UPDATE TUTOR SET ESTADO = 'S' WHERE NUMERO_EMPLEADO = ?";
@@ -388,7 +481,7 @@ public class TutorDao implements Dao<Tutor, Integer> {
         String sql = "UPDATE TUTOR SET PASS = ? WHERE NUMERO_EMPLEADO = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
-            ps.setString(1, nuevaPassword);
+            ps.setString(1, PasswordUtil.hash(nuevaPassword));
             ps.setInt(2, numeroEmpleado);
             return ps.executeUpdate() > 0;
         } catch (SQLException e) {

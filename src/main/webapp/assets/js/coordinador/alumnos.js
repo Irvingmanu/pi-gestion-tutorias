@@ -861,22 +861,25 @@ document.addEventListener('DOMContentLoaded', function () {
     // Se avisa aqui, fuera de los switch de arriba, porque aplica tanto si la carga fue
     // "exito parcial" (exito=carga_masiva_alumnos) como si fallo por completo
     // (error=archivo_invalido, cuando NINGUNA fila paso la validacion) — el titulo y tipo
-    // cambian segun cual de los dos haya sido.
+    // cambian segun cual de los dos haya sido. Cada elemento ya es un mensaje completo
+    // ("Fila 6: el correo 'x' ya está registrado en el sistema."), por eso se unen con
+    // salto de linea (mostrarAlerta usa innerText, que SI respeta '\n' como <br>) en vez de
+    // coma: serian oraciones larguisimas pegadas si se unieran con ", ".
     if (window.filasInvalidasExcel && window.filasInvalidasExcel.length > 0) {
         let insertados = parseInt(parametros.get('insertados') || '0', 10);
-        let listaFilas = window.filasInvalidasExcel.join(', ');
+        let listaFilas = window.filasInvalidasExcel.join('\n');
 
         if (insertados > 0) {
             mostrarAlerta(
                 'advertencia',
                 'Carga parcial',
-                'Se registraron ' + insertados + ' alumno(s), pero se omitieron las siguientes filas por datos inválidos: ' + listaFilas + '.'
+                'Se registraron ' + insertados + ' alumno(s), pero se omitieron estas filas:\n' + listaFilas
             );
         } else {
             mostrarAlerta(
                 'error',
                 'No se registró ningún alumno',
-                'Ninguna fila del archivo pasó la validación. Filas con error: ' + listaFilas + '.'
+                'Ninguna fila del archivo pasó la validación:\n' + listaFilas
             );
         }
     }

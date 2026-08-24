@@ -205,10 +205,12 @@ AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los con
 
 </div>
 
+<jsp:include page="../includes/cargando.jsp" />
 <jsp:include page="../includes/alertas.jsp" />
 
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/cargando.js"></script>
 <!-- Select2 (buscador de "Asignar a Grupo"): jQuery debe cargar antes que Select2, y ambos
      antes que formulario-alumno.js, que los usa. Mismo orden que tutor/tutoria-individual.jsp. -->
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>

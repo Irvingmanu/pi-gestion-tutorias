@@ -172,8 +172,14 @@ public class GrupoDao implements Dao<Grupo, Integer> {
     // <select> de grupos de asignacion.jsp).
     public List<Grupo> getDisponiblesParaAsignacion() {
         List<Grupo> lista = new ArrayList<>();
+        // NOT EXISTS contra ASIGNACION_TUTOR con ESTADO = 'S': un grupo con una asignacion
+        // activa ya tiene tutor, asi que ni siquiera aparece como opcion en el <select> de
+        // "Nueva Asignacion" (antes solo se bloqueaba al guardar, via
+        // AsignacionTutorDao.existeAsignacionActiva(), que sigue ahi como blindaje de
+        // servidor por si el <select> es manipulado).
         String sql = SELECT_BASE +
                 "WHERE g.ESTADO = 'S' AND EXISTS (SELECT 1 FROM ALUMNO a WHERE a.ID_GRUPO = g.ID_GRUPO AND a.ESTADO = 'S') " +
+                "AND NOT EXISTS (SELECT 1 FROM ASIGNACION_TUTOR at WHERE at.ID_GRUPO = g.ID_GRUPO AND at.ESTADO = 'S') " +
                 "ORDER BY car.NOMBRE, g.CUATRIMESTRE, g.LETRA";
 
         try (Connection con = SQLConnector.getConnection();

@@ -41,7 +41,7 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         List<AsignacionTutor> lista = new ArrayList<>();
         String sql = "SELECT a.ID_ASIGNACION, a.ID_TUTOR, a.ID_GRUPO, a.ESTADO, " +
                 "t.NOMBRES, t.APELLIDO_PATERNO, t.APELLIDO_MATERNO, " +
-                "car.NOMBRE AS NOMBRE_CARRERA, car.ID_ACADEMIA, g.CUATRIMESTRE, g.LETRA " +
+                "car.NOMBRE AS NOMBRE_CARRERA, car.ID_ACADEMIA, g.CUATRIMESTRE, g.LETRA, g.GENERACION " +
                 "FROM ASIGNACION_TUTOR a " +
                 "JOIN TUTOR t ON t.NUMERO_EMPLEADO = a.ID_TUTOR " +
                 "JOIN GRUPO g ON g.ID_GRUPO = a.ID_GRUPO " +
@@ -65,7 +65,13 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
                 String apellidos = rs.getString("APELLIDO_PATERNO") + (apellidoM != null && !apellidoM.isBlank() ? " " + apellidoM : "");
                 asignacion.setApellidosTutor(apellidos);
 
-                asignacion.setNombreGrupo(rs.getString("NOMBRE_CARRERA") + " " + rs.getInt("CUATRIMESTRE") + "°" + rs.getString("LETRA"));
+                // Mismo formato que gestion-grupos.jsp/alumnos.js: "Carrera - Cuatri° Letra
+                // (Gen AAAA-AAAA)", para que la columna "Grupo" de asignacion.jsp muestre la
+                // generacion sin que el coordinador tenga que ir a buscarla a otra pantalla.
+                String generacion = rs.getString("GENERACION");
+                String etiquetaGeneracion = (generacion != null && !generacion.isBlank()) ? generacion : "Sin generación";
+                asignacion.setNombreGrupo(rs.getString("NOMBRE_CARRERA") + " - " + rs.getInt("CUATRIMESTRE") + "° "
+                        + rs.getString("LETRA") + " (Gen " + etiquetaGeneracion + ")");
                 asignacion.setIdAcademia(rs.getInt("ID_ACADEMIA"));
                 lista.add(asignacion);
             }
@@ -80,6 +86,29 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
 
     @Override
     public AsignacionTutor getById(Integer id) {
+        String sql = "SELECT ID_ASIGNACION, ID_TUTOR, ID_GRUPO, ESTADO FROM ASIGNACION_TUTOR WHERE ID_ASIGNACION = ?";
+
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setInt(1, id);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    AsignacionTutor asignacion = new AsignacionTutor();
+                    asignacion.setIdAsignacion(rs.getInt("ID_ASIGNACION"));
+                    asignacion.setIdTutor(rs.getInt("ID_TUTOR"));
+                    asignacion.setIdGrupo(rs.getInt("ID_GRUPO"));
+                    asignacion.setEstado(rs.getString("ESTADO"));
+                    return asignacion;
+                }
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error al buscar la asignación: " + e.getMessage());
+            e.printStackTrace();
+        }
+
         return null;
     }
 
@@ -273,5 +302,45 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         }
 
         return false;
+    }
+
+    // Blindaje: no se puede desasignar a un tutor de un grupo si todavia hay algo pendiente
+    // entre ese tutor y ese grupo en especifico: sesiones grupales pendientes del grupo,
+    // sesiones individuales pendientes con alumnos de ese grupo, o solicitudes pendientes de
+    // alumnos de ese grupo. A diferencia de TutorDao#tienePendientes (que bloquea la baja del
+    // tutor en general, sin importar el grupo), esta version es por-grupo: sirve para el
+    // boton "Desasignar" de una fila de ASIGNACION_TUTOR puntual.
+    public boolean tienePendientesEnGrupo(int idTutor, int idGrupo) {
+        return existeRegistro(
+                "SELECT COUNT(1) FROM SESION_GRUPAL " +
+                        "WHERE ID_TUTOR = ? AND ID_GRUPO = ? AND ESTADO = 'Pendiente' AND ROWNUM = 1",
+                idTutor, idGrupo)
+                || existeRegistro(
+                "SELECT COUNT(1) FROM SESION_INDIVIDUAL si " +
+                        "JOIN ALUMNO al ON al.MATRICULA = si.MATRICULA " +
+                        "WHERE si.ID_TUTOR = ? AND al.ID_GRUPO = ? AND si.ESTADO = 'Pendiente' AND ROWNUM = 1",
+                idTutor, idGrupo)
+                || existeRegistro(
+                "SELECT COUNT(1) FROM SOLICITUD_TUTORIA st " +
+                        "JOIN ALUMNO al ON al.MATRICULA = st.MATRICULA " +
+                        "WHERE st.ID_TUTOR = ? AND al.ID_GRUPO = ? AND st.ESTATUS = 'Pendiente' AND ROWNUM = 1",
+                idTutor, idGrupo);
+    }
+
+    private boolean existeRegistro(String sql, int idTutor, int idGrupo) {
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, idTutor);
+            ps.setInt(2, idGrupo);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getInt(1) > 0;
+            }
+        } catch (SQLException e) {
+            System.err.println("Error al validar pendientes de la asignación: " + e.getMessage());
+            e.printStackTrace();
+            // Ante un error de BD, se asume que SI hay pendientes: mejor bloquear de mas
+            // una desasignacion que arriesgar romper sesiones/solicitudes en curso.
+            return true;
+        }
     }
 }

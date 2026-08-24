@@ -639,11 +639,13 @@
 </div>
 
 <!-- Inclusión de los modales unificados -->
+<jsp:include page="../includes/cargando.jsp" />
 <jsp:include page="../includes/alertas.jsp" />
 
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/tutor/reportes.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/cargando.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/tutor/tutorias-grupales-modal.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/tutor/alumnos-atendidos-modal.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/tutor/canalizados-modal.js"></script>

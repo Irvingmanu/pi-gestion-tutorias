@@ -364,6 +364,50 @@ document.addEventListener('DOMContentLoaded', function () {
     filtrarTutores();
 });
 
+// Modal "Carga Masiva de Tutores": confirmacion al cerrar con cambios sin enviar (mismo
+// patron que el modal de Carga Masiva de Alumnos en alumnos.js), sin Select2 porque aqui no
+// hay un <select> que elegir de antemano (la Academia viene del propio Excel, por fila).
+document.addEventListener('DOMContentLoaded', function () {
+    let inputCargaArchivo = document.getElementById('cargaMasivaTutoresArchivo');
+    let formCargaMasiva = document.getElementById('formCargaMasivaTutores');
+    let modalCargaMasivaEl = document.getElementById('modalCargaMasivaTutores');
+    if (!formCargaMasiva || !inputCargaArchivo || !modalCargaMasivaEl) return;
+
+    function cargaMasivaTieneCambios() {
+        return inputCargaArchivo.files && inputCargaArchivo.files.length > 0;
+    }
+
+    function cerrarModalCargaMasiva() {
+        let instancia = bootstrap.Modal.getInstance(modalCargaMasivaEl);
+        if (instancia) instancia.hide();
+    }
+
+    function intentarCerrarModalCargaMasiva() {
+        if (!cargaMasivaTieneCambios()) {
+            cerrarModalCargaMasiva();
+            return;
+        }
+        mostrarConfirmacion(
+            'advertencia',
+            '¿Descartar carga masiva?',
+            'Si cierras ahora, perderás el archivo seleccionado.',
+            'Sí, salir',
+            cerrarModalCargaMasiva
+        );
+    }
+
+    // El modal se reabre varias veces en la misma pagina: se limpia por completo cada vez
+    // que se abre para no arrastrar el archivo elegido la vez anterior.
+    modalCargaMasivaEl.addEventListener('show.bs.modal', function () {
+        formCargaMasiva.reset();
+    });
+
+    let btnCancelarCargaMasiva = document.getElementById('btnCancelarCargaMasivaTutores');
+    let btnCerrarCargaMasiva = document.getElementById('btnCerrarCargaMasivaTutores');
+    if (btnCancelarCargaMasiva) btnCancelarCargaMasiva.addEventListener('click', intentarCerrarModalCargaMasiva);
+    if (btnCerrarCargaMasiva) btnCerrarCargaMasiva.addEventListener('click', intentarCerrarModalCargaMasiva);
+});
+
 // Toasts/alertas de exito y error via parametros en la URL (?exito=, ?error=)
 document.addEventListener('DOMContentLoaded', function () {
     const parametros = new URLSearchParams(window.location.search);
@@ -383,6 +427,15 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'actualizado':
                 mostrarToast('exito', '¡Éxito!', 'El tutor fue actualizado correctamente');
                 break;
+            case 'carga_masiva_tutores': {
+                // Si hubo filas invalidas, se omite este toast: mas abajo se muestra una
+                // alerta mas completa (con el numero de cada fila omitida), que ya incluye
+                // este mismo conteo de "insertados".
+                if (window.filasInvalidasTutoresExcel && window.filasInvalidasTutoresExcel.length > 0) break;
+                let insertados = parametros.get('insertados') || '0';
+                mostrarToast('exito', '¡Éxito!', 'Se registraron ' + insertados + ' tutor(es) correctamente.');
+                break;
+            }
         }
 
         window.history.replaceState(null, null, window.location.pathname);
@@ -404,8 +457,56 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'tutor_periodo_activo':
                 mostrarAlerta('error', 'No se puede eliminar', 'Este tutor tiene un grupo asignado dentro de un periodo escolar activo. Debes esperar a que el periodo finalice o reasignar el grupo antes de eliminarlo.');
                 break;
+            case 'tutor_con_pendientes':
+                mostrarAlerta('error', 'No se puede eliminar', 'No se puede eliminar al tutor porque tiene grupos asignados, solicitudes o sesiones pendientes.');
+                break;
+            case 'archivo_vacio':
+                mostrarAlerta('error', 'Error', 'Selecciona un archivo Excel (.xlsx o .xls) antes de subir.');
+                break;
+            case 'archivo_muy_grande':
+                mostrarAlerta('error', 'Error', 'El archivo es demasiado grande. El límite es de 5 MB.');
+                break;
+            case 'archivo_invalido':
+                // Si hay filas invalidas con numero de renglon (window.filasInvalidasTutoresExcel),
+                // se omite este mensaje generico: mas abajo se muestra uno mas especifico con
+                // el detalle fila por fila.
+                if (!window.filasInvalidasTutoresExcel || window.filasInvalidasTutoresExcel.length === 0) {
+                    mostrarAlerta('error', 'Error', 'No se pudo leer el archivo, o ninguna fila tenía datos válidos. Verifica el formato de las columnas y vuelve a intentar.');
+                }
+                break;
+            case 'carga_fallida':
+                mostrarAlerta('error', 'Error', 'No se pudo guardar la carga masiva por un error interno. Intenta de nuevo.');
+                break;
         }
 
         window.history.replaceState(null, null, window.location.pathname);
+    }
+
+    // Filas del ultimo Excel de carga masiva que se omitieron por datos invalidos/duplicados
+    // (window.filasInvalidasTutoresExcel, ver gestion-tutores.jsp: TutoresServlet la guarda
+    // en SESSION para no saturar la URL, el JSP la vuelca a este global y la borra de la
+    // sesion). mostrarAlerta() es un modal, no un toast: se queda en pantalla hasta que el
+    // coordinador le da clic a "Aceptar", a proposito, para que le de tiempo de leer y
+    // anotar el detalle antes de que desaparezca solo. Cada elemento ya es un mensaje
+    // completo ("Fila 6: la academia 'Contabilidad' no existe en el catálogo."), por eso se
+    // unen con salto de linea (mostrarAlerta usa innerText, que SI respeta '\n' como <br>)
+    // en vez de coma: serian oraciones larguisimas pegadas si se unieran con ", ".
+    if (window.filasInvalidasTutoresExcel && window.filasInvalidasTutoresExcel.length > 0) {
+        let insertados = parseInt(parametros.get('insertados') || '0', 10);
+        let listaFilas = window.filasInvalidasTutoresExcel.join('\n');
+
+        if (insertados > 0) {
+            mostrarAlerta(
+                'advertencia',
+                'Carga parcial',
+                'Se registraron ' + insertados + ' tutor(es), pero se omitieron estas filas:\n' + listaFilas
+            );
+        } else {
+            mostrarAlerta(
+                'error',
+                'No se registró ningún tutor',
+                'Ninguna fila del archivo pasó la validación:\n' + listaFilas
+            );
+        }
     }
 });

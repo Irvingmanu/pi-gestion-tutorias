@@ -12,9 +12,24 @@ import java.io.IOException;
 import java.sql.Date;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
+import java.util.Map;
+import java.util.Set;
 
 @WebServlet(name = "PeriodoEscolarServlet", value = "/gestion-periodos")
 public class PeriodoEscolarServlet extends HttpServlet {
+
+    // Modelo estricto de 3 cuatrimestres: un periodo solo puede arrancar en uno de estos
+    // meses. Debe coincidir exactamente con MESES_PERMITIDOS en periodos.js.
+    private static final Set<Integer> MESES_PERMITIDOS = Set.of(1, 5, 9);
+
+    // Nombre que le corresponde a cada mes de inicio valido, para calcularNombrePeriodo().
+    // Debe coincidir exactamente con NOMBRES_INICIO en periodos.js.
+    private static final Map<Integer, String> NOMBRES_MES_INICIO = Map.of(
+            1, "Enero - Abril",
+            5, "Mayo - Agosto",
+            9, "Septiembre - Diciembre"
+    );
 
     private final PeriodoEscolarDao periodoDao = new PeriodoEscolarDao();
 
@@ -95,13 +110,26 @@ public class PeriodoEscolarServlet extends HttpServlet {
             return;
         }
 
-        if (periodoDao.existeNombre(nombre.trim())) {
+        // Candado del mes de inicio (replica exacta de la validacion en periodos.js).
+        if (!mesValido(fechaInicio)) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=mes_invalido");
+            return;
+        }
+
+        // Duracion estricta: mayor a 3 meses y menor o igual a 4 (91 a 123 dias).
+        if (!duracionValida(fechaInicio, fechaFin)) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=duracion_invalida");
+            return;
+        }
+
+        String nombreCalculado = calcularNombrePeriodo(fechaInicio);
+        if (periodoDao.existeNombre(nombreCalculado)) {
             response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=nombre_duplicado");
             return;
         }
 
         PeriodoEscolar periodo = new PeriodoEscolar();
-        periodo.setNombre(nombre.trim());
+        periodo.setNombre(nombreCalculado);
         periodo.setFechaInicio(Date.valueOf(fechaInicio));
         periodo.setFechaFin(Date.valueOf(fechaFin));
         periodo.setEstado("S");
@@ -174,14 +202,27 @@ public class PeriodoEscolarServlet extends HttpServlet {
             return;
         }
 
-        if (periodoDao.existeNombreParaOtro(nombre.trim(), idPeriodo)) {
+        // Candado del mes de inicio (replica exacta de la validacion en periodos.js).
+        if (!mesValido(fechaInicio)) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=mes_invalido");
+            return;
+        }
+
+        // Duracion estricta: mayor a 3 meses y menor o igual a 4 (91 a 123 dias).
+        if (!duracionValida(fechaInicio, fechaFin)) {
+            response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=duracion_invalida");
+            return;
+        }
+
+        String nombreCalculado = calcularNombrePeriodo(fechaInicio);
+        if (periodoDao.existeNombreParaOtro(nombreCalculado, idPeriodo)) {
             response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=nombre_duplicado");
             return;
         }
 
         PeriodoEscolar periodo = new PeriodoEscolar();
         periodo.setIdPeriodo(idPeriodo);
-        periodo.setNombre(nombre.trim());
+        periodo.setNombre(nombreCalculado);
         periodo.setFechaInicio(Date.valueOf(fechaInicio));
         periodo.setFechaFin(Date.valueOf(fechaFin));
         periodo.setAsistenciasGrupales(asistenciasGrupales);
@@ -193,6 +234,30 @@ public class PeriodoEscolarServlet extends HttpServlet {
         } else {
             response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=registro_fallido");
         }
+    }
+
+    // Candado del mes de inicio (replica exacta de mesValido() en periodos.js): un periodo
+    // solo puede arrancar en Enero, Mayo o Septiembre, sin confiar en que el <input
+    // type="date"> del formulario no fue manipulado (POST directo, DevTools, etc.).
+    private boolean mesValido(LocalDate fechaInicio) {
+        return MESES_PERMITIDOS.contains(fechaInicio.getMonthValue());
+    }
+
+    // Duracion estricta (replica exacta de actualizarValidezFechas() en periodos.js): mayor
+    // a 3 meses y menor o igual a 4 (91 a 123 dias).
+    private boolean duracionValida(LocalDate fechaInicio, LocalDate fechaFin) {
+        long dias = ChronoUnit.DAYS.between(fechaInicio, fechaFin);
+        return dias > 90 && dias <= 123;
+    }
+
+    // El campo "Nombre del periodo" es readonly en el formulario (se autocompleta por JS a
+    // partir de la Fecha de inicio, ver actualizarNombreAutomatico() en periodos.js): igual
+    // que con matricula/idGrupo en AlumnoServlet, "readonly" es solo UX, asi que el nombre
+    // real que se guarda SIEMPRE se recalcula aqui a partir de la fecha ya validada, en vez
+    // de confiar en el texto que haya llegado en el parametro "nombre" de un POST manipulado.
+    // Solo se llama despues de confirmar mesValido(fechaInicio) == true.
+    private String calcularNombrePeriodo(LocalDate fechaInicio) {
+        return NOMBRES_MES_INICIO.get(fechaInicio.getMonthValue()) + " " + fechaInicio.getYear();
     }
 
     private void procesarEliminacion(HttpServletRequest request, HttpServletResponse response) throws IOException {
