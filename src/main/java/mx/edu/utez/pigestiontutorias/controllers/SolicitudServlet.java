@@ -21,8 +21,6 @@ import java.util.*;
 public class SolicitudServlet extends HttpServlet {
 
     private static final String[] DIAS_SEMANA = {
-            // Sin acento en "Miercoles" para que coincida con CK_HORARIO_DIA y con lo que
-            // devuelve HorarioDao (ver TutorDao.normalizarDiaSemana).
             "Lunes", "Martes", "Miercoles", "Jueves", "Viernes", "Sabado", "Domingo"
     };
 
@@ -33,9 +31,6 @@ public class SolicitudServlet extends HttpServlet {
     private final SesionIndividualDao sesionIndividualDao = new SesionIndividualDao();
     private final HorarioDao horarioDao = new HorarioDao();
 
-    // -----------------------------------------------------------------
-    // GET: listar solicitudes del tutor logueado, o ver el detalle de una
-    // -----------------------------------------------------------------
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -46,28 +41,20 @@ public class SolicitudServlet extends HttpServlet {
             return;
         }
 
-        // Cancelación automática: antes de mostrar cualquier listado o detalle,
-        // se cancelan las solicitudes "Pendiente" que ya están a 1 día o menos
-        // de su fecha/hora propuesta. Complementa a CancelacionSolicitudesListener
-        // (tarea en segundo plano), por si nadie visitó ninguna pantalla desde
-        // la última corrida programada.
         solicitudDao.cancelarSolicitudesVencidas();
 
         String accion = request.getParameter("accion");
 
-        // ---- Formulario de nueva solicitud (alumno) ----
         if ("nueva".equals(accion)) {
             mostrarFormularioNuevaSolicitud(request, response, (String) session.getAttribute("matricula"));
             return;
         }
 
-        // ---- Historial de solicitudes del alumno (Mis Solicitudes) ----
         if ("historial".equals(accion)) {
             mostrarHistorialAlumno(request, response, (String) session.getAttribute("matricula"));
             return;
         }
 
-        // ---- Detalle de una solicitud (imagen 3: Solicitudes_Info) ----
         if ("detalle".equals(accion)) {
             int idSolicitud = Integer.parseInt(request.getParameter("idSolicitud"));
             Solicitud solicitud = solicitudDao.getById(idSolicitud);
@@ -79,18 +66,16 @@ public class SolicitudServlet extends HttpServlet {
 
             request.setAttribute("paginaActiva", "solicitudes");
 
-            // 2. Determinar el color de la etiqueta (Badge) según el estatus
             String badgeColor;
             switch (solicitud.getEstatus() != null ? solicitud.getEstatus() : "") {
                 case "Confirmada": badgeColor = "success"; break;
                 case "Rechazada": badgeColor = "danger"; break;
                 case "Reprogramada": badgeColor = "info"; break;
                 case "Cancelada": badgeColor = "secondary"; break;
-                default: badgeColor = "warning"; // Para "Pendiente"
+                default: badgeColor = "warning";
             }
             request.setAttribute("badgeColor", badgeColor);
 
-            // 3. Formatear las fechas aquí en Java, para enviarlas limpias al JSP
             SimpleDateFormat formatoFecha = new SimpleDateFormat("dd MMMM yyyy", new Locale("es", "MX"));
             if (solicitud.getFechaPropuesta() != null) {
                 request.setAttribute("fechaPropuestaFormateada", formatoFecha.format(solicitud.getFechaPropuesta()));
@@ -99,8 +84,6 @@ public class SolicitudServlet extends HttpServlet {
                 request.setAttribute("nuevaFechaFormateada", formatoFecha.format(solicitud.getNuevaFecha()));
             }
 
-            // Solo si sigue pendiente tiene sentido ofrecer "Reprogramar": se arma
-            // la misma disponibilidad real (día+hora) que ve el alumno al crearla.
             if ("Pendiente".equals(solicitud.getEstatus())) {
                 List<Horario> listaHorarios = horarioDao.findDisponiblesByTutor(solicitud.getIdTutor());
                 String disponibilidadJson = construirDisponibilidadJson(solicitud.getIdTutor(), listaHorarios);
@@ -113,12 +96,9 @@ public class SolicitudServlet extends HttpServlet {
             return;
         }
 
-        // ---- Listado de solicitudes del tutor (imagen 2: Solicitudes) ----
         Integer idUsuario = (Integer) session.getAttribute("idUsuario");
         Tutor tutor = idUsuario != null ? tutorDao.getById(idUsuario) : null;
 
-        // >>> FIX: antes esta línea no existía, por eso el navbar nunca marcaba
-        // "Solicitudes" como activo al entrar al listado normal.
         request.setAttribute("paginaActiva", "solicitudes");
 
         if (tutor == null) {
@@ -132,9 +112,6 @@ public class SolicitudServlet extends HttpServlet {
         request.getRequestDispatcher("/tutor/solicitudes.jsp").forward(request, response);
     }
 
-    // -----------------------------------------------------------------
-    // POST: crear solicitud (alumno) / aceptar o rechazar (tutor)
-    // -----------------------------------------------------------------
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -147,7 +124,6 @@ public class SolicitudServlet extends HttpServlet {
 
         String accion = request.getParameter("accion");
 
-        // ---- Crear solicitud (formulario solicitud.jsp del alumno) ----
         if ("crear".equals(accion)) {
             String matricula = (String) session.getAttribute("matricula");
             Alumno alumno = matricula != null ? alumnoDAO.getById(matricula) : null;
@@ -157,16 +133,11 @@ public class SolicitudServlet extends HttpServlet {
                 return;
             }
 
-            // Blindaje de servidor: maximo 1 solicitud por semana (7 dias corridos desde su
-            // ultima solicitud registrada). El formulario no impide reenviar, asi que se
-            // revalida aqui igual que el resto de las reglas de negocio del servlet.
             if (solicitudDao.tieneSolicitudReciente(alumno.getMatricula())) {
                 response.sendRedirect(request.getContextPath() + "/solicitudes?accion=nueva&error=limite_semanal");
                 return;
             }
 
-            // No confiamos en un idTutor mandado por el formulario: lo calculamos
-            // aquí igual que en el JSP, a partir del grupo del alumno.
             Integer idTutor = asignacionTutorDao.findIdTutorByGrupo(alumno.getIdGrupo());
 
             if (idTutor == null) {
@@ -174,10 +145,6 @@ public class SolicitudServlet extends HttpServlet {
                 return;
             }
 
-            // Validamos la fecha propuesta contra el mínimo de 2 días de anticipación
-            // ANTES de construir la Solicitud: el <select> del JSP ya excluye estos
-            // días, pero eso es solo una restricción de UI — un POST directo
-            // (curl/Postman) podría saltársela, así que se vuelve a exigir aquí.
             String fechaPropuestaStr = request.getParameter("fechaPropuesta");
             LocalDate fechaPropuesta = null;
             try {
@@ -215,13 +182,9 @@ public class SolicitudServlet extends HttpServlet {
             return;
         }
 
-        // ---- Aceptar (pantalla de detalle, botón del tutor) ----
         if ("aceptar".equals(accion)) {
             int idSolicitud = Integer.parseInt(request.getParameter("idSolicitud"));
 
-            // Por si la solicitud venció justo antes de que el tutor diera clic en
-            // "Aceptar": se corre la cancelación automática y se vuelve a leer el
-            // estatus ya actualizado antes de continuar.
             solicitudDao.cancelarSolicitudesVencidas();
             Solicitud solicitud = solicitudDao.getById(idSolicitud);
 
@@ -233,8 +196,6 @@ public class SolicitudServlet extends HttpServlet {
 
             solicitudDao.actualizarEstatus(idSolicitud, "Confirmada");
 
-            // Al aceptar, la solicitud se convierte en una sesión pendiente: así deja de
-            // ser invisible para el alumno y aparece en su agenda.
             if (solicitud.getFechaPropuesta() != null) {
                 SesionIndividual sesion = new SesionIndividual();
                 sesion.setIdTutor(solicitud.getIdTutor());
@@ -251,7 +212,6 @@ public class SolicitudServlet extends HttpServlet {
             return;
         }
 
-        // ---- Rechazar (pantalla de detalle, botón del tutor) ----
         if ("rechazar".equals(accion)) {
             int idSolicitud = Integer.parseInt(request.getParameter("idSolicitud"));
             solicitudDao.actualizarEstatus(idSolicitud, "Rechazada");
@@ -260,7 +220,6 @@ public class SolicitudServlet extends HttpServlet {
             return;
         }
 
-        // ---- Reprogramar (el tutor propone una nueva fecha) ----
         if ("reprogramar".equals(accion)) {
             int idSolicitud = Integer.parseInt(request.getParameter("idSolicitud"));
             Solicitud solicitud = solicitudDao.getById(idSolicitud);
@@ -285,10 +244,6 @@ public class SolicitudServlet extends HttpServlet {
             LocalDate fechaMinima = LocalDate.now().plusDays(2);
             boolean fechaValida = nuevaFecha != null && !nuevaFecha.isBefore(fechaMinima);
 
-            // No basta con la fecha: revalidamos que la hora elegida siga libre en
-            // el horario real del tutor (mismo cálculo que arma el <select> en el
-            // JSP), por si el bloque se ocupó entre que se cargó la pantalla y se
-            // envió el formulario, o si llega un POST directo saltándose la UI.
             boolean horaValida = false;
             if (fechaValida && nuevaHora != null && !nuevaHora.isBlank()) {
                 List<Horario> listaHorarios = horarioDao.findDisponiblesByTutor(solicitud.getIdTutor());
@@ -310,23 +265,14 @@ public class SolicitudServlet extends HttpServlet {
             return;
         }
 
-        // Acción no reconocida: regresamos a la lista por seguridad
         response.sendRedirect(request.getContextPath() + "/solicitudes");
     }
 
-    // Escapa (no elimina) cualquier caracter con significado HTML antes de guardar texto
-    // libre del alumno (Asunto/Descripcion): un "<script>" queda como "&lt;script&gt;", asi
-    // que nunca se puede interpretar como markup/JS al re-mostrarlo, sin arriesgar el bypass
-    // tipico de un regex de "quitar etiquetas".
     private String sanitizarTexto(String valor) {
         if (valor == null) return null;
         return StringEscapeUtils.escapeHtml4(valor.trim());
     }
 
-    // -----------------------------------------------------------------
-    // Formulario de nueva solicitud: arma la disponibilidad real del
-    // tutor asignado (próximos 14 días) para reemplazar el dummy del JSP.
-    // -----------------------------------------------------------------
     private void mostrarFormularioNuevaSolicitud(HttpServletRequest request, HttpServletResponse response, String matricula)
             throws ServletException, IOException {
 
@@ -352,11 +298,6 @@ public class SolicitudServlet extends HttpServlet {
         request.getRequestDispatcher("/alumno/solicitud.jsp").forward(request, response);
     }
 
-    // Disponibilidad real del tutor entre fechaInicio y limite (ambos incluidos):
-    // cruza el HORARIO_ATENCION (fraccionado en bloques de 1 hora) con las horas
-    // ya ocupadas. Los días sin ningún hueco libre no se agregan al mapa.
-    // La usan tanto el formulario de nueva solicitud (alumno) como el de
-    // reprogramar (tutor), para no calcular la disponibilidad de dos formas distintas.
     private Map<LocalDate, Set<String>> construirDisponibilidad(int idTutor, List<Horario> listaHorarios,
                                                                 LocalDate fechaInicio, LocalDate limite) {
         Map<LocalDate, Set<String>> horasOcupadas = solicitudDao.getHorasOcupadas(idTutor, fechaInicio, limite);
@@ -382,9 +323,6 @@ public class SolicitudServlet extends HttpServlet {
         return disponibilidad;
     }
 
-    // Arma a mano el JSON (sin librerías externas) con el formato
-    // {"2026-08-03":["13:00","14:00"]} para los próximos 14 días, empezando
-    // con el mismo mínimo de 2 días de anticipación que se exige en doPost.
     private String construirDisponibilidadJson(int idTutor, List<Horario> listaHorarios) {
         LocalDate fechaInicio = LocalDate.now().plusDays(2);
         LocalDate limite = LocalDate.now().plusDays(14);
@@ -416,8 +354,6 @@ public class SolicitudServlet extends HttpServlet {
         return json.toString();
     }
 
-    // Verifica que "hora" (y, si la duración es de 2 horas, también el bloque
-    // siguiente) estén dentro de las horas libres de ese día.
     private boolean horarioDisponible(Set<String> horasDelDia, String hora, int duracion) {
         if (horasDelDia == null || !horasDelDia.contains(hora)) {
             return false;
@@ -425,15 +361,11 @@ public class SolicitudServlet extends HttpServlet {
         return duracion != 2 || horasDelDia.contains(sumarUnaHora(hora));
     }
 
-    // "13:00" -> "14:00"
     private String sumarUnaHora(String hora) {
         int horaBase = Integer.parseInt(hora.split(":")[0]);
         return String.format("%02d:00", horaBase + 1);
     }
 
-    // -----------------------------------------------------------------
-    // Historial de solicitudes del alumno logueado (vista "Mis Solicitudes")
-    // -----------------------------------------------------------------
     private void mostrarHistorialAlumno(HttpServletRequest request, HttpServletResponse response, String matricula)
             throws ServletException, IOException {
 
@@ -445,8 +377,6 @@ public class SolicitudServlet extends HttpServlet {
         request.getRequestDispatcher("/alumno/mis-solicitudes.jsp").forward(request, response);
     }
 
-    // Convierte un bloque "13:00" - "16:00" en las horas de inicio de 1 hora
-    // que contiene: 13:00, 14:00, 15:00.
     private List<String> fraccionarEnHoras(String horaDesde, String horaHasta) {
         List<String> horas = new ArrayList<>();
 

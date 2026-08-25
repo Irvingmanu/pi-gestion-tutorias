@@ -15,9 +15,6 @@ import java.io.OutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-// Genera el reporte ejecutivo en PDF del reporte global del coordinador: resumen de metricas,
-// tabla de tutorías grupales por tutor y desglose de canalizaciones, con paginacion (encabezado
-// de tabla repetido en cada pagina) y la paleta institucional (verde UTEZ) en los encabezados.
 public class ReportePdfBuilder {
 
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -60,9 +57,6 @@ public class ReportePdfBuilder {
         filtros.setFont(fuenteSubtitulo);
         filtros.setAlignment(Element.ALIGN_CENTER);
         filtros.add("Periodo: " + datos.getTituloPeriodo());
-        // La linea de Carrera/Cuatrimestre/Grupo/Tutor solo aporta en el reporte agregado: en el
-        // reporte de un alumno especifico siempre queda en "Todas/Todos" y el bloque "Datos del
-        // Alumno" de abajo ya cubre esa informacion, asi que se omite para no duplicarla.
         if (datos.getDatosAlumno() == null) {
             filtros.add("\nCarrera: " + orTodas(datos.getNombreCarrera())
                     + "  |  Cuatrimestre: " + orTodos(datos.getNombreCuatrimestre())
@@ -77,10 +71,6 @@ public class ReportePdfBuilder {
         agregarDatosAlumno(documento, datos);
     }
 
-    // Ficha academica del alumno filtrado (buscador de alumnos del dashboard): nombre completo +
-    // matricula, carrera, nivel, cuatrimestre-grupo y generacion, resueltos server-side a partir
-    // de su trayectoria (ver ReportesServlet/ReportesGlobalesServlet.resolverDatosAlumno). No se
-    // agrega nada cuando no hay alumno filtrado (reporte agregado normal).
     private void agregarDatosAlumno(Document documento, ReporteExportDatos datos) throws DocumentException {
         ReporteExportDatos.DatosAcademicosAlumno da = datos.getDatosAlumno();
         if (da == null) return;
@@ -112,8 +102,6 @@ public class ReportePdfBuilder {
         tabla.addCell(celdaTexto(valor));
     }
 
-    // Seccion de metricas y graficos (resumen ejecutivo): las mismas 4 tarjetas + los datos
-    // numericos de la grafica de distribucion de canalizados.
     private void agregarResumenEjecutivo(Document documento, ReporteExportDatos datos) throws DocumentException {
         ReportesDao.ReporteResumen r = datos.getResumen();
 
@@ -146,9 +134,6 @@ public class ReportePdfBuilder {
         agregarGraficas(documento, datos);
     }
 
-    // Graficas capturadas desde el navegador (Chart.js toBase64Image()) al momento de exportar:
-    // misma dona de "Distribución de Alumnos Canalizados" y misma barra de "Estado de
-    // Solicitudes de Asesoría" que se ven en la vista de Reportes Globales.
     private void agregarGraficas(Document documento, ReporteExportDatos datos) throws DocumentException {
         boolean hayPastel = datos.getImagenPastel() != null && datos.getImagenPastel().length > 0;
         boolean hayBarras = datos.getImagenBarras() != null && datos.getImagenBarras().length > 0;
@@ -183,9 +168,6 @@ public class ReportePdfBuilder {
         }
     }
 
-    // Tabla paginada del avance de tutorías grupales por tutor (misma info que el modal de
-    // "Seguimiento de Tutorías Grupales"; no se filtra por carrera/cuatrimestre/tutor porque
-    // ese modal tampoco lo hace).
     private void agregarTutoriasGrupales(Document documento, ReporteExportDatos datos) throws DocumentException {
         documento.add(nuevoTituloSeccion("Tutorías Grupales por Tutor"));
 
@@ -218,9 +200,6 @@ public class ReportePdfBuilder {
         documento.add(tabla);
     }
 
-    // Tabla paginada del detalle de tutorías individuales/espontaneas (misma info que el modal
-    // "Alumnos Atendidos": temas tratados, acuerdos y el vinculo directo a un area de apoyo
-    // cuando la sesion origino una canalizacion).
     private void agregarAtenciones(Document documento, ReporteExportDatos datos) throws DocumentException {
         documento.add(nuevoTituloSeccion("Detalle de Tutorías Individuales"));
 
@@ -249,8 +228,6 @@ public class ReportePdfBuilder {
         documento.add(tabla);
     }
 
-    // Tabla paginada del desglose de canalizaciones (misma info que el modal "Alumnos
-    // Canalizados", con los mismos filtros de la barra de Reportes Globales).
     private void agregarCanalizaciones(Document documento, ReporteExportDatos datos) throws DocumentException {
         documento.add(nuevoTituloSeccion("Desglose de Canalizaciones"));
 

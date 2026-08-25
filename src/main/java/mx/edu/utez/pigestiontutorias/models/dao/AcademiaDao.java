@@ -10,9 +10,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-// Catalogo estatico: ACADEMIA se puebla directo en BD via script SQL, no hay alta/edicion/baja
-// desde la aplicacion. Este DAO solo expone lectura, para llenar los <select> de Academia en
-// formulario-alumno.jsp, formulario-tutor.jsp y el filtro en cascada de asignacion.jsp.
 public class AcademiaDao {
 
     public List<Academia> getAll() {

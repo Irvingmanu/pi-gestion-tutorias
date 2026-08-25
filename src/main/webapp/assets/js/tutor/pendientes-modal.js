@@ -1,9 +1,3 @@
-// Modal "Pendientes" de tutor/reportes.jsp: lista las solicitudes de tutoria pendientes de
-// los alumnos asignados a ESTE tutor (el servidor filtra por el tutor de la sesion, ver
-// ReportesServlet). El boton "Ir a Solicitudes" al inicio del modal lleva al modulo donde el
-// tutor puede responderlas.
-// Requiere que la vista defina antes: const CONTEXT_PATH = "<context-path>";
-// y que ya esten cargados alertas.js y bootstrap.js.
 
 let modalPendientesInstancia = null;
 let modalDetallePendienteInstancia = null;

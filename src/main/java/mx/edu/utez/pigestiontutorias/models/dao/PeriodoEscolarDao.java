@@ -90,7 +90,6 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         }
     }
 
-    // Borrado logico, mismo patron que TUTOR/ALUMNO (ESTADO = 'N')
     @Override
     public boolean delete(Integer id) {
         String sql = "UPDATE PERIODO_ESCOLAR SET ESTADO = 'N' WHERE ID_PERIODO = ?";
@@ -120,9 +119,6 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         }
     }
 
-    // Periodos activos del año ACTUAL (dinamico via EXTRACT(YEAR FROM SYSDATE),
-    // asi que el mismo codigo sirve el proximo año sin tocarlo). Alimenta el
-    // <select> de "Nueva Asignación" en asignacion.jsp.
     public List<PeriodoEscolar> getDelAnioActual() {
         List<PeriodoEscolar> lista = new ArrayList<>();
         String sql = "SELECT * FROM PERIODO_ESCOLAR WHERE ESTADO = 'S' " +
@@ -143,10 +139,6 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         return lista;
     }
 
-    // Periodos activos (cualquier año), para el <select> de "Periodo Escolar" del modal
-    // "Nuevo Grupo" en gestion-grupos.jsp: a diferencia de getDelAnioActual(), no se limita
-    // al año en curso, porque un grupo puede crearse para un periodo que ya arranco o que
-    // todavia no empieza.
     public List<PeriodoEscolar> getActivos() {
         List<PeriodoEscolar> lista = new ArrayList<>();
         String sql = "SELECT * FROM PERIODO_ESCOLAR WHERE ESTADO = 'S' ORDER BY FECHA_INICIO DESC";
@@ -165,9 +157,6 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         return lista;
     }
 
-    // Periodo "vigente": el que contiene la fecha de hoy. Se usa para acotar
-    // el <input type="date"> al registrar tutorias (grupal/individual) sin
-    // hardcodear un rango de dos semanas ni un año fijo.
     public PeriodoEscolar getPeriodoVigente() {
         String sql = "SELECT * FROM PERIODO_ESCOLAR WHERE ESTADO = 'S' " +
                 "AND TRUNC(SYSDATE) BETWEEN FECHA_INICIO AND FECHA_FIN " +
@@ -187,8 +176,6 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         return null;
     }
 
-    // Igual que existeNombre, pero excluyendo el propio registro: se usa al editar un periodo
-    // para no rechazar el nombre contra si mismo cuando no cambio.
     public boolean existeNombreParaOtro(String nombre, int idPeriodoExcluir) {
         String sql = "SELECT COUNT(*) FROM PERIODO_ESCOLAR WHERE UPPER(NOMBRE) = UPPER(?) AND ID_PERIODO <> ?";
         try (Connection con = SQLConnector.getConnection();

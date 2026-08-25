@@ -85,7 +85,6 @@ public class TutoriaServlet extends HttpServlet {
 
         Integer idCanalizacion = null;
 
-        // Si el tutor eligió canalizar a alguna área, primero se registra la canalización
         if (idAreaStr != null && !idAreaStr.isBlank()) {
             Canalizacion c = new Canalizacion();
             c.setIdArea(Integer.parseInt(idAreaStr));

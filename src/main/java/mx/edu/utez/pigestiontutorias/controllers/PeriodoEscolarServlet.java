@@ -19,12 +19,8 @@ import java.util.Set;
 @WebServlet(name = "PeriodoEscolarServlet", value = "/gestion-periodos")
 public class PeriodoEscolarServlet extends HttpServlet {
 
-    // Modelo estricto de 3 cuatrimestres: un periodo solo puede arrancar en uno de estos
-    // meses. Debe coincidir exactamente con MESES_PERMITIDOS en periodos.js.
     private static final Set<Integer> MESES_PERMITIDOS = Set.of(1, 5, 9);
 
-    // Nombre que le corresponde a cada mes de inicio valido, para calcularNombrePeriodo().
-    // Debe coincidir exactamente con NOMBRES_INICIO en periodos.js.
     private static final Map<Integer, String> NOMBRES_MES_INICIO = Map.of(
             1, "Enero - Abril",
             5, "Mayo - Agosto",
@@ -103,20 +99,16 @@ public class PeriodoEscolarServlet extends HttpServlet {
             return;
         }
 
-        // Blindaje de servidor: fin debe ser posterior a inicio, sin importar
-        // lo que manden los <input type="date"> del formulario.
         if (!fechaFin.isAfter(fechaInicio)) {
             response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=rango_invalido");
             return;
         }
 
-        // Candado del mes de inicio (replica exacta de la validacion en periodos.js).
         if (!mesValido(fechaInicio)) {
             response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=mes_invalido");
             return;
         }
 
-        // Duracion estricta: mayor a 3 meses y menor o igual a 4 (91 a 123 dias).
         if (!duracionValida(fechaInicio, fechaFin)) {
             response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=duracion_invalida");
             return;
@@ -144,9 +136,6 @@ public class PeriodoEscolarServlet extends HttpServlet {
         }
     }
 
-    // Edicion de un periodo ya existente (nombre/fechas/objetivo de tutorías grupales), incluida
-    // la unica forma soportada de corregir ASISTENCIASGRUPALES desde la interfaz: el DAO ya tenia
-    // el metodo update() listo, solo faltaba esta ruta para invocarlo desde el formulario.
     private void procesarEdicion(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Integer idPeriodo = null;
         try {
@@ -202,13 +191,11 @@ public class PeriodoEscolarServlet extends HttpServlet {
             return;
         }
 
-        // Candado del mes de inicio (replica exacta de la validacion en periodos.js).
         if (!mesValido(fechaInicio)) {
             response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=mes_invalido");
             return;
         }
 
-        // Duracion estricta: mayor a 3 meses y menor o igual a 4 (91 a 123 dias).
         if (!duracionValida(fechaInicio, fechaFin)) {
             response.sendRedirect(request.getContextPath() + "/gestion-periodos?error=duracion_invalida");
             return;
@@ -236,26 +223,15 @@ public class PeriodoEscolarServlet extends HttpServlet {
         }
     }
 
-    // Candado del mes de inicio (replica exacta de mesValido() en periodos.js): un periodo
-    // solo puede arrancar en Enero, Mayo o Septiembre, sin confiar en que el <input
-    // type="date"> del formulario no fue manipulado (POST directo, DevTools, etc.).
     private boolean mesValido(LocalDate fechaInicio) {
         return MESES_PERMITIDOS.contains(fechaInicio.getMonthValue());
     }
 
-    // Duracion estricta (replica exacta de actualizarValidezFechas() en periodos.js): mayor
-    // a 3 meses y menor o igual a 4 (91 a 123 dias).
     private boolean duracionValida(LocalDate fechaInicio, LocalDate fechaFin) {
         long dias = ChronoUnit.DAYS.between(fechaInicio, fechaFin);
         return dias > 90 && dias <= 123;
     }
 
-    // El campo "Nombre del periodo" es readonly en el formulario (se autocompleta por JS a
-    // partir de la Fecha de inicio, ver actualizarNombreAutomatico() en periodos.js): igual
-    // que con matricula/idGrupo en AlumnoServlet, "readonly" es solo UX, asi que el nombre
-    // real que se guarda SIEMPRE se recalcula aqui a partir de la fecha ya validada, en vez
-    // de confiar en el texto que haya llegado en el parametro "nombre" de un POST manipulado.
-    // Solo se llama despues de confirmar mesValido(fechaInicio) == true.
     private String calcularNombrePeriodo(LocalDate fechaInicio) {
         return NOMBRES_MES_INICIO.get(fechaInicio.getMonthValue()) + " " + fechaInicio.getYear();
     }

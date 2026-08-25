@@ -1,10 +1,3 @@
-// Modal "Cambiar contraseña", reutilizable para Coordinador/Tutor/Alumno: dos pasos,
-// primero verifica la contraseña actual contra el servidor y luego permite capturar/
-// confirmar la nueva. Al guardar con éxito, el modal se cierra solo.
-// Requiere que la vista defina antes:
-//   const CONTEXT_PATH = "<context-path>";
-//   const ENDPOINT_CAMBIAR_PASSWORD = "<context-path>/<servlet-del-rol>";
-// y que ya esten cargados alertas.js y bootstrap.js.
 
 let passwordActualVerificada = null;
 
@@ -14,9 +7,7 @@ function obtenerModalCambiarPassword() {
         console.error('No se encontró el elemento #modalCambiarPassword en el DOM.');
         return null;
     }
-    // getOrCreateInstance reutiliza la instancia que Bootstrap ya creó al abrir
-    // el modal (por data-bs-toggle="modal"). Si aquí hiciéramos "new bootstrap.Modal(el)"
-    // se crearía una instancia nueva con _isShown = false, y su hide() no haría nada.
+
     return bootstrap.Modal.getOrCreateInstance(el);
 }
 
@@ -53,7 +44,6 @@ function resetearModalCambiarPassword() {
     });
 }
 
-/** Entre 8 y 64 caracteres, al menos una mayúscula y un número (debe coincidir con CambioPasswordUtil.java). */
 function cumpleRequisitosPassword(password) {
     return password.length >= 8 && password.length <= 64 && /[A-Z]/.test(password) && /[0-9]/.test(password);
 }
@@ -152,7 +142,7 @@ function guardarNuevaPassword() {
         .then(function (resp) { return resp.json(); })
         .then(function (data) {
             if (data.exito) {
-                // Cierra el modal automáticamente al guardar con éxito.
+
                 const modal = obtenerModalCambiarPassword();
                 if (modal) modal.hide();
                 mostrarToast('exito', 'Contraseña actualizada', data.mensaje);

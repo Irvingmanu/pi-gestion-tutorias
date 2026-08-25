@@ -10,8 +10,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-// MOTIVO_AREA guarda el texto del motivo en la columna NOMBRE (no NOMBRE_MOTIVO); el
-// modelo Java sigue llamando al campo "nombreMotivo" para no confundirlo con AREA_APOYO.NOMBRE.
 public class MotivoDAO implements Dao<Motivo, Integer> {
 
     public List<Motivo> getByIdArea(int idArea) {

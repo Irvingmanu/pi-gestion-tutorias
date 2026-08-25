@@ -114,12 +114,8 @@
 <script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/cargando.js"></script>
 
-<!-- Puente entre EL y el JS externo: valores calculados por el servidor -->
 <script>
     window.PUEDE_ENVIAR = ${puedeEnviar};
-    // Disponibilidad real de las próximas 2 semanas, calculada en
-    // SolicitudServlet.construirDisponibilidadJson (cruza HORARIO_ATENCION
-    // del tutor con las horas ya ocupadas en SOLICITUD_TUTORIA/SESION_INDIVIDUAL).
     window.DISPONIBILIDAD = ${empty disponibilidadJson ? '{}' : disponibilidadJson};
 </script>
 <script src="${pageContext.request.contextPath}/assets/js/alumno/solicitud.js"></script>

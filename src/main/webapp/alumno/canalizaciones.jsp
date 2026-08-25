@@ -2,7 +2,6 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <c:set var="paginaActiva" value="canalizaciones" scope="request" />
 <%
-    // Unico bloque Java: formateador de fecha en espanol, igual que en mis-solicitudes.jsp
     java.text.SimpleDateFormat formatoFecha = new java.text.SimpleDateFormat("dd MMMM yyyy", new java.util.Locale("es", "MX"));
     pageContext.setAttribute("formatoFecha", formatoFecha);
 %>

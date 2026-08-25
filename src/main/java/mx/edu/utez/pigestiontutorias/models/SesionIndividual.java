@@ -7,13 +7,13 @@ public class SesionIndividual {
     private int idTutor;
     private String matricula;
     private Date fecha;
-    private String hora; // ej. "13:00", la hora original propuesta/confirmada de la cita
+    private String hora;
     private String temasTratados;
     private String acuerdos;
-    private Integer idCanalizacion; // puede ser null
+    private Integer idCanalizacion;
     private String estado;
-    private String estatusAsistencia; // 'Presente' o 'Falta'
-    private String origen; // 'Programada' (via Solicitud) o 'Espontanea' (alta directa del tutor)
+    private String estatusAsistencia;
+    private String origen;
 
     public SesionIndividual() {}
 

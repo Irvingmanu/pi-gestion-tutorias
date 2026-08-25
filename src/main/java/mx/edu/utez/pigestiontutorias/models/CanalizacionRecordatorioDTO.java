@@ -1,8 +1,5 @@
 package mx.edu.utez.pigestiontutorias.models;
 
-// Datos minimos que necesita EmailSender.enviarRecordatorioCanalizacion: se obtienen re-consultando
-// la BD por ID_CANALIZACION (nunca confiando en lo que mande el cliente) para asegurar que el
-// correo de contacto del area y el link de confirmacion sean los reales.
 public class CanalizacionRecordatorioDTO {
     private String nombreArea;
     private String correoContactoArea;

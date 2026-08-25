@@ -19,7 +19,6 @@ public class AreaDAO implements Dao<Area, Integer> {
         return createAndGetId(entidad) > 0;
     }
 
-    // Devuelve el ID_AREA generado para poder insertar sus motivos hijos
     public int createAndGetId(Area entidad) {
         String sql = "INSERT INTO AREA_APOYO(NOMBRE, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, CORREO_CONTACTO, ENLACE_CITA) VALUES(?, ?, ?, ?, ?, ?)";
         try (Connection con = SQLConnector.getConnection();
@@ -97,8 +96,6 @@ public class AreaDAO implements Dao<Area, Integer> {
         return listaAreas;
     }
 
-    // Usado por el formulario de tutoria individual: cada Area trae ya cargados sus Motivos
-    // para poder generar un <select> por Area sin hacer una consulta aparte por cada una.
     public List<Area> getAllConMotivos() {
         List<Area> areas = getAll();
         for (Area area : areas) {
@@ -128,9 +125,6 @@ public class AreaDAO implements Dao<Area, Integer> {
         return null;
     }
 
-    // Cuantos alumnos ya fueron canalizados a esta area (tabla CANALIZACION.ID_AREA), sin
-    // importar el motivo ni el estatus: mientras exista al menos uno, el nombre del area y
-    // sus motivos quedan bloqueados para edicion (regla de negocio en AreaServlet/JSP).
     public int contarCanalizados(int idArea) {
         String sql = "SELECT COUNT(*) FROM CANALIZACION WHERE ID_AREA = ?";
         try (Connection con = SQLConnector.getConnection();

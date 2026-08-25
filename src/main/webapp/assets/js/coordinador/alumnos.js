@@ -39,30 +39,19 @@ function prepararReactivacion(matricula) {
     );
 }
 
-// ==================== AGRUPACION DE LA TABLA POR CARRERA + CUATRIMESTRE + GRUPO ====================
-// El JSP renderiza UNA sola tabla oculta (#tablaOriginalAlumnos) con todos los alumnos.
-// Aqui la leemos una sola vez, y cada vez que cambia un filtro agrupamos las filas que
-// coinciden y pintamos una tabla independiente (con scroll) por cada combinacion de
-// Carrera + Cuatrimestre + Grupo, sin volver a pedir nada al servidor.
-
 let filasAlumnosOriginales = [];
 
-// Lee las filas de la tabla oculta del JSP hacia filasAlumnosOriginales. Separado de
-// inicializarAgrupacionAlumnos() porque el filtro de Cuatrimestre/Grupo (poblarSelect*)
-// tambien necesita estas filas ya cargadas ANTES de pintarse (ver valoresUnicos).
 function cargarFilasAlumnosOriginales() {
     let tbodyOriginal = document.getElementById('tablaAlumnosOriginal');
     filasAlumnosOriginales = tbodyOriginal ? Array.from(tbodyOriginal.querySelectorAll('tr')) : [];
 }
 
-// Pinta el primer grupo (o el mensaje de "no hay alumnos"), respetando el filtro de
-// "Mostrar alumnos dados de baja" (desmarcado por defecto).
 function inicializarAgrupacionAlumnos() {
     let contenedorGrupos = document.getElementById('contenedorGruposAlumnos');
     if (!contenedorGrupos) return;
 
     if (filasAlumnosOriginales.length === 0) {
-        // El JSP no encontro alumnos en BD (listaAlumnos vacia)
+
         contenedorGrupos.innerHTML = '<div class="alert alert-info text-center">No hay alumnos registrados todavía.</div>';
         return;
     }
@@ -70,9 +59,6 @@ function inicializarAgrupacionAlumnos() {
     filtrarAlumnos();
 }
 
-// Filtrado en tiempo real: ningun filtro es obligatorio. El texto de "Buscar Alumno" ya NO
-// participa aqui (antes reconstruia todo desde cero con cada letra escrita); ver
-// aplicarBusquedaAlumno() mas abajo, que opera directo sobre el DOM ya renderizado.
 function filtrarAlumnos() {
     let selectAcademiaFiltro = document.getElementById('academiaFiltroPrincipal');
     let academiaSeleccionada = selectAcademiaFiltro ? selectAcademiaFiltro.value : '';
@@ -100,24 +86,15 @@ function filtrarAlumnos() {
 
     renderizarGruposAlumnos(filasFiltradas);
 
-    // Reaplica la busqueda activa (si habia una) sobre los acordeones recien reconstruidos,
-    // para no perderla al cambiar otro filtro (Academia/Carrera/Grupo/Cuatrimestre/Inactivos).
     aplicarBusquedaAlumno();
 }
 
-// Agrupa las filas por Carrera + Cuatrimestre + Grupo y pinta una tabla por cada grupo
 function renderizarGruposAlumnos(filas) {
     let contenedor = document.getElementById('contenedorGruposAlumnos');
     if (!contenedor) return;
 
     contenedor.innerHTML = '';
 
-    // filas.length ya ES el conteo de <tr> que van a quedar visibles (equivalente a
-    // contar los <tr> normales con display:'' en gestion-tutores.js/asignacion.js,
-    // pero aqui el conteo se conoce antes de pintar nada porque las tablas se
-    // reconstruyen desde cero en cada filtro, no se ocultan filas existentes). Sin
-    // resultados: se oculta la estructura de tabla por completo (contenedor ya quedo
-    // vacio arriba) y se muestra la tarjeta en su lugar.
     let tarjetaSinResultados = document.getElementById('tarjetaSinResultados');
     let sinResultados = filas.length === 0;
     if (tarjetaSinResultados) tarjetaSinResultados.style.display = sinResultados ? '' : 'none';
@@ -143,7 +120,6 @@ function renderizarGruposAlumnos(filas) {
         grupos.get(clave).filas.push(fila);
     });
 
-    // Orden: Carrera (alfabetico), Cuatrimestre (numerico), Grupo (alfabetico)
     let gruposOrdenados = Array.from(grupos.values()).sort(function (a, b) {
         if (a.carrera !== b.carrera) return a.carrera.localeCompare(b.carrera);
         if (a.cuatri !== b.cuatri) return Number(a.cuatri) - Number(b.cuatri);
@@ -155,11 +131,6 @@ function renderizarGruposAlumnos(filas) {
     });
 }
 
-// Construye un .accordion-item de Bootstrap 5 para un solo grupo: encabezado con Nombre
-// del Grupo, Generacion y Tutor, y el cuerpo con la tabla de alumnos (con scroll). Empieza
-// siempre colapsado (aria-expanded="false", sin la clase "show" en el collapse); lo abre
-// aplicarBusquedaAlumno() si hay una coincidencia de busqueda dentro. Sin data-bs-parent:
-// permite varios grupos abiertos a la vez (la busqueda puede abrir mas de uno).
 function construirAcordeonGrupo(grupoInfo) {
     let idHeader = 'acordeonHeaderGrupo' + grupoInfo.idGrupo;
     let idCollapse = 'acordeonCollapseGrupo' + grupoInfo.idGrupo;
@@ -195,9 +166,6 @@ function construirAcordeonGrupo(grupoInfo) {
     let cuerpo = document.createElement('div');
     cuerpo.className = 'accordion-body';
 
-    // Acceso directo al historial de tutorias (individuales y grupales) de TODO el grupo,
-    // sin tener que ir a Reportes Globales y volver a elegir Carrera/Cuatrimestre/Grupo a
-    // mano (ver ReportesGlobalesServlet.doGet, atributos prefiltro*).
     let barraAcciones = document.createElement('div');
     barraAcciones.className = 'd-flex justify-content-end mb-2';
 
@@ -245,18 +213,6 @@ function construirAcordeonGrupo(grupoInfo) {
     return item;
 }
 
-// ==================== BUSQUEDA DE ALUMNO SOBRE LOS ACORDEONES YA RENDERIZADOS ====================
-// A diferencia de los demas filtros (Academia/Carrera/Grupo/Cuatrimestre/Inactivos), que
-// reconstruyen los acordeones desde cero via filtrarAlumnos(), la busqueda por nombre NO
-// reconstruye nada: opera directo sobre el DOM que ya esta pintado, mostrando/ocultando
-// <tr> y .accordion-item, y forzando con la API de Bootstrap (bootstrap.Collapse) a que se
-// abran los grupos con coincidencias. Se vuelve a aplicar sola despues de cada
-// reconstruccion (ver filtrarAlumnos()) para no perder la busqueda activa al cambiar otro
-// filtro.
-
-// Fuerza abierto/cerrado un .accordion-item via la API de Bootstrap, sin depender de que
-// el coordinador le haya dado clic al boton. getOrCreateInstance ya es no-op si el collapse
-// ya esta en el estado pedido, asi que es seguro llamarlo en cada tecla escrita.
 function abrirAcordeonItem(item) {
     let colapso = item.querySelector('.accordion-collapse');
     if (!colapso || typeof bootstrap === 'undefined') return;
@@ -282,8 +238,7 @@ function aplicarBusquedaAlumno() {
         let filas = item.querySelectorAll('tbody tr');
 
         if (!texto) {
-            // Buscador vacio: se restaura el estado original (filas visibles, acordeon
-            // cerrado), sin importar si antes tenia coincidencias o no.
+
             filas.forEach(function (fila) {
                 fila.style.display = '';
             });
@@ -304,29 +259,17 @@ function aplicarBusquedaAlumno() {
             abrirAcordeonItem(item);
             algunGrupoConCoincidencia = true;
         } else {
-            // Grupo entero sin coincidencias: se oculta el acordeon completo.
+
             item.style.display = 'none';
         }
     });
 
-    // Si hay texto de busqueda y ningun grupo tuvo coincidencias, se reusa la tarjeta de
-    // "sin resultados" que ya existe (en vez de dejar la pantalla en blanco). Con el
-    // buscador vacio no se toca: filtrarAlumnos() ya la dejo como corresponde segun los
-    // demas filtros.
     let tarjetaSinResultados = document.getElementById('tarjetaSinResultados');
     if (texto && acordeones.length > 0) {
         let sinCoincidencias = !algunGrupoConCoincidencia;
         if (tarjetaSinResultados) tarjetaSinResultados.style.display = sinCoincidencias ? '' : 'none';
     }
 }
-
-// ==================== FILTROS DE CUATRIMESTRE/GRUPO LIMITADOS A GRUPOS CON ALUMNOS ====================
-// En vez de un rango fijo (1-11 / A-F) o de listar TODOS los grupos que existen en BD
-// (window.gruposExistentes incluye grupos recien creados desde el modal "Nuevo Grupo"
-// que aun no tienen ningun alumno), estos <select> se arman a partir de
-// filasAlumnosOriginales: solo ofrecen combinaciones Carrera+Cuatrimestre+Grupo que
-// realmente tienen registros en la tabla, para no dejar elegir un filtro que nunca
-// va a traer resultados.
 
 function valoresUnicos(campo, filtroCarrera, filtroCuatri) {
     let datasetKey = campo === 'letra' ? 'grupo' : campo;
@@ -341,10 +284,6 @@ function valoresUnicos(campo, filtroCarrera, filtroCuatri) {
     return Array.from(vistos);
 }
 
-// Filtro OPCIONAL Academia -> Carrera (cliente, sin fetch, sin bloquear el select):
-// #carreraFiltroPrincipal ya viene con TODAS las carreras del sistema renderizadas
-// (JSTL) y habilitado desde el inicio; esto solo oculta (display:none) las <option>
-// cuyo data-academia-id no coincida. Mismo patron que formulario-alumno.js.
 function aplicarFiltroAcademiaPrincipal() {
     let selectAcademia = document.getElementById('academiaFiltroPrincipal');
     let selectCarrera = document.getElementById('carreraFiltroPrincipal');
@@ -355,7 +294,7 @@ function aplicarFiltroAcademiaPrincipal() {
 
     Array.prototype.forEach.call(selectCarrera.options, function (opcion) {
         if (!opcion.value) {
-            return; // el placeholder "Seleccione la carrera" siempre se conserva
+            return;
         }
 
         let coincide = !idAcademia || opcion.getAttribute('data-academia-id') === idAcademia;
@@ -365,10 +304,6 @@ function aplicarFiltroAcademiaPrincipal() {
         }
     });
 
-    // Si la carrera elegida ya no pertenece a la academia filtrada, se limpia la
-    // seleccion y se re-dispara el resto de la cascada (Cuatrimestre/Grupo/tabla).
-    // En cualquier otro caso, la tabla igual se refiltra de una vez: cambiar de
-    // academia debe ocultar/mostrar filas al instante, no solo tocar el <select>.
     if (selectCarrera.value && !opcionSeleccionadaSigueVisible) {
         selectCarrera.value = '';
         selectCarrera.dispatchEvent(new Event('change'));
@@ -415,10 +350,7 @@ function poblarSelectGrupo(carreraSeleccionada, cuatrimestreSeleccionado) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Este archivo tambien se carga en formulario-alumno.jsp (solo por confirmarCancelacion()),
-    // que reutiliza el id "cuatrimestre" para su propia cascada Carrera->Cuatrimestre. Sin
-    // este guard, este bloque (pensado para el listado de gestion-grupos.jsp) lo pisaba con
-    // las opciones del listado apenas cargaba la pagina.
+
     let contenedorGrupos = document.getElementById('contenedorGruposAlumnos');
     if (!contenedorGrupos) {
         return;
@@ -431,10 +363,6 @@ document.addEventListener('DOMContentLoaded', function () {
     let cuatrimestre = document.getElementById('cuatrimestre');
     let mostrarInactivos = document.getElementById('mostrarInactivos');
 
-    // #carreraFiltroPrincipal ya viene con todas sus opciones desde el JSP (JSTL);
-    // solo falta poblar Cuatrimestre/Grupo, que si siguen siendo dinamicos. Las filas
-    // se cargan primero porque poblarSelectCuatrimestre/poblarSelectGrupo ya dependen
-    // de filasAlumnosOriginales (ver valoresUnicos).
     cargarFilasAlumnosOriginales();
     poblarSelectCuatrimestre('');
     poblarSelectGrupo('', '');
@@ -456,14 +384,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (mostrarInactivos) mostrarInactivos.addEventListener('change', filtrarAlumnos);
 });
 
-// ==================== MODAL "NUEVO GRUPO" ====================
-// Cascada Academia -> Carrera (mismo patron de solo ocultar <option>, sin fetch) y
-// Carrera -> Cuatrimestre segun el NIVEL de la carrera (TSU 1-6 / ING 7-10, igual que
-// formulario-alumno.js). La Letra es un <select> fijo A-F (mismo rango que el alta de
-// alumno); al elegir Cuatrimestre se consulta window.gruposExistentes (grupos reales
-// de BD, no solo los que ya tienen alumnos) para deshabilitar las letras ya usadas en
-// esa Carrera+Cuatrimestre y preseleccionar la primera libre. El formulario hace un
-// POST real a AlumnoServlet (accion=crearGrupo), que usa GrupoDao.findOrCreate().
 document.addEventListener('DOMContentLoaded', function () {
     let selectModalAcademia = document.getElementById('modalAcademia');
     let selectModalCarrera = document.getElementById('modalCarrera');
@@ -481,7 +401,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let opcionSeleccionadaSigueVisible = false;
 
         Array.prototype.forEach.call(selectModalCarrera.options, function (opcion) {
-            if (!opcion.value) return; // el placeholder "Seleccione la carrera" siempre se conserva
+            if (!opcion.value) return;
 
             let coincide = !idAcademia || opcion.getAttribute('data-academia-id') === idAcademia;
             opcion.style.display = coincide ? '' : 'none';
@@ -536,11 +456,6 @@ document.addEventListener('DOMContentLoaded', function () {
         selectModalLetra.disabled = true;
     }
 
-    // Exclusion dinamica: arma el <select> con A-F, deshabilitando las letras que ya
-    // existen en window.gruposExistentes para esa Carrera+Cuatrimestre, y preselecciona
-    // la primera letra libre. Si las 6 ya existen, deja el placeholder vacio+required
-    // seleccionado para que el navegador bloquee el envio (el select sigue habilitado:
-    // un <select disabled> no participa en la validacion de "required").
     function poblarSelectLetraModal(carreraNombre, cuatrimestre) {
         if (!carreraNombre || !cuatrimestre) {
             resetearSelectLetraModal('Seleccione primero el cuatrimestre');
@@ -579,9 +494,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Cualquier seleccion hecha cuenta como "datos capturados" para la confirmacion
-    // de cierre; la Letra solo cuenta si el select ya esta habilitado (con sugerencia
-    // real), no en su placeholder inicial deshabilitado.
     function modalNuevoGrupoTieneCambios() {
         return selectModalAcademia.value !== ''
             || selectModalCarrera.value !== ''
@@ -625,21 +537,12 @@ document.addEventListener('DOMContentLoaded', function () {
         poblarSelectLetraModal(nombreCarrera, selectModalCuatrimestre.value);
     });
 
-    // El modal se reabre varias veces en la misma pagina: se limpia por completo cada
-    // vez que se abre para no arrastrar la seleccion de la vez anterior.
     modalNuevoGrupoEl.addEventListener('show.bs.modal', function () {
         formNuevoGrupo.reset();
         aplicarFiltroAcademiaModal();
         poblarCuatrimestresModal(null);
         resetearSelectLetraModal('Seleccione primero el cuatrimestre');
 
-        // Sugerencia de Año de Inicio = año actual, con rango año actual -5 a +1: -5 porque
-        // un grupo de 6° cuatrimestre o mas registrado HOY corresponde a una generacion que
-        // arranco varios años atras (cohortes activas/rezagadas), no solo el año pasado.
-        // formNuevoGrupo.reset() ya limpio el campo a su estado inicial (sin value en el
-        // HTML), asi que se sugiere aqui. El texto de ayuda muestra el rango explicitamente
-        // para que el coordinador no tenga que adivinarlo (mismo rango que valida
-        // AlumnoServlet si se manda el POST directo).
         let anioActual = new Date().getFullYear();
         let anioMinimo = anioActual - 5;
         let anioMaximo = anioActual + 1;
@@ -652,11 +555,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Refuerzo anti-autocompletado: el autocompletado del navegador (aunque el <input>
-    // tenga autocomplete="off") a veces repone un valor capturado en una prueba anterior
-    // DESPUES de que se abre el modal, pisando en silencio la sugerencia de arriba sin que
-    // se note a simple vista. shown.bs.modal se dispara cuando el modal ya esta totalmente
-    // visible (mas tarde que show.bs.modal), asi que se vuelve a forzar el año sugerido aqui.
     modalNuevoGrupoEl.addEventListener('shown.bs.modal', function () {
         inputModalAnioInicio.value = String(new Date().getFullYear());
     });
@@ -666,16 +564,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnCancelarNuevoGrupo) btnCancelarNuevoGrupo.addEventListener('click', intentarCerrarModalNuevoGrupo);
     if (btnCerrarNuevoGrupo) btnCerrarNuevoGrupo.addEventListener('click', intentarCerrarModalNuevoGrupo);
 
-    // El "Exito al guardar" se muestra en el bloque de toasts por parametros de URL
-    // (?exito=grupo_creado), al recargar despues del POST real a /gestion-grupos.
 });
 
-// ==================== MODAL "CARGA MASIVA DE ALUMNOS" ====================
-// Un archivo Excel = un Grupo (elegido en #cargaMasivaGrupo). El POST (con el archivo) lo
-// hace el propio <form enctype="multipart/form-data">, asi que aqui solo se maneja abrir/
-// cerrar el modal con confirmacion si ya se eligio grupo o archivo, igual que el resto de
-// los modales de esta pagina. El "Exito"/"Error" real se muestra en el bloque de toasts por
-// parametros de URL (?exito=carga_masiva_alumnos / ?error=...), al recargar despues del POST.
 document.addEventListener('DOMContentLoaded', function () {
     let selectCargaGrupo = document.getElementById('cargaMasivaGrupo');
     let inputCargaArchivo = document.getElementById('cargaMasivaArchivo');
@@ -683,12 +573,6 @@ document.addEventListener('DOMContentLoaded', function () {
     let modalCargaMasivaEl = document.getElementById('modalCargaMasiva');
     if (!formCargaMasiva || !selectCargaGrupo || !inputCargaArchivo || !modalCargaMasivaEl) return;
 
-    // Searchable Select (Select2) para "Grupo": util si hay muchos grupos activos. Mismo
-    // patron defensivo que #asignarGrupo en formulario-alumno.js: si el CDN de jQuery/
-    // Select2 no cargo, el <select> nativo sigue funcionando. dropdownParent es OBLIGATORIO
-    // aqui porque el select vive dentro de un modal de Bootstrap: sin eso, el menu
-    // desplegable de Select2 se renderiza como hijo de <body> (fuera del modal) y el
-    // z-index/overflow del modal lo deja tapado o inutilizable.
     let $cargaMasivaGrupo = (typeof jQuery !== 'undefined' && jQuery.fn.select2)
         ? jQuery(selectCargaGrupo)
         : null;
@@ -725,11 +609,6 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
-    // El modal se reabre varias veces en la misma pagina: se limpia por completo cada vez
-    // que se abre para no arrastrar la seleccion de la vez anterior. formCargaMasiva.reset()
-    // ya deja el <select> real en su placeholder; el trigger('change') fuerza a Select2 a
-    // releer ese valor y refrescar lo que muestra (si no, el widget se queda mostrando la
-    // ultima opcion elegida aunque el <select> real ya se haya limpiado).
     modalCargaMasivaEl.addEventListener('show.bs.modal', function () {
         formCargaMasiva.reset();
         if ($cargaMasivaGrupo) $cargaMasivaGrupo.trigger('change');
@@ -741,7 +620,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnCerrarCargaMasiva) btnCerrarCargaMasiva.addEventListener('click', intentarCerrarModalCargaMasiva);
 });
 
-// Toasts/alertas de exito y error via parametros en la URL (?exito=, ?error=)
 document.addEventListener('DOMContentLoaded', function () {
     const parametros = new URLSearchParams(window.location.search);
     const exito = parametros.get('exito');
@@ -764,9 +642,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 mostrarToast('exito', '¡Éxito!', 'El grupo fue creado correctamente');
                 break;
             case 'carga_masiva_alumnos': {
-                // Si hubo filas invalidas, se omite este toast: mas abajo se muestra una
-                // alerta mas completa (con el numero de cada fila omitida), que ya incluye
-                // este mismo conteo de "insertados".
+
                 if (window.filasInvalidasExcel && window.filasInvalidasExcel.length > 0) break;
                 let insertados = parametros.get('insertados') || '0';
                 mostrarToast('exito', '¡Éxito!', 'Se registraron ' + insertados + ' alumno(s) correctamente.');
@@ -796,10 +672,7 @@ document.addEventListener('DOMContentLoaded', function () {
             case 'reactivacion_fallida':
                 mostrarAlerta('error', 'Error', 'No se pudo reactivar al alumno.');
                 break;
-            // Antes todos los campos del modal "Nuevo Grupo" caian en un solo
-            // "grupo_datos_invalidos" generico, y el coordinador tenia que adivinar cual de
-            // los 5 campos era el problema (ver crearGrupoIndependiente() en AlumnoServlet,
-            // que ahora corta en el primero que falle y manda un codigo especifico por campo).
+
             case 'grupo_carrera_invalida':
                 mostrarAlerta('error', 'Error', 'Selecciona una Carrera válida.');
                 break;
@@ -810,8 +683,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 mostrarAlerta('error', 'Error', 'Selecciona una Letra válida (A-F).');
                 break;
             case 'grupo_anio_invalido': {
-                // Mismo rango que se sugiere en el modal (ver show.bs.modal mas abajo):
-                // año actual -5 a +1.
+
                 let anioActual = new Date().getFullYear();
                 mostrarAlerta('error', 'Error', 'El Año de Inicio debe estar entre ' + (anioActual - 5) + ' y ' + (anioActual + 1) + '.');
                 break;
@@ -835,11 +707,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 mostrarAlerta('error', 'Error', 'Selecciona un archivo Excel (.xlsx o .xls) antes de subir.');
                 break;
             case 'archivo_invalido':
-                // Si hay filas invalidas con numero de renglon (window.filasInvalidasExcel),
-                // se omite este mensaje generico: mas abajo se muestra uno mas especifico
-                // con el detalle fila por fila. Ambos usan el mismo modal (mostrarAlerta),
-                // asi que mostrar los dos aqui pisaria el primero con el segundo sin que se
-                // llegue a ver.
+
                 if (!window.filasInvalidasExcel || window.filasInvalidasExcel.length === 0) {
                     mostrarAlerta('error', 'Error', 'No se pudo leer el archivo, o ninguna fila tenía datos válidos. Verifica el formato de las columnas y vuelve a intentar.');
                 }
@@ -852,19 +720,6 @@ document.addEventListener('DOMContentLoaded', function () {
         window.history.replaceState(null, null, window.location.pathname);
     }
 
-    // Filas del ultimo Excel de carga masiva que se omitieron por datos invalidos/
-    // duplicados (window.filasInvalidasExcel, ver gestion-grupos.jsp: AlumnoServlet la
-    // guarda en SESSION para no saturar la URL, el JSP la vuelca a este global y la borra
-    // de la sesion). mostrarAlerta() es un modal (bootstrap.Modal), no un toast: se queda
-    // en pantalla hasta que el coordinador le da clic a "Aceptar", a proposito, para que le
-    // de tiempo de leer y anotar los numeros de fila antes de que desaparezca solo.
-    // Se avisa aqui, fuera de los switch de arriba, porque aplica tanto si la carga fue
-    // "exito parcial" (exito=carga_masiva_alumnos) como si fallo por completo
-    // (error=archivo_invalido, cuando NINGUNA fila paso la validacion) — el titulo y tipo
-    // cambian segun cual de los dos haya sido. Cada elemento ya es un mensaje completo
-    // ("Fila 6: el correo 'x' ya está registrado en el sistema."), por eso se unen con
-    // salto de linea (mostrarAlerta usa innerText, que SI respeta '\n' como <br>) en vez de
-    // coma: serian oraciones larguisimas pegadas si se unieran con ", ".
     if (window.filasInvalidasExcel && window.filasInvalidasExcel.length > 0) {
         let insertados = parseInt(parametros.get('insertados') || '0', 10);
         let listaFilas = window.filasInvalidasExcel.join('\n');

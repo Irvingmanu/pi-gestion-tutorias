@@ -1,8 +1,3 @@
-// Modal "Alumnos Canalizados" de reportes-globales.jsp: lista las canalizaciones a áreas de
-// apoyo (Psicología, Servicio Médico, Becas, etc.), respetando los mismos filtros de la barra
-// de Reportes Globales para que el desglose sea coherente con el KPI de la tarjeta.
-// Requiere que la vista defina antes: const CONTEXT_PATH = "<context-path>";
-// y que ya esten cargados alertas.js y bootstrap.js.
 
 let modalCanalizadosInstancia = null;
 let modalDetalleCanalizacionInstancia = null;

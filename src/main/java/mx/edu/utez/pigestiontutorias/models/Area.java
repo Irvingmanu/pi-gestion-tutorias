@@ -41,8 +41,6 @@ public class Area {
     public String getApellidoMaternoEncargado() { return apellidoMaternoEncargado; }
     public void setApellidoMaternoEncargado(String apellidoMaternoEncargado) { this.apellidoMaternoEncargado = apellidoMaternoEncargado; }
 
-    // Nombre completo del encargado (NOMBRES + APELLIDO_PATERNO + APELLIDO_MATERNO,
-    // columnas separadas en BD) para mostrar en listados y correos.
     public String getEncargado() {
         if (nombresEncargado == null) return null;
         StringBuilder sb = new StringBuilder(nombresEncargado);
@@ -75,8 +73,6 @@ public class Area {
         this.motivos = motivos;
     }
 
-    // Cuantos alumnos ya fueron canalizados a esta area (ver AreaDAO#contarCanalizados).
-    // Si es > 0, el nombre del area y sus motivos quedan bloqueados para edicion.
     public int getAlumnosCanalizados() {
         return alumnosCanalizados;
     }

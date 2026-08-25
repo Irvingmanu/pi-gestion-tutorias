@@ -17,10 +17,6 @@ public class AlumnoDAO implements Dao<Alumno, String> {
 
     private final GrupoDao grupoDao = new GrupoDao();
 
-    // Alta individual: en la misma transaccion que el INSERT en ALUMNO, deja el renglon de
-    // apertura en ALUMNO_GRUPO_HISTORICO (mismo patron que ya usaba crearMasivo() para la
-    // carga por Excel, aplicado ahora tambien al alta de un solo alumno) para que su
-    // trayectoria academica se pueda reconstruir despues.
     @Override
     public boolean create(Alumno entidad) {
         String sqlAlumno = "INSERT INTO ALUMNO(MATRICULA, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, CORREO_INSTITUCIONAL, TELEFONO, ID_GENERO, ID_GRUPO, PASS) " +
@@ -73,13 +69,6 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         }
     }
 
-    // Alta masiva (carga de Excel via AlumnoServlet + Apache POI, accion=cargaMasivaAlumnos):
-    // un solo batch/commit para todos los alumnos ya validados por el servlet, mas un
-    // segundo batch en la MISMA transaccion para dejar registro en ALUMNO_GRUPO_HISTORICO
-    // (alta inicial del alumno en idGrupo). idGrupo es el mismo para todo el lote: la carga
-    // masiva es "un archivo = un grupo", elegido en el modal antes de subir el Excel.
-    // Usa PasswordUtil.hash(...) igual que create(), para que un alumno de carga masiva
-    // pueda iniciar sesion exactamente igual que uno dado de alta a mano.
     public int crearMasivo(List<Alumno> alumnos, int idGrupo) {
         if (alumnos == null || alumnos.isEmpty()) return 0;
 
@@ -190,8 +179,6 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return false;
     }
 
-    // MATRICULA ya es la PK real de ALUMNO (no hay ID_ALUMNO surrogate), asi que estas
-    // variantes de edicion excluyen por MATRICULA en vez de un id numerico aparte.
     public boolean existeCorreo(String correo, String matriculaExcluida) {
         String sql = "SELECT COUNT(*) FROM ALUMNO WHERE CORREO_INSTITUCIONAL = ? AND MATRICULA <> ?";
         try (Connection con = SQLConnector.getConnection();
@@ -228,8 +215,7 @@ public class AlumnoDAO implements Dao<Alumno, String> {
 
     @Override
     public List<Alumno> getAll() {
-        // Trae activos e inactivos: la pantalla de gestion decide que mostrar
-        // segun el filtro "mostrar dados de baja".
+
         List<Alumno> listaAlumnos = new ArrayList<>();
         String sql = "SELECT * FROM ALUMNO";
         try (Connection con = SQLConnector.getConnection();
@@ -255,9 +241,6 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return null;
     }
 
-    // Login: busca por correo institucional (ver LoginServlet, que intenta ALUMNO
-    // antes que TUTOR y COORDINADOR). Incluye PASS para que el servlet valide la
-    // contraseña; ESTADO se revisa aparte para no dejar entrar a alguien dado de baja.
     public Alumno findByCorreo(String correo) {
         String sql = "SELECT * FROM ALUMNO WHERE UPPER(CORREO_INSTITUCIONAL) = UPPER(?)";
         try (Connection con = SQLConnector.getConnection();
@@ -270,9 +253,6 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return null;
     }
 
-    // Perfil del alumno para la sesión: además de sus datos, resuelve el Grupo
-    // (Carrera + Cuatrimestre + Letra + Periodo, ya unificados en GRUPO) como objeto
-    // para poder usarlo directamente en EL (ej. ${alumno.grupo.nombreGrupo}) sin scriptlets.
     public Alumno getPerfilCompleto(String matricula) {
         Alumno alumno = getById(matricula);
         if (alumno == null) return null;
@@ -283,12 +263,6 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return alumno;
     }
 
-    // Edicion desde formulario-alumno.jsp: es el unico punto donde el coordinador puede
-    // cambiar a un alumno de grupo (incluyendo pasarlo a una carrera de Ingenieria, ya que
-    // GRUPO.ID_CARRERA es independiente del nivel). Si el ID_GRUPO cambia, cierra el
-    // renglon abierto en ALUMNO_GRUPO_HISTORICO y abre uno nuevo, en la misma transaccion
-    // que el UPDATE, para que getTrayectoriaPorAlumno() pueda reconstruir el recorrido
-    // completo del alumno (usado por la seccion "Trayectoria academica" del historial).
     @Override
     public boolean update(Alumno entidad) {
         String sqlGrupoAnterior = "SELECT ID_GRUPO FROM ALUMNO WHERE MATRICULA = ?";
@@ -354,9 +328,6 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         }
     }
 
-    // Recorrido academico completo de un alumno (Parte A de "Historial a largo plazo"):
-    // un renglon por cada estancia en ALUMNO_GRUPO_HISTORICO, con el nombre/nivel de
-    // carrera y los datos del grupo resueltos via JOIN. fechaFin NULL = grupo actual.
     public List<TrayectoriaGrupoDTO> getTrayectoriaPorAlumno(String matricula) {
         List<TrayectoriaGrupoDTO> lista = new ArrayList<>();
         String sql = "SELECT c.NOMBRE AS NOMBRE_CARRERA, c.NIVEL, g.CUATRIMESTRE, g.LETRA, g.GENERACION, " +
@@ -391,7 +362,7 @@ public class AlumnoDAO implements Dao<Alumno, String> {
 
     @Override
     public boolean delete(String matricula) {
-        // Baja logica: preserva el historial de asistencias/sesiones y bloquea el acceso del alumno.
+
         String sql = "UPDATE ALUMNO SET ESTADO = 'N' WHERE MATRICULA = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -403,7 +374,6 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         }
     }
 
-    // Reactiva a un alumno dado de baja y restaura su acceso al sistema.
     public boolean reactivar(String matricula) {
         String sql = "UPDATE ALUMNO SET ESTADO = 'S' WHERE MATRICULA = ?";
         try (Connection con = SQLConnector.getConnection();
@@ -444,13 +414,6 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return new CarreraDao().getAll();
     }
 
-    // Siguiente numero de 3 digitos disponible para una MATRICULA nueva (formato
-    // AnioPeriodoSigla + Contador, ver GenerarCredencialesServlet). Revisa las matriculas
-    // que ya empiezan con ese prefijo (Anio+Periodo+Sigla, en MAYUSCULAS porque
-    // AlumnoServlet siempre guarda la matricula en mayusculas), se queda con el sufijo
-    // numerico de cada una y regresa el mayor + 1 (o 1 si todavia no hay ninguna).
-    // Se resuelve en Java (no con TO_NUMBER(SUBSTR(...)) en SQL) para no reventar la
-    // consulta si algun dato viejo/manual no trae un sufijo numerico.
     public int obtenerSiguienteContador(String prefijo) {
         String sql = "SELECT MATRICULA FROM ALUMNO WHERE MATRICULA LIKE ?";
         int mayor = 0;
@@ -468,7 +431,7 @@ public class AlumnoDAO implements Dao<Alumno, String> {
                     try {
                         mayor = Math.max(mayor, Integer.parseInt(matricula.substring(prefijo.length())));
                     } catch (NumberFormatException ignorada) {
-                        // Matricula con sufijo no numerico: no cuenta para el correlativo.
+
                     }
                 }
             }
@@ -481,10 +444,6 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return mayor + 1;
     }
 
-    // Buscador de alumnos del dashboard de Reportes (por nombre completo o matricula).
-    // idTutor == null -> busqueda global (vista Coordinador, ve a todos los alumnos).
-    // idTutor != null -> solo alumnos cuyo grupo esta asignado a ese tutor (via
-    // ASIGNACION_TUTOR), para que un tutor jamas pueda ver/buscar alumnos ajenos.
     public List<AlumnoBusquedaDTO> buscarAlumnos(String texto, Integer idTutor) {
         List<AlumnoBusquedaDTO> lista = new ArrayList<>();
         if (texto == null || texto.isBlank()) return lista;
@@ -545,8 +504,6 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return alumno;
     }
 
-    // idCarrera/idGrupo definen el grupo real del alumno: sin el grupo correcto, dos
-    // carreras que comparten letra+cuatrimestre podrian filtrarse sesiones grupales ajenas.
     public List<EventoAgenda> getAgendaAlumno(String matricula, int idGrupo) {
         List<EventoAgenda> listaEventos = new ArrayList<>();
 

@@ -1,9 +1,3 @@
-// Modal "Canalizados" de tutor/reportes.jsp: lista las canalizaciones registradas por ESTE
-// tutor (el servidor filtra por el tutor de la sesion, ver ReportesServlet). Si el area de apoyo
-// todavia no confirma la atencion (ESTATUS = 'En proceso'), habilita un boton para reenviarle
-// un correo de recordatorio al encargado del area.
-// Requiere que la vista defina antes: const CONTEXT_PATH = "<context-path>";
-// y que ya esten cargados alertas.js (mostrarConfirmacion/mostrarToast) y bootstrap.js.
 
 let modalCanalizadosInstancia = null;
 let modalDetalleCanalizacionInstancia = null;

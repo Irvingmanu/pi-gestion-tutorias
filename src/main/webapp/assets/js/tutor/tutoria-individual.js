@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function () {
     var HORA_MIN = '07:00';
     var HORA_MAX = '21:00';
 
-    // Restringe el datepicker para que no se puedan elegir fechas futuras
     if (inputFechaEspontanea) {
         var hoy = new Date();
         var yyyy = hoy.getFullYear();
@@ -24,11 +23,6 @@ document.addEventListener('DOMContentLoaded', function () {
         inputFechaEspontanea.setAttribute('max', yyyy + '-' + mm + '-' + dd);
     }
 
-    // Si el alumno falto no tiene caso obligar al tutor a redactar temas/acuerdos,
-    // ni permitirle registrar una canalizacion basada en una sesion que no ocurrio.
-    // Textareas van con readonly (no disabled) para que su valor SI viaje en el POST;
-    // los selects de "Vinculo Directo" si van con disabled porque son opcionales
-    // (el backend ya trata idMotivo vacio/ausente como "Ninguno").
     function actualizarCamposPorAsistencia() {
         if (radioFalto.checked) {
             modalTemasTratados.required = false;
@@ -67,23 +61,16 @@ document.addEventListener('DOMContentLoaded', function () {
         radio.addEventListener('change', actualizarCamposPorAsistencia);
     });
 
-    // ==========================================================================
-    // VALIDACIÓN EN VIVO DEL MODAL "COMPLETAR SESIÓN" (mismo patrón que
-    // registro-grupal.js / coordinador/tutor.js): marca is-invalid en cada
-    // campo requerido del modal en tiempo real.
-    // ==========================================================================
     var btnGuardarModal = formCompletarSesion.querySelector('button[type="submit"]');
     var inputsRequeridosModal = formCompletarSesion.querySelectorAll('input[required], textarea[required]');
 
     function verificarFormularioModal() {
         var esValido = true;
         inputsRequeridosModal.forEach(function (input) {
-            // Los radios de asistencia se validan como grupo, no uno por uno
             if (input.type === 'radio') {
                 return;
             }
             if (input.offsetParent === null) {
-                // campo oculto/disabled por "Faltó": no bloquea el formulario
                 return;
             }
             if (!input.checkValidity()) {
@@ -177,31 +164,15 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     });
 
-    // ==========================================================================
-    // VALIDACIÓN EN VIVO DE "TUTORÍA ESPONTÁNEA" (mismo patrón que
-    // assets/js/tutor/registro-grupal.js y assets/js/coordinador/tutor.js):
-    // marca is-invalid en cada campo requerido y solo habilita "Guardar" cuando
-    // todo el formulario es válido.
-    // ==========================================================================
     if (formTutoriaEspontanea) {
         var btnGuardarEspontanea = document.getElementById('btnGuardarEspontanea');
         var inputsRequeridosEspontanea = formTutoriaEspontanea.querySelectorAll('input[required], select[required], textarea[required]');
 
-        // ==========================================================================
-        // SELECCIÓN EN CASCADA GRUPO -> ALUMNO, ahora con Select2 (jQuery) en vez del
-        // datalist/autocomplete propio de antes: Select2 resuelve el buscador y su UI.
-        // El <select id="alumnoBuscador" name="matricula" required> manda directo la
-        // matrícula en el POST, ya no hace falta un <input type="hidden"> aparte.
-        // ==========================================================================
         var selectGrupo = document.getElementById('grupoSelector');
         var feedbackAlumno = document.getElementById('alumnoEstado');
         var inputTemasEspontanea = document.getElementById('temasTratados');
         var inputAcuerdosEspontanea = document.getElementById('acuerdos');
 
-        // Temas Tratados y Acuerdos quedan bloqueados (ver "disabled" en el JSP) hasta que
-        // el tutor eligió tanto el Grupo como el Alumno; un campo disabled no viaja en el
-        // POST, pero mientras tanto tampoco puede volverse válido el <select> de alumno
-        // (también required), así que el formulario no se puede enviar en ese estado.
         function actualizarCamposPorGrupoAlumno() {
             var hayGrupoYAlumno = !!(selectGrupo && selectGrupo.value)
                 && !!($alumnoBuscador && $alumnoBuscador.val());
@@ -213,8 +184,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 inputAcuerdosEspontanea.disabled = !hayGrupoYAlumno;
             }
         }
-        // Guardado defensivo: si el CDN de jQuery/Select2 no cargó (ej. red bloqueada),
-        // el resto del formulario (fecha, hora, temas, etc.) debe seguir funcionando.
         var $alumnoBuscador = (typeof jQuery !== 'undefined' && jQuery.fn.select2)
             ? jQuery('#alumnoBuscador')
             : null;
@@ -228,12 +197,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         actualizarCamposPorGrupoAlumno();
 
-        // Parche Bootstrap <-> Select2: el <select> real queda oculto (display:none)
-        // tras el widget de Select2, así que Bootstrap no puede pintarle su borde rojo
-        // ni activar ".is-invalid ~ .invalid-feedback" con solo ver el <select>. Estas
-        // dos funciones se llaman a mano desde donde antes se marcaba is-invalid en los
-        // demás campos: al perder foco/cerrarse sin elegir (select2:close, equivalente
-        // al "blur" de un input normal) y al intentar enviar el formulario.
         function marcarAlumnoInvalido() {
             if (!$alumnoBuscador) {
                 return;
@@ -259,8 +222,6 @@ document.addEventListener('DOMContentLoaded', function () {
             $alumnoBuscador.next('.select2-container').find('.select2-selection').css('border-color', '');
         }
 
-        // Vacía el <select> e inyecta una opción por alumno (o un placeholder si aún
-        // no hay grupo/está cargando), y refresca la UI de Select2 con trigger('change').
         function fijarOpcionesAlumno(opciones, deshabilitado) {
             if (!$alumnoBuscador) {
                 return;
@@ -291,7 +252,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetch(formTutoriaEspontanea.action + '?accion=obtenerAlumnosPorGrupo&idGrupo=' + encodeURIComponent(idGrupo))
                     .then(function (resp) { return resp.json(); })
                     .then(function (alumnos) {
-                        // El tutor pudo haber cambiado de grupo mientras la peticion viajaba
                         if (selectGrupo.value !== idGrupo) return;
 
                         var opciones = [{ texto: 'Selecciona un alumno', valor: '' }];
@@ -319,8 +279,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
 
-                // Apenas el tutor elige un alumno válido, se limpia cualquier estado de
-                // error que haya quedado forzado (por submit o por select2:close abajo).
                 if (matricula) {
                     limpiarAlumnoInvalido();
                 }
@@ -329,10 +287,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 verificarFormularioEspontanea();
             });
 
-            // select2:close es el equivalente al "blur" de un input normal: se dispara
-            // cuando el tutor cierra el desplegable (clic afuera, Escape, Tab) sin llegar
-            // a elegir nada. Si en ese momento el <select> sigue sin valor, se marca
-            // inválido igual que el resto de los campos requeridos al perder el foco.
             $alumnoBuscador.on('select2:close', function () {
                 if (!$alumnoBuscador.val()) {
                     marcarAlumnoInvalido();
@@ -354,9 +308,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         inputsRequeridosEspontanea.forEach(function (input) {
-            // #alumnoBuscador (Select2) ya notifica cambios via su propio listener
-            // 'change' de arriba; el <select> real queda oculto tras el widget de
-            // Select2, así que marcarle is-invalid aquí no tendría efecto visible.
             if (input.id === 'alumnoBuscador') {
                 return;
             }
@@ -384,8 +335,6 @@ document.addEventListener('DOMContentLoaded', function () {
     formTutoriaEspontanea.addEventListener('submit', function (e) {
         e.preventDefault();
 
-        // #alumnoBuscador ahora es un <select required name="matricula"> real, así que
-        // checkValidity() nativo ya refleja correctamente si se eligió un alumno.
         if (!formTutoriaEspontanea.checkValidity()) {
             inputsRequeridosEspontanea.forEach(function (input) {
                 if (!input.checkValidity()) {
@@ -393,10 +342,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             });
 
-            // Parche Bootstrap <-> Select2: el loop de arriba salta #alumnoBuscador a
-            // propósito (queda oculto tras el widget de Select2, marcarle is-invalid no
-            // se ve por sí solo). marcarAlumnoInvalido() hace a mano lo mismo que ya
-            // pasa con select2:close cuando el tutor sale del campo sin elegir nada.
             if ($alumnoBuscador && !$alumnoBuscador.val()) {
                 marcarAlumnoInvalido();
             }
@@ -405,7 +350,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // Validación de fecha: no se permiten fechas futuras
         if (inputFechaEspontanea && inputFechaEspontanea.value) {
             var fechaSeleccionada = new Date(inputFechaEspontanea.value + 'T00:00:00');
             var fechaHoy = new Date();
@@ -416,7 +360,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Validación de horario permitido (7:00 AM - 9:00 PM)
         if (inputHoraEspontanea && inputHoraEspontanea.value) {
             if (inputHoraEspontanea.value < HORA_MIN || inputHoraEspontanea.value > HORA_MAX) {
                 inputHoraEspontanea.classList.add('is-invalid');

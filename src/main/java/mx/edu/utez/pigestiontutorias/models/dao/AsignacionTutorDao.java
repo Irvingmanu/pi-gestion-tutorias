@@ -11,8 +11,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-// ASIGNACION_TUTOR ahora solo enlaza ID_TUTOR con ID_GRUPO (GRUPO ya encapsula
-// Carrera+Cuatrimestre+Letra+Periodo, antes eran 3 FKs sueltas + ID_PERIODO aparte).
 public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
 
     @Override
@@ -34,8 +32,6 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         }
     }
 
-    // Lista de asignaciones activas para el panel de "Asignación de Tutores",
-    // con los datos ya legibles del tutor y del grupo (via JOIN).
     @Override
     public List<AsignacionTutor> getAll() {
         List<AsignacionTutor> lista = new ArrayList<>();
@@ -65,9 +61,6 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
                 String apellidos = rs.getString("APELLIDO_PATERNO") + (apellidoM != null && !apellidoM.isBlank() ? " " + apellidoM : "");
                 asignacion.setApellidosTutor(apellidos);
 
-                // Mismo formato que gestion-grupos.jsp/alumnos.js: "Carrera - Cuatri° Letra
-                // (Gen AAAA-AAAA)", para que la columna "Grupo" de asignacion.jsp muestre la
-                // generacion sin que el coordinador tenga que ir a buscarla a otra pantalla.
                 String generacion = rs.getString("GENERACION");
                 String etiquetaGeneracion = (generacion != null && !generacion.isBlank()) ? generacion : "Sin generación";
                 asignacion.setNombreGrupo(rs.getString("NOMBRE_CARRERA") + " - " + rs.getInt("CUATRIMESTRE") + "° "
@@ -117,7 +110,6 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return false;
     }
 
-    // Borrado lógico: la asignación deja de estar activa pero se conserva el historial.
     @Override
     public boolean delete(Integer id) {
         String sql = "UPDATE ASIGNACION_TUTOR SET ESTADO = 'N' WHERE ID_ASIGNACION = ?";
@@ -135,8 +127,6 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         }
     }
 
-    // Regla de negocio: un grupo (GRUPO ya encapsula Carrera+Cuatrimestre+Letra+Periodo)
-    // solo puede tener un tutor activo a la vez.
     public boolean existeAsignacionActiva(int idGrupo) {
         String sql = "SELECT COUNT(*) FROM ASIGNACION_TUTOR WHERE ID_GRUPO = ? AND ESTADO = 'S'";
 
@@ -159,8 +149,6 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return false;
     }
 
-    // Necesario para el módulo de Solicitud: dado el grupo de un alumno, obtenemos el
-    // ID_TUTOR que tiene asignado (un alumno tiene un solo tutor activo por grupo).
     public Integer findIdTutorByGrupo(int idGrupo) {
         String sql = "SELECT ID_TUTOR FROM ASIGNACION_TUTOR WHERE ID_GRUPO = ? AND ESTADO = 'S'";
 
@@ -183,8 +171,6 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return null;
     }
 
-    // Grupos que tiene asignados un tutor, filtrados por el periodo vigente para no
-    // repetir el mismo grupo si el tutor estuvo asignado a él en periodos anteriores.
     public List<Grupo> obtenerGruposPorTutor(int idTutor, int idPeriodoVigente) {
         List<Grupo> lista = new ArrayList<>();
         String sql = "SELECT g.ID_GRUPO, g.ID_CARRERA, g.CUATRIMESTRE, g.LETRA, g.ID_PERIODO, g.ESTADO, " +
@@ -224,9 +210,6 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return lista;
     }
 
-    // Blindaje de servidor: el grupo enviado debe ser uno de los que el tutor
-    // realmente tiene asignados, sin confiar en que el <select> del formulario
-    // no fue manipulado.
     public boolean existeAsignacionParaTutor(int idTutor, int idGrupo) {
         String sql = "SELECT COUNT(*) FROM ASIGNACION_TUTOR WHERE ID_TUTOR = ? AND ID_GRUPO = ? AND ESTADO = 'S'";
 
@@ -250,8 +233,6 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return false;
     }
 
-    // Blindaje de Tutoria Espontanea: se verifica que el alumno realmente pertenezca
-    // a alguno de los grupos asignados al tutor.
     public boolean alumnoPerteneceATutor(int idTutor, String matricula) {
         String sql = "SELECT COUNT(*) FROM ALUMNO al " +
                 "JOIN ASIGNACION_TUTOR a ON a.ID_GRUPO = al.ID_GRUPO " +
@@ -277,8 +258,6 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return false;
     }
 
-    // Blindaje: un tutor NO puede eliminarse (dar de baja) si tiene al menos
-    // una asignación activa dentro de un periodo escolar que también está activo.
     public boolean existeAsignacionEnPeriodoActivo(int idTutor) {
         String sql = "SELECT COUNT(*) FROM ASIGNACION_TUTOR a " +
                 "JOIN GRUPO g ON g.ID_GRUPO = a.ID_GRUPO " +
@@ -304,12 +283,6 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return false;
     }
 
-    // Blindaje: no se puede desasignar a un tutor de un grupo si todavia hay algo pendiente
-    // entre ese tutor y ese grupo en especifico: sesiones grupales pendientes del grupo,
-    // sesiones individuales pendientes con alumnos de ese grupo, o solicitudes pendientes de
-    // alumnos de ese grupo. A diferencia de TutorDao#tienePendientes (que bloquea la baja del
-    // tutor en general, sin importar el grupo), esta version es por-grupo: sirve para el
-    // boton "Desasignar" de una fila de ASIGNACION_TUTOR puntual.
     public boolean tienePendientesEnGrupo(int idTutor, int idGrupo) {
         return existeRegistro(
                 "SELECT COUNT(1) FROM SESION_GRUPAL " +
@@ -338,8 +311,7 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         } catch (SQLException e) {
             System.err.println("Error al validar pendientes de la asignación: " + e.getMessage());
             e.printStackTrace();
-            // Ante un error de BD, se asume que SI hay pendientes: mejor bloquear de mas
-            // una desasignacion que arriesgar romper sesiones/solicitudes en curso.
+
             return true;
         }
     }

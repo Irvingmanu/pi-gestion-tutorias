@@ -8,20 +8,18 @@ public class Solicitud {
     private int idSolicitud;
     private String matricula;
     private int idTutor;
-    private Integer idHorario;      // puede ser NULL
+    private Integer idHorario;
     private String asunto;
     private String descripcion;
-    private String estatus;         // Pendiente, Confirmada, Rechazada, Reprogramada
+    private String estatus;
     private Date fechaPropuesta;
     private Date fechaRespuesta;
     private Date nuevaFecha;
-    private String nuevaHora;       // hora de la contrapropuesta del tutor, ej. "13:00"
-    private Integer duracion;       // horas: 1 o 2
-    private String horaPropuesta;   // ej. "13:00"
-    private Timestamp fechaRegistro; // se llena sola por defecto en la BD
+    private String nuevaHora;
+    private Integer duracion;
+    private String horaPropuesta;
+    private Timestamp fechaRegistro;
 
-    // Campos extra que NO existen en la tabla, solo para mostrar datos
-    // del alumno en la lista de solicitudes del tutor (se llenan con un JOIN)
     private String nombreAlumno;
     private String apellidosAlumno;
 

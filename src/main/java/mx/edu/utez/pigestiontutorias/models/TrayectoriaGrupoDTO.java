@@ -2,9 +2,6 @@ package mx.edu.utez.pigestiontutorias.models;
 
 import java.sql.Date;
 
-// Un renglon del recorrido academico de un alumno (ALUMNO_GRUPO_HISTORICO + GRUPO +
-// CARRERA), usado por la seccion "Trayectoria academica" del historial del alumno en
-// coordinador/reportes-globales.jsp. fechaFin == null significa que es su grupo actual.
 public class TrayectoriaGrupoDTO {
     private String nombreCarrera;
     private String nivel;

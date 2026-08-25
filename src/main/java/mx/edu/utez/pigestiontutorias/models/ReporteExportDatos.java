@@ -4,11 +4,6 @@ import mx.edu.utez.pigestiontutorias.models.dao.ReportesDao;
 
 import java.util.List;
 
-// Contenedor de todo lo que necesitan ReporteExcelBuilder/ReportePdfBuilder para armar la
-// exportacion global del coordinador: junta el mismo ReporteResumen que ya usan las tarjetas/
-// graficas, el avance grupal y el detalle de atenciones/canalizaciones que ya usan los modales
-// de "Tutorías Grupales", "Alumnos Atendidos" y "Alumnos Canalizados", para que el archivo
-// exportado sea consistente con lo que el coordinador ve en pantalla.
 public class ReporteExportDatos {
     private final ReportesDao.ReporteResumen resumen;
     private final String periodoVigenteNombre;
@@ -65,9 +60,6 @@ public class ReporteExportDatos {
                 nombreCarrera, nombreCuatrimestre, nombreGrupo, nombreTutor, null, null, imagenPastel, imagenBarras);
     }
 
-    // Sobrecarga con nombreAlumno: cuando el buscador de alumnos del dashboard tiene un
-    // alumno seleccionado, el encabezado del Excel/PDF exportado lo indica junto al resto
-    // de los filtros (Carrera/Cuatrimestre/Grupo/Tutor).
     public ReporteExportDatos(ReportesDao.ReporteResumen resumen, String periodoVigenteNombre, int objetivoGrupal,
                               List<AvanceTutorGrupal> avanceGrupal, List<AtencionAlumnoDTO> atenciones,
                               List<CanalizacionAlumnoDTO> canalizaciones, String tituloPeriodo,

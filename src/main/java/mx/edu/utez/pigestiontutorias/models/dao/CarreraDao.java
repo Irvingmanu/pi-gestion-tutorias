@@ -10,8 +10,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-// Catalogo estatico: CARRERA se puebla directo en BD via script SQL, no hay alta/edicion/baja
-// desde la aplicacion (create/update/delete quedan sin implementar a proposito).
 public class CarreraDao implements Dao<Carrera, Integer> {
 
     @Override
@@ -40,8 +38,6 @@ public class CarreraDao implements Dao<Carrera, Integer> {
         return lista;
     }
 
-    // Carreras de una Academia especifica: usado por el select en cascada Academia -> Carrera
-    // de formulario-alumno.jsp (AlumnoServlet, accion=obtenerCarrerasPorAcademia).
     public List<Carrera> getByIdAcademia(int idAcademia) {
         List<Carrera> lista = new ArrayList<>();
         String sql = "SELECT ID_CARRERA, NOMBRE, NIVEL, ID_ACADEMIA FROM CARRERA WHERE ID_ACADEMIA = ? ORDER BY NOMBRE";

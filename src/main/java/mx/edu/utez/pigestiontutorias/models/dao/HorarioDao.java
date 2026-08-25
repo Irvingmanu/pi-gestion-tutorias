@@ -37,8 +37,6 @@ public class HorarioDao implements Dao<Horario, Integer> {
         return false;
     }
 
-    // Lista los horarios activos de un tutor, para el <select> del alumno
-    // al llenar la solicitud.
     public List<Horario> findDisponiblesByTutor(int idTutor) {
         List<Horario> lista = new ArrayList<>();
 

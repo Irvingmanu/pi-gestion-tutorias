@@ -18,9 +18,6 @@ import mx.edu.utez.pigestiontutorias.utils.EmailSender;
 import java.io.IOException;
 import java.security.SecureRandom;
 
-// Recuperacion de contraseña contra el nuevo esquema: ya no hay CODIGO_RECUPERACION en
-// USUARIO, los codigos ahora viven en TOKENS (TIPO='Recuperacion') enlazados a exactamente
-// uno de ALUMNO/TUTOR/COORDINADOR. El correo se busca en las 3 tablas, igual que en el login.
 @WebServlet(name = "RecuperarServlet", urlPatterns = {"/recuperar"})
 public class RecuperarServlet extends HttpServlet {
 
@@ -30,10 +27,6 @@ public class RecuperarServlet extends HttpServlet {
     private final TokenDao tokenDao = new TokenDao();
     private final EmailSender emailSender = new EmailSender();
 
-    // Tope de la clave en TEXTO PLANO que el usuario escribe. La columna PASS en BD
-    // es VARCHAR2(64) (pensada para un hash SHA-256 de 64 hex), pero mientras se
-    // guarde en texto plano debe caber ahi sin truncarse: se rechaza en vez de
-    // recortar para no dejar al usuario con una contraseña distinta a la que escribio.
     private static final int MAX_PASS_TEXTO_PLANO = 50;
 
     @Override

@@ -2,9 +2,6 @@ package mx.edu.utez.pigestiontutorias.models;
 
 import java.sql.Date;
 
-// Fila del modal "Alumnos Canalizados" del reporte del coordinador (ver
-// ReportesGlobalesServlet/CanalizacionDao.getCanalizacionesDetalladas). Combina CANALIZACION
-// con el alumno/grupo canalizado y el tutor que la registro (via SESION_INDIVIDUAL).
 public class CanalizacionAlumnoDTO {
     private int idCanalizacion;
     private String matricula;

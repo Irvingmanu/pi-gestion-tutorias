@@ -69,8 +69,6 @@ public class CoordinadorDAO implements Dao<Coordinador, Integer> {
         return null;
     }
 
-    // Login: busca por correo institucional (ver LoginServlet, ultimo intento tras
-    // ALUMNO y TUTOR). Incluye PASS para que el servlet valide la contraseña.
     public Coordinador findByCorreo(String correo) {
         String sql = "SELECT * FROM COORDINADOR WHERE UPPER(CORREO_INSTITUCIONAL) = UPPER(?)";
         try (Connection con = SQLConnector.getConnection();

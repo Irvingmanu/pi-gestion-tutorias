@@ -1,9 +1,3 @@
-// Modal "Solicitudes Pendientes" de reportes-globales.jsp: lista las solicitudes de tutoria
-// creadas por los alumnos que aun no han sido procesadas (ESTATUS = 'Pendiente'), respetando
-// los mismos filtros de la barra de Reportes Globales para que el desglose sea coherente con
-// el KPI de la tarjeta "Pendientes".
-// Requiere que la vista defina antes: const CONTEXT_PATH = "<context-path>";
-// y que ya esten cargados alertas.js (mostrarConfirmacion/mostrarToast) y bootstrap.js.
 
 let modalPendientesInstancia = null;
 let modalDetallePendienteInstancia = null;

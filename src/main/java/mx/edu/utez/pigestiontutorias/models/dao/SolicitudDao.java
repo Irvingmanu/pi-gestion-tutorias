@@ -26,9 +26,6 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         return false;
     }
 
-    // ---------------------------------------------------------------
-    // 1. Insertar una nueva solicitud (la crea el alumno)
-    // ---------------------------------------------------------------
     @Override
     public boolean create(Solicitud solicitud) {
         String sql = "INSERT INTO SOLICITUD_TUTORIA " +
@@ -69,12 +66,6 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         }
     }
 
-    // ---------------------------------------------------------------
-    // 1b. Limite de 1 solicitud por semana (alumno): rolling de 7 dias corridos,
-    // contados desde FECHA_REGISTRO (el momento en que se creo la solicitud, NO la
-    // fecha de la cita que el alumno propone). Si ya tiene una solicitud registrada
-    // en los ultimos 7 dias, no puede crear otra hasta que se cumpla la semana.
-    // ---------------------------------------------------------------
     public boolean tieneSolicitudReciente(String matricula) {
         String sql = "SELECT COUNT(*) FROM SOLICITUD_TUTORIA " +
                 "WHERE MATRICULA = ? AND FECHA_REGISTRO >= (SYSDATE - 7)";
@@ -96,9 +87,6 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         return false;
     }
 
-    // ---------------------------------------------------------------
-    // 2. Listar todas las solicitudes de un tutor (con datos del alumno)
-    // ---------------------------------------------------------------
     public List<Solicitud> findByTutor(int idTutor) {
         List<Solicitud> lista = new ArrayList<>();
         String sql = "SELECT s.ID_SOLICITUD, s.MATRICULA, s.ID_TUTOR, " +
@@ -129,9 +117,6 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         return lista;
     }
 
-    // ---------------------------------------------------------------
-    // 3. Obtener una sola solicitud por su id (pantalla de detalle)
-    // ---------------------------------------------------------------
     @Override
     public Solicitud getById(Integer idSolicitud) {
         String sql = "SELECT s.ID_SOLICITUD, s.MATRICULA, s.ID_TUTOR, " +
@@ -161,9 +146,6 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         return null;
     }
 
-    // ---------------------------------------------------------------
-    // 4. Aceptar o rechazar una solicitud (actualiza estatus)
-    // ---------------------------------------------------------------
     public boolean actualizarEstatus(int idSolicitud, String nuevoEstatus) {
         String sql = "UPDATE SOLICITUD_TUTORIA " +
                 "SET ESTATUS = ?, FECHA_RESPUESTA = SYSDATE " +
@@ -185,9 +167,6 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         }
     }
 
-    // ---------------------------------------------------------------
-    // 5. Reprogramar: el tutor propone una nueva fecha (contrapropuesta)
-    // ---------------------------------------------------------------
     public boolean reprogramar(int idSolicitud, Date nuevaFecha, String nuevaHora) {
         String sql = "UPDATE SOLICITUD_TUTORIA " +
                 "SET ESTATUS = 'Reprogramada', NUEVA_FECHA = ?, NUEVA_HORA = ?, FECHA_RESPUESTA = SYSDATE " +
@@ -210,23 +189,6 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         }
     }
 
-    // ---------------------------------------------------------------
-    // 5b. Cancelación automática de solicitudes vencidas: cualquier solicitud
-    // que siga "Pendiente" y a la que le falte 1 día o menos para la fecha/hora
-    // propuesta se cancela sola. La llama tanto el SolicitudServlet (al cargar
-    // listados/detalle o antes de aceptar) como CancelacionSolicitudesListener
-    // (tarea programada en segundo plano) — mismo método, dos disparadores.
-    //
-    // FECHA_PROPUESTA es solo la fecha (00:00) y HORA_PROPUESTA es texto
-    // "HH:mm", así que se reconstruye la fecha-hora completa sumándole las
-    // horas/minutos como fracción de día, y se compara contra SYSDATE + 1.
-    //
-    // IMPORTANTE: si la columna ESTATUS tiene un CHECK constraint con los
-    // valores permitidos, hay que agregar 'Cancelada' a esa lista, ej.:
-    //   ALTER TABLE SOLICITUD_TUTORIA DROP CONSTRAINT <nombre_constraint>;
-    //   ALTER TABLE SOLICITUD_TUTORIA ADD CONSTRAINT <nombre_constraint>
-    //       CHECK (ESTATUS IN ('Pendiente','Confirmada','Rechazada','Reprogramada','Cancelada'));
-    // ---------------------------------------------------------------
     public int cancelarSolicitudesVencidas() {
         String sql = "UPDATE SOLICITUD_TUTORIA " +
                 "SET ESTATUS = 'Cancelada', FECHA_RESPUESTA = SYSDATE " +
@@ -253,11 +215,6 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         }
     }
 
-    // ---------------------------------------------------------------
-    // 6. Horas ya ocupadas del tutor en un rango de fechas, cruzando las
-    // solicitudes ya confirmadas y las sesiones individuales agendadas.
-    // Se usa para calcular la disponibilidad real que ve el alumno.
-    // ---------------------------------------------------------------
     public Map<LocalDate, Set<String>> getHorasOcupadas(int idTutor, LocalDate desde, LocalDate hasta) {
         Map<LocalDate, Set<String>> ocupadas = new HashMap<>();
 
@@ -266,9 +223,6 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
                 "WHERE ID_TUTOR = ? AND ESTATUS = 'Confirmada' " +
                 "AND FECHA_PROPUESTA BETWEEN ? AND ?";
 
-        // SESION_INDIVIDUAL no guarda la hora de la cita, solo la fecha:
-        // si el tutor ya tiene una sesión ese día, se bloquea el día completo
-        // para no arriesgarnos a empalmar horarios que no podemos verificar.
         String sqlSesiones = "SELECT FECHA FROM SESION_INDIVIDUAL " +
                 "WHERE ID_TUTOR = ? AND FECHA BETWEEN ? AND ?";
 
@@ -326,9 +280,6 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         return ocupadas;
     }
 
-    // ---------------------------------------------------------------
-    // 7. Historial de solicitudes de un alumno (vista "Mis Solicitudes")
-    // ---------------------------------------------------------------
     public List<Solicitud> getSolicitudesByAlumno(String matricula) {
         List<Solicitud> lista = new ArrayList<>();
         String sql = "SELECT s.ID_SOLICITUD, s.MATRICULA, s.ID_TUTOR, " +
@@ -359,21 +310,12 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         return lista;
     }
 
-    // ---------------------------------------------------------------
-    // 8. Modal "Solicitudes Pendientes" del reporte del coordinador: solicitudes con
-    // ESTATUS = 'Pendiente', con el alumno/grupo que la creo y el tutor al que va dirigida
-    // (para poder mandarle un recordatorio por correo desde el detalle). Reutiliza los mismos
-    // filtros opcionales de tutor/carrera/cuatrimestre/letra/fechas que el resto de los modales
-    // de Reportes Globales, para que el desglose sea coherente con el KPI de la tarjeta.
-    // ---------------------------------------------------------------
     public List<SolicitudPendienteDTO> getSolicitudesPendientesGlobal(Integer idTutor, Integer idCarrera,
                                                                       Integer cuatrimestre, String letra,
                                                                       Date desde, Date hasta) {
         return getSolicitudesPendientesGlobal(idTutor, idCarrera, cuatrimestre, letra, desde, hasta, null);
     }
 
-    // Sobrecarga con matricula: cuando el buscador de alumnos del dashboard selecciona un
-    // alumno, el modal "Pendientes" se acota a ese alumno en vez del filtro/tutor general.
     public List<SolicitudPendienteDTO> getSolicitudesPendientesGlobal(Integer idTutor, Integer idCarrera,
                                                                       Integer cuatrimestre, String letra,
                                                                       Date desde, Date hasta, String matricula) {
@@ -446,10 +388,6 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         return lista;
     }
 
-    // Detalle de una sola solicitud pendiente (pantalla de "Ver detalles" + boton de
-    // recordatorio por correo al tutor): mismo mapeo que getSolicitudesPendientesGlobal
-    // pero filtrado por ID_SOLICITUD, sin exigir ESTATUS = 'Pendiente' (por si ya fue
-    // atendida entre que se cargo la lista y se dio clic en el boton).
     public SolicitudPendienteDTO getDetalleParaRecordatorio(int idSolicitud) {
         String sql = "SELECT s.ID_SOLICITUD, s.MATRICULA, s.ASUNTO, s.DESCRIPCION, s.ESTATUS, " +
                 "s.FECHA_PROPUESTA, s.HORA_PROPUESTA, s.DURACION, " +
@@ -511,9 +449,6 @@ public class SolicitudDao implements Dao<Solicitud, Integer> {
         return dto;
     }
 
-    // ---------------------------------------------------------------
-    // Método privado de apoyo para no repetir el mapeo de columnas
-    // ---------------------------------------------------------------
     private Solicitud mapearSolicitud(ResultSet rs) throws Exception {
         Solicitud solicitud = new Solicitud();
         solicitud.setIdSolicitud(rs.getInt("ID_SOLICITUD"));

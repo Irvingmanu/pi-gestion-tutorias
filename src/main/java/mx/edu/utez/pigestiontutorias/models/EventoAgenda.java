@@ -23,16 +23,14 @@ public class EventoAgenda {
         this.estadoAsistenciaAlumno = estadoAsistenciaAlumno;
 
         if (fecha != null) {
-            // FECHA solo guarda el dia (se crea con Date.valueOf, siempre a medianoche);
-            // la hora real de la cita vive aparte en la columna HORA ("HH:mm"). Sin esto,
-            // la hora mostrada salia siempre 12:00am.
+
             LocalDateTime dt = fecha.toLocalDateTime();
             if (hora != null && !hora.isBlank()) {
                 String[] partes = hora.trim().split(":");
                 try {
                     dt = dt.withHour(Integer.parseInt(partes[0].trim())).withMinute(Integer.parseInt(partes[1].trim()));
                 } catch (NumberFormatException | ArrayIndexOutOfBoundsException ignored) {
-                    // HORA con formato inesperado: se conserva la medianoche de FECHA como respaldo.
+
                 }
             }
             this.fechaFormateada = formatearFecha(dt);

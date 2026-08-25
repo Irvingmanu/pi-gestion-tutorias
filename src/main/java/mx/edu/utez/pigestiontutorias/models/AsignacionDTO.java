@@ -1,8 +1,5 @@
 package mx.edu.utez.pigestiontutorias.models;
 
-// Representa un "grupo real" (Carrera + Cuatrimestre + Letra) que un tutor
-// tiene asignado. Es de solo lectura: se arma con un JOIN en AsignacionTutorDao
-// y se usa para pintar el <select> de registro-grupal.jsp.
 public class AsignacionDTO {
     private int idCarrera;
     private String nombreCarrera;
@@ -40,12 +37,10 @@ public class AsignacionDTO {
     public String getLetra() { return letra; }
     public void setLetra(String letra) { this.letra = letra; }
 
-    // Value del <option>: "idCarrera|idCuatrimestre|idLetra"
     public String getValorOption() {
         return idCarrera + "|" + idCuatrimestre + "|" + idLetra;
     }
 
-    // Texto visible del <option>, ej. "DSM - 1° A"
     public String getEtiqueta() {
         return nombreCarrera + " - " + numeroCuatri + "° " + letra;
     }

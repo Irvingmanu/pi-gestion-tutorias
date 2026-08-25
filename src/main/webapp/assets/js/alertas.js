@@ -98,10 +98,6 @@ function mostrarConfirmacion(tipo, titulo, mensaje, textoBotonAceptar, callbackA
     new bootstrap.Modal(document.getElementById('modalConfirmacion')).show();
 }
 
-// modalConfirmacion puede abrirse encima de otro modal ya visible (ej. "Completar Sesión").
-// Bootstrap no sube el z-index en cascada para modales anidados, así que el backdrop nuevo
-// queda por debajo del modal anterior (mismo z-index, 1050 vs 1055) y no lo oscurece.
-// Aquí se marca el backdrop recien creado para subirlo por encima de todo (ver alertas.css).
 document.getElementById('modalConfirmacion').addEventListener('shown.bs.modal', function () {
     let backdrops = document.querySelectorAll('.modal-backdrop.show');
     let backdropConfirmacion = backdrops[backdrops.length - 1];

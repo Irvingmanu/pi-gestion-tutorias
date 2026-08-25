@@ -35,8 +35,7 @@ public class SesionIndividualServlet extends HttpServlet {
     private final CanalizacionDao canalizacionDao = new CanalizacionDao();
     private final SesionIndividualDao sesionIndividualDao = new SesionIndividualDao();
     private final PeriodoEscolarDao periodoEscolarDao= new PeriodoEscolarDao();
-    // Reutilizado solo por su consulta "alumnos activos de un grupo" (misma que usa
-    // SesionGrupalServlet); no tiene relacion con sesiones grupales en si.
+
     private final AsistenciaGrupalDao asistenciaGrupalDao = new AsistenciaGrupalDao();
 
     @Override
@@ -67,9 +66,6 @@ public class SesionIndividualServlet extends HttpServlet {
         request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
     }
 
-    // AJAX consumido desde tutoria-individual.jsp mientras el tutor escribe la matricula:
-    // en vez de que se entere hasta el submit final (despues de llenar fecha/hora/temas/
-    // acuerdos) de que el alumno no existe o no es suyo, aqui se valida al vuelo.
     private void validarMatricula(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
 
@@ -110,9 +106,6 @@ public class SesionIndividualServlet extends HttpServlet {
         }
     }
 
-    // AJAX consumido desde tutoria-individual.jsp al elegir un grupo en el <select>: llena
-    // el <datalist> del buscador de alumnos con los alumnos activos de ese grupo, para que
-    // el tutor busque por nombre en vez de teclear la matricula a mano.
     private void obtenerAlumnosPorGrupo(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
 
@@ -137,8 +130,6 @@ public class SesionIndividualServlet extends HttpServlet {
             return;
         }
 
-        // Blindaje de servidor: el grupo debe ser realmente uno de los asignados a este
-        // tutor, sin confiar en que el <select> del formulario no fue manipulado.
         if (!asignacionTutorDao.existeAsignacionParaTutor(tutor.getNumeroEmpleado(), idGrupo)) {
             response.getWriter().write("[]");
             return;
@@ -209,8 +200,6 @@ public class SesionIndividualServlet extends HttpServlet {
             return;
         }
 
-        // El radio "Asistió/Faltó" solo existe en el modal de completar sesión; se valida
-        // aparte porque las sesiones nuevas (alta directa) no lo tienen en el formulario.
         if (esCompletado && (estatusAsistencia == null
                 || !(estatusAsistencia.equals("Presente") || estatusAsistencia.equals("Falta")))) {
             request.setAttribute("error", "asistencia_no_indicada");
@@ -224,9 +213,6 @@ public class SesionIndividualServlet extends HttpServlet {
         if (esCompletado) {
             int idSesion = Integer.parseInt(idSesionStr.trim());
 
-            // Blindaje de servidor: el tutor solo puede completar la sesion el dia
-            // programado o despues, nunca antes (ej. no puede adelantar/inventar el
-            // registro de una cita que todavia no ocurre).
             SesionIndividual sesionExistente = sesionIndividualDao.getById(idSesion);
             if (sesionExistente == null) {
                 request.setAttribute("error", "sesion_no_encontrada");
@@ -256,16 +242,8 @@ public class SesionIndividualServlet extends HttpServlet {
                 return;
             }
 
-            // Blindaje de servidor: la identidad del alumno se valida primero (antes de
-            // fecha/hora), igual que ya se valida en vivo via AJAX en el frontend. Asi el
-            // tutor nunca llena el resto del formulario para enterarse hasta el final de
-            // que la matricula no existe o no es de sus grupos.
             matricula = matricula.trim().toUpperCase();
 
-            // Blindaje contra ORA-02291: SESION_INDIVIDUAL.MATRICULA es FK a ALUMNO.MATRICULA,
-            // asi que una matricula mal formada o inexistente revienta el INSERT en el DAO.
-            // Antes esto era un sendRedirect que perdia todo lo escrito en el formulario;
-            // ahora se reenvia (forward) a la misma pantalla con los datos ya capturados.
             if (matricula.length() != 10) {
                 request.setAttribute("error", "matricula_invalida");
                 marcarTabEspontanea(request, matricula, fechaStr, hora, temasTratados, acuerdos);
@@ -290,8 +268,6 @@ public class SesionIndividualServlet extends HttpServlet {
                 return;
             }
 
-            // Blindaje de servidor: la fecha no puede ser futura, sin importar lo que
-            // mande el formulario (el <input type="date"> se puede manipular).
             LocalDate fechaSesion;
             try {
                 fechaSesion = LocalDate.parse(fechaStr.trim());
@@ -319,7 +295,6 @@ public class SesionIndividualServlet extends HttpServlet {
                 return;
             }
 
-            // Blindaje de servidor: la hora debe estar dentro del horario académico permitido (7:00 - 21:00)
             LocalTime horaSesion;
             try {
                 horaSesion = LocalTime.parse(hora.trim());
@@ -367,9 +342,6 @@ public class SesionIndividualServlet extends HttpServlet {
         }
     }
 
-    // Reabre la pestaña "Tutoria Espontanea" (en vez de la de Sesiones Programadas,
-    // que es la que se ve por defecto) y reenvia al JSP lo que el tutor ya habia
-    // escrito, para que un error de validacion no lo obligue a recapturar todo.
     private void marcarTabEspontanea(HttpServletRequest request, String matricula, String fecha, String hora,
                                      String temas, String acuerdos) {
         request.setAttribute("tabActiva", "espontanea");
@@ -380,8 +352,6 @@ public class SesionIndividualServlet extends HttpServlet {
         request.setAttribute("acuerdosEnviados", acuerdos);
     }
 
-    // Crea una CANALIZACION por cada motivo seleccionado en "Vinculo Directo" y devuelve
-    // la primera generada, para enlazarla como ID_CANALIZACION de la sesion nueva.
     private Integer registrarCanalizaciones(String[] idMotivos, String matricula, String baseUrl) {
         if (idMotivos == null) {
             return null;

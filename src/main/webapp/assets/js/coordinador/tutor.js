@@ -1,6 +1,3 @@
-/**
- * Muestra modal de confirmación antes de cancelar el formulario.
- */
 function confirmarCancelacion() {
     let boton = document.getElementById('btnCancelarFormulario');
     let urlDestino = boton ? boton.dataset.urlCancelar : '/';
@@ -16,12 +13,7 @@ function confirmarCancelacion() {
     );
 }
 
-/**
- * Prepara y confirma la eliminación del tutor.
- * @param {string|number} nomina
- */
 function prepararEliminacion(nomina) {
-    // Si la función de la alerta personalizada existe y funciona
     if (typeof mostrarConfirmacion === 'function') {
         mostrarConfirmacion(
             'critica',
@@ -74,9 +66,6 @@ function ejecutarSubmitReactivar(nomina) {
         console.error('No se encontró el formulario oculto formReactivarTutor o inputReactivarNomina');
     }
 }
-/**
- * Agrega un rango de horario dinámico a la lista de horarios del tutor.
- */
 function agregarHorario() {
     const selectDia = document.getElementById('selectDia');
     const inputDesde = document.getElementById('horarioDesde');
@@ -128,10 +117,6 @@ function agregarHorario() {
     }
 }
 
-/**
- * Confirma y elimina el renglón de horario seleccionado.
- * @param {HTMLElement} btn
- */
 function eliminarHorario(btn) {
     mostrarConfirmacion(
         'advertencia',
@@ -151,11 +136,6 @@ function eliminarHorario(btn) {
     );
 }
 
-/**
- * Ajusta un <input type="time"> de horario a los limites 07:00-21:00, y evita que
- * "Hasta" quede antes (o igual) que "Desde". Usado por formulario-tutor.jsp.
- * @param {HTMLInputElement} input
- */
 function validarLimitesHora(input) {
     const minHora = '07:00';
     const maxHora = '21:00';
@@ -164,9 +144,6 @@ function validarLimitesHora(input) {
         else if (input.value > maxHora) { input.value = maxHora; }
     }
 
-    // "Hasta" nunca puede quedar antes (ni igual) que "Desde": se revisa aqui sin importar
-    // cual de los dos inputs disparo el cambio, para que tambien se corrija si el usuario
-    // edita "Hasta" directamente a una hora anterior a la ya elegida en "Desde".
     const inputDesde = document.getElementById('horarioDesde');
     const inputHasta = document.getElementById('horarioHasta');
     if (inputDesde && inputHasta && inputDesde.value) {
@@ -177,11 +154,6 @@ function validarLimitesHora(input) {
     }
 }
 
-// ==========================================================================
-// VALIDACIÓN EN VIVO DE formulario-tutor.jsp. Este archivo tambien se carga en
-// gestion-tutores.jsp (listado), que no tiene #formGuardar; el guard de abajo evita
-// que este bloque intente enganchar listeners a elementos que no existen ahi.
-// ==========================================================================
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('formGuardar');
     if (!form) {
@@ -192,10 +164,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const contenedorHorarios = document.getElementById('contenedorHorarios');
     const feedbackHorario = document.getElementById('feedbackHorarioRequerido');
     const inputCorreo = document.getElementById('correo');
-    // Ojo: "input, select" a proposito, no "input[required], select[required]". Apellido
-    // materno es opcional (sin required) pero SI tiene pattern (letras y espacios); si
-    // solo se enganchan los campos required, escribir un caracter invalido ahi nunca
-    // marca is-invalid ni bloquea Guardar, aunque el patron lo rechace.
     const inputsValidables = form.querySelectorAll('input, select');
 
     function tieneHorarios() {
@@ -240,8 +208,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Al enviar el formulario, avisar con las alertas ya definidas el motivo exacto
-    // por el que no se puede guardar (en vez de solo dejar el boton deshabilitado).
     form.addEventListener('submit', function (evento) {
         if (inputCorreo && !inputCorreo.checkValidity()) {
             evento.preventDefault();
@@ -262,26 +228,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Expuesta para que agregarHorario()/eliminarHorario() (arriba) puedan re-evaluar
-    // el boton al agregar/quitar horarios.
     window.actualizarEstadoGuardar = verificarFormulario;
 
     verificarFormulario();
 
-    // Toast de error (mensajeError resuelto server-side en TutoresServlet, expuesto
-    // via data-attribute; ausente en gestion-tutores.jsp, asi que no hace falta guard aparte).
     const mensajeError = document.body.dataset.mensajeError;
     if (mensajeError) {
         mostrarAlerta('error', 'Error', mensajeError);
     }
 });
 
-// ==========================================================================
-// AUTOCOMPLETADO DE CORREO INSTITUCIONAL en formulario-tutor.jsp: mientras el
-// coordinador escribe Nombres/Apellido paterno, el correo se arma solo como
-// primerNombre + primerApellidoPaterno + "@utez.edu.mx" (sin acentos ni espacios).
-// Mismo criterio que TutoresServlet#generarCorreoInstitucional (carga masiva por Excel).
-// ==========================================================================
 document.addEventListener('DOMContentLoaded', function () {
     const inputNombres = document.getElementById('nombres');
     const inputApellidoPaterno = document.getElementById('apellidoPaterno');
@@ -289,9 +245,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!inputNombres || !inputApellidoPaterno || !inputCorreo) return;
 
     const DOMINIO_CORREO = '@utez.edu.mx';
-    // Recuerda el ultimo valor que generamos nosotros: si el correo actual ya no
-    // coincide con el, significa que el usuario lo edito a mano y dejamos de tocarlo
-    // (asi no le pisamos un correo distinto que haya escrito el, ej. en modo edicion).
     let ultimoCorreoGenerado = inputCorreo.value || '';
 
     function primeraPalabraSinAcentos(texto) {
@@ -307,8 +260,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         ultimoCorreoGenerado = (primerNombre && primerApellido) ? primerNombre + primerApellido + DOMINIO_CORREO : '';
         inputCorreo.value = ultimoCorreoGenerado;
-        // Dispara "input" para que la validacion en vivo (mas arriba en este archivo y
-        // en validar-correo.js) reevalue el campo y el boton Guardar.
         inputCorreo.dispatchEvent(new Event('input', { bubbles: true }));
     }
 
@@ -316,9 +267,6 @@ document.addEventListener('DOMContentLoaded', function () {
     inputApellidoPaterno.addEventListener('input', actualizarCorreoAutomatico);
 });
 
-/**
- * Filtrado en tiempo real de la tabla de tutores.
- */
 function filtrarTutores() {
     let inputBuscar = document.getElementById('buscarTutor');
     let tabla = document.getElementById('tablaTutores');
@@ -369,9 +317,6 @@ document.addEventListener('DOMContentLoaded', function () {
     filtrarTutores();
 });
 
-// Modal "Carga Masiva de Tutores": confirmacion al cerrar con cambios sin enviar (mismo
-// patron que el modal de Carga Masiva de Alumnos en alumnos.js), sin Select2 porque aqui no
-// hay un <select> que elegir de antemano (la Academia viene del propio Excel, por fila).
 document.addEventListener('DOMContentLoaded', function () {
     let inputCargaArchivo = document.getElementById('cargaMasivaTutoresArchivo');
     let formCargaMasiva = document.getElementById('formCargaMasivaTutores');
@@ -401,8 +346,6 @@ document.addEventListener('DOMContentLoaded', function () {
         );
     }
 
-    // El modal se reabre varias veces en la misma pagina: se limpia por completo cada vez
-    // que se abre para no arrastrar el archivo elegido la vez anterior.
     modalCargaMasivaEl.addEventListener('show.bs.modal', function () {
         formCargaMasiva.reset();
     });
@@ -413,7 +356,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnCerrarCargaMasiva) btnCerrarCargaMasiva.addEventListener('click', intentarCerrarModalCargaMasiva);
 });
 
-// Toasts/alertas de exito y error via parametros en la URL (?exito=, ?error=)
 document.addEventListener('DOMContentLoaded', function () {
     const parametros = new URLSearchParams(window.location.search);
     const exito = parametros.get('exito');
@@ -433,9 +375,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 mostrarToast('exito', '¡Éxito!', 'El tutor fue actualizado correctamente');
                 break;
             case 'carga_masiva_tutores': {
-                // Si hubo filas invalidas, se omite este toast: mas abajo se muestra una
-                // alerta mas completa (con el numero de cada fila omitida), que ya incluye
-                // este mismo conteo de "insertados".
                 if (window.filasInvalidasTutoresExcel && window.filasInvalidasTutoresExcel.length > 0) break;
                 let insertados = parametros.get('insertados') || '0';
                 mostrarToast('exito', '¡Éxito!', 'Se registraron ' + insertados + ' tutor(es) correctamente.');
@@ -472,9 +411,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 mostrarAlerta('error', 'Error', 'El archivo es demasiado grande. El límite es de 5 MB.');
                 break;
             case 'archivo_invalido':
-                // Si hay filas invalidas con numero de renglon (window.filasInvalidasTutoresExcel),
-                // se omite este mensaje generico: mas abajo se muestra uno mas especifico con
-                // el detalle fila por fila.
                 if (!window.filasInvalidasTutoresExcel || window.filasInvalidasTutoresExcel.length === 0) {
                     mostrarAlerta('error', 'Error', 'No se pudo leer el archivo, o ninguna fila tenía datos válidos. Verifica el formato de las columnas y vuelve a intentar.');
                 }
@@ -487,15 +423,6 @@ document.addEventListener('DOMContentLoaded', function () {
         window.history.replaceState(null, null, window.location.pathname);
     }
 
-    // Filas del ultimo Excel de carga masiva que se omitieron por datos invalidos/duplicados
-    // (window.filasInvalidasTutoresExcel, ver gestion-tutores.jsp: TutoresServlet la guarda
-    // en SESSION para no saturar la URL, el JSP la vuelca a este global y la borra de la
-    // sesion). mostrarAlerta() es un modal, no un toast: se queda en pantalla hasta que el
-    // coordinador le da clic a "Aceptar", a proposito, para que le de tiempo de leer y
-    // anotar el detalle antes de que desaparezca solo. Cada elemento ya es un mensaje
-    // completo ("Fila 6: la academia 'Contabilidad' no existe en el catálogo."), por eso se
-    // unen con salto de linea (mostrarAlerta usa innerText, que SI respeta '\n' como <br>)
-    // en vez de coma: serian oraciones larguisimas pegadas si se unieran con ", ".
     if (window.filasInvalidasTutoresExcel && window.filasInvalidasTutoresExcel.length > 0) {
         let insertados = parseInt(parametros.get('insertados') || '0', 10);
         let listaFilas = window.filasInvalidasTutoresExcel.join('\n');

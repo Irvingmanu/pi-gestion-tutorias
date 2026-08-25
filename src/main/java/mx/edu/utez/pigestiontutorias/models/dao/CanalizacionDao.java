@@ -21,8 +21,7 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
 
     @Override
     public boolean create(Canalizacion entidad) {
-        // Sin baseUrl no hay forma de armar el link de confirmacion, asi que este camino
-        // (que en la practica nadie usa, ver comentario de crearYObtenerId) no manda correo.
+
         return crearYObtenerId(entidad, null) > 0;
     }
 
@@ -46,11 +45,6 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
         return false;
     }
 
-    // Inserta la canalización (con su propia conexión/commit) y devuelve el ID generado, para
-    // enlazarlo con SESION_INDIVIDUAL (create() de la interfaz no sirve aquí porque
-    // SesionIndividualServlet y TutoriaServlet necesitan el ID generado para enlazarlo a
-    // SESION_INDIVIDUAL.ID_CANALIZACION). Si la inserción tuvo éxito y hay baseUrl, dispara
-    // el correo de confirmación al encargado del área.
     public int crearYObtenerId(Canalizacion c, String baseUrl) {
         try (Connection con = SQLConnector.getConnection()) {
             int idGenerado = crearEnTransaccion(con, c);
@@ -64,11 +58,6 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
         }
     }
 
-    // Variante que reutiliza la conexión/transacción del llamador (no hace commit ni la cierra):
-    // la usa SesionIndividualDao.completarSesion() para que la canalización quede en la misma
-    // transacción que el UPDATE de SESION_INDIVIDUAL. Genera el ID_TOKEN y lo deja en
-    // el objeto "c", pero NO manda el correo aquí — eso debe esperar a que el llamador confirme
-    // el commit, para no notificar al encargado de un registro que después se puede revertir.
     public int crearEnTransaccion(Connection con, Canalizacion c) throws SQLException {
         String token = generarToken();
         String sql = "INSERT INTO CANALIZACION(ID_AREA, ID_MOTIVO, MATRICULA, FECHA_CANALIZACION, ESTATUS, OBSERVACIONES, ID_TOKEN) " +
@@ -98,8 +87,6 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
         }
     }
 
-    // Manda el correo de confirmación al encargado del área. Publico porque tambien lo llama
-    // SesionIndividualDao.completarSesion() despues de su propio commit exitoso.
     public void enviarCorreoConfirmacion(Canalizacion c, String baseUrl) {
         Area area = areaDAO.getById(c.getIdArea());
         if (area == null || area.getCorreoContacto() == null || c.getIdToken() == null) {
@@ -116,9 +103,6 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
                 nombreAlumno, c.getMatricula(), motivoODetalle, link);
     }
 
-    // Usado por ConfirmarCanalizacionServlet cuando el encargado del área da clic en el link
-    // del correo. Devuelve "ok", "ya_confirmada" (el link ya se habia usado) o "invalido"
-    // (el token no existe).
     public String confirmarPorToken(String token) {
         String sqlSelect = "SELECT ESTATUS FROM CANALIZACION WHERE ID_TOKEN = ?";
         String sqlUpdate = "UPDATE CANALIZACION SET ESTATUS = 'Atendido' WHERE ID_TOKEN = ?";
@@ -162,9 +146,6 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
         return sb.toString();
     }
 
-    // Usado por CanalizacionesServlet para que el alumno vea a donde fue canalizado:
-    // trae, ademas de la canalizacion, el nombre/encargado/correo/enlace de cita del area
-    // y el nombre del motivo (si tiene uno asociado).
     public List<Canalizacion> getByMatricula(String matricula) {
         List<Canalizacion> lista = new ArrayList<>();
         String sql = "SELECT c.ID_CANALIZACION, c.ID_AREA, c.ID_MOTIVO, c.MATRICULA, c.FECHA_CANALIZACION, " +
@@ -221,20 +202,12 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
         return lista;
     }
 
-    // Modal "Alumnos Canalizados" del reporte del coordinador: una fila por canalizacion,
-    // con el alumno/grupo destino, el tutor que la registro (via SESION_INDIVIDUAL, unica
-    // forma en que se crea una CANALIZACION, ver TutoriaServlet/SesionIndividualServlet) y el
-    // area/motivo/estatus. Reutiliza los mismos filtros opcionales de carrera/cuatrimestre/letra
-    // que ReportesDao para que el desglose sea coherente con el KPI de la tarjeta; el filtro de
-    // idTutor se aplica sobre quien registro la canalizacion (si.ID_TUTOR).
     public List<CanalizacionAlumnoDTO> getCanalizacionesDetalladas(Integer idTutor, Integer idCarrera,
                                                                    Integer cuatrimestre, String letra,
                                                                    Date desde, Date hasta) {
         return getCanalizacionesDetalladas(idTutor, idCarrera, cuatrimestre, letra, desde, hasta, null);
     }
 
-    // Sobrecarga con matricula: cuando el buscador de alumnos del dashboard selecciona un
-    // alumno, el modal "Canalizados" se acota a ese alumno en vez del filtro/tutor general.
     public List<CanalizacionAlumnoDTO> getCanalizacionesDetalladas(Integer idTutor, Integer idCarrera,
                                                                    Integer cuatrimestre, String letra,
                                                                    Date desde, Date hasta, String matricula) {
@@ -330,10 +303,6 @@ public class CanalizacionDao implements Dao<Canalizacion, Integer> {
         return lista;
     }
 
-    // Boton "Enviar correo de recordatorio" del modal "Canalizados" del tutor: vuelve a
-    // consultar por ID_CANALIZACION (no confia en lo que mande el cliente) y exige que la
-    // canalizacion haya sido registrada por ese mismo tutor (via SESION_INDIVIDUAL.ID_TUTOR),
-    // para que un tutor no pueda mandar recordatorios de canalizaciones ajenas.
     public CanalizacionRecordatorioDTO getDetalleParaRecordatorio(int idCanalizacion, int idTutorSesion) {
         String sql = "SELECT c.ID_TOKEN, c.ESTATUS, c.OBSERVACIONES, c.MATRICULA, " +
                 "a.NOMBRES AS NOMBRES_ALUMNO, a.APELLIDO_PATERNO AS AP_ALUMNO, a.APELLIDO_MATERNO AS AM_ALUMNO, " +

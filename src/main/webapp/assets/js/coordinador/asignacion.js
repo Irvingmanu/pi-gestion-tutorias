@@ -1,6 +1,3 @@
-// Logica de la vista de Asignacion de Tutores (coordinador/asignacion.jsp):
-// toasts/alertas via parametros en la URL (?exito=, ?error=) y confirmacion
-// de eliminacion de una asignacion existente.
 
 document.addEventListener('DOMContentLoaded', function () {
     const urlParams = new URLSearchParams(window.location.search);
@@ -32,12 +29,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-// Filtro OBLIGATORIO en cascada: Academia -> Tutor + Grupo. Un tutor solo puede
-// asignarse a grupos de su misma academia, asi que en vez de derivar el filtro del
-// Tutor elegido (como antes), ahora la Academia es la que manda arriba y filtra a
-// los dos por igual. Tutor y Grupo empiezan disabled; todas sus opciones ya vienen
-// renderizadas con data-academia-id (ver asignacion.jsp), asi que esto no pide nada
-// al servidor, solo oculta/deshabilita <option> en el cliente.
 document.addEventListener('DOMContentLoaded', function () {
     const selectAcademia = document.getElementById('academiaFormulario');
     const selectTutor = document.getElementById('tutor');
@@ -46,16 +37,12 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
-    // Reutilizable para Tutor y Grupo: oculta las <option> cuyo data-academia-id no
-    // coincida con la academia elegida, limpia la seleccion previa (evita datos
-    // cruzados entre academias) y deshabilita el <select> si no hay academia o si
-    // esa academia no tiene opciones disponibles.
     function filtrarPorAcademia(select, idAcademia, textoSinAcademia, textoConOpciones, textoSinOpciones) {
         let huboOpcionesVisibles = false;
 
         Array.prototype.forEach.call(select.options, function (opcion) {
             if (!opcion.value) {
-                return; // el placeholder siempre se conserva tal cual
+                return;
             }
 
             const coincide = idAcademia !== '' && opcion.getAttribute('data-academia-id') === idAcademia;
@@ -86,8 +73,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
-// Filtro OPCIONAL de la tabla "Asignaciones Actuales": oculta filas cuyo
-// data-academia-id no coincida con la academia elegida en #filtroAcademiaTabla.
 document.addEventListener('DOMContentLoaded', function () {
     const selectFiltroTabla = document.getElementById('filtroAcademiaTabla');
     const tabla = document.getElementById('tablaAsignaciones');

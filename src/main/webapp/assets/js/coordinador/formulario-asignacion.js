@@ -1,6 +1,3 @@
-// Logica dedicada a asignacion.jsp: habilita/deshabilita el boton "Agregar"
-// del formulario "Nueva Asignación" segun se llenen todos los selects
-// requeridos, y marca en rojo el select que quede invalido.
 
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('formGuardar');

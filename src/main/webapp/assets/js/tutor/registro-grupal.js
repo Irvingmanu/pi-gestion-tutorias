@@ -1,11 +1,3 @@
-// Archivo: webapp/assets/js/tutor/registro-grupal.js
-// Registro de Tutoría Grupal: al elegir un grupo se carga por AJAX la cuadrícula completa
-// de asistencia (estilo Excel: sesiones históricas del periodo + la sesión que se está
-// registrando en este mismo formulario). Todo -- temas/acuerdos y la asistencia marcada
-// en la cuadrícula, historia incluida -- se guarda junto en un único POST al presionar
-// "Guardar". La columna de la sesión que se está registrando se reordena en vivo entre
-// las columnas históricas según la fecha capturada arriba (ver obtenerColumnasOrdenadas).
-
 document.addEventListener('DOMContentLoaded', function () {
     var CICLO_ESTATUS = ['Presente', 'Falta', 'Justificado'];
     var UMBRAL_RIESGO = 80;
@@ -25,20 +17,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var inputSoloAsistencia = document.getElementById('inputSoloAsistencia');
     var btnGuardarListaAsistencia = document.getElementById('btnGuardarListaAsistencia');
 
-    // Fecha de "hoy" en ISO, usada tanto para acotar el <input type="date"> como para
-    // decidir, columna por columna de la cuadricula, que acciones de asistencia estan
-    // permitidas (ver REGLAS DE NEGOCIO DE ASISTENCIA mas abajo).
     var hoyStr = formatearFechaISO(new Date());
 
-    // Estado unico de la cuadricula (fuente de verdad): se llena al cargar un grupo y lo
-    // van mutando tanto los clics en las celdas como el reordenamiento por cambio de fecha,
-    // para que ningun cambio se pierda al re-renderizar.
     var estadoGrid = null;
 
-    // Se activan cuando el tutor da clic en alguna celda de la cuadrícula, para distinguir
-    // "solo vino a justificar/corregir asistencia de sesiones ya registradas" (guardado
-    // parcial, sin exigir Fecha/Acuerdos/Temas) de "está registrando una sesión nueva"
-    // (donde esos campos siguen siendo obligatorios).
     var huboEdicionHistorica = false;
     var huboEdicionColumnaNueva = false;
 
@@ -52,8 +34,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return huboEdicionHistorica && !huboEdicionColumnaNueva && camposSuperioresVacios();
     }
 
-    // Revisa el estado actual de la cuadrícula (no solo la última celda tocada) para saber
-    // si hay alguna sesión histórica marcada como "Justificado".
     function hayAlgunaSesionJustificada() {
         if (!estadoGrid) {
             return false;
@@ -65,9 +45,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // El botón "Guardar Lista de Asistencia" es un atajo dedicado al guardado parcial:
-    // solo aparece cuando el tutor está justificando asistencia de sesiones ya registradas
-    // (mismo criterio que puedeGuardarSoloAsistencia) y hay al menos un "Justificado" marcado.
     function actualizarBotonListaAsistencia() {
         if (!btnGuardarListaAsistencia) {
             return;
@@ -83,9 +60,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return yyyy + '-' + mm + '-' + dd;
     }
 
-    // Rango permitido del selector de fecha: nunca en el futuro, y como máximo
-    // DIAS_ANTIGUEDAD_MAXIMA días atrás desde hoy. Si el periodo escolar ya traía un "min"
-    // más restrictivo (su fecha de inicio, seteada por el JSP), se respeta ese en su lugar.
     if (inputFecha) {
         inputFecha.setAttribute('max', hoyStr);
 
@@ -99,9 +73,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // ==========================================================================
-    // CUADRÍCULA DE ASISTENCIA
-    // ==========================================================================
     function escaparHtml(texto) {
         var div = document.createElement('div');
         div.textContent = texto == null ? '' : String(texto);
@@ -143,12 +114,6 @@ document.addEventListener('DOMContentLoaded', function () {
         cuerpoTablaAsistencia.appendChild(fila);
     }
 
-    // ==========================================================================
-    // REGLAS DE NEGOCIO DE ASISTENCIA POR FECHA
-    // Fechas pasadas (antes de hoy): no se permite registrar/modificar Presente ni Falta,
-    // solo "Justificar". Fecha de hoy: no se permite Justificar, solo Presente/Falta.
-    // Sin fecha capturada todavia (columna "nueva" antes de elegir fecha): sin restriccion.
-    // ==========================================================================
     function obtenerRestriccionColumna(fechaIso) {
         if (!fechaIso) {
             return 'libre';
@@ -167,10 +132,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return ciclo[(idx + 1) % ciclo.length];
     }
 
-    // Calcula, segun la restriccion de la columna, cual seria el proximo estatus al dar
-    // clic en una celda. En una columna pasada, una celda que ya esta en "Presente" queda
-    // bloqueada (ya no se puede quitar la asistencia); el resto solo puede pasar a
-    // "Justificado".
     function siguienteEstatusPermitido(actual, restriccion) {
         if (restriccion === 'pasada') {
             return actual === 'Presente' ? 'Presente' : 'Justificado';
@@ -258,9 +219,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return tr;
     }
 
-    // Arma la lista de columnas (sesiones históricas + la sesión actual) en orden
-    // cronológico ascendente, según la fecha capturada arriba en el formulario. Sin fecha
-    // capturada todavía, la columna "actual" cae al final (comportamiento por defecto).
     function obtenerColumnasOrdenadas() {
         var columnas = estadoGrid.sesionesServidor.map(function (s) {
             return { id: s.idSesionGrupal, fechaIso: s.fechaIso, esNueva: false };
@@ -284,11 +242,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return columnas;
     }
 
-    // Cuando la fecha capturada arriba (columna "nueva") entra o sale de la zona "pasada"
-    // por un cambio de fecha, el estatus ya marcado en cada fila puede dejar de ser valido
-    // (ej. quedo en "Presente" mientras la fecha aun no se elegia y luego el tutor eligio
-    // una fecha pasada). Se corrige aqui en estadoGrid antes de renderizar, para que tanto
-    // la cuadricula como los inputs ocultos que se envian al servidor queden consistentes.
     function corregirEstatusColumnaNueva(columnas) {
         var columnaNueva = columnas.find(function (c) { return c.esNueva; });
         if (!columnaNueva) {
@@ -323,9 +276,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return grupos;
     }
 
-    // Re-renderiza toda la cuadrícula a partir de estadoGrid (fuente de verdad), sin perder
-    // ninguna edición previa: se llama tanto al cargar un grupo como cada vez que cambia la
-    // fecha de la sesión actual, para reubicar esa columna en su posición cronológica.
     function renderizarDesdeEstado() {
         if (!estadoGrid) {
             return;
@@ -372,8 +322,6 @@ document.addEventListener('DOMContentLoaded', function () {
         verificarFormularioGrupal();
     }
 
-    // Construye el estado inicial (una vez por carga de grupo) a partir de la respuesta
-    // del servidor y dispara el primer render.
     function iniciarEstadoGrid(data) {
         var sesionesServidor = (data && data.sesiones) || [];
 
@@ -405,8 +353,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Mantiene estadoGrid sincronizado con lo que el tutor marca en pantalla, para que un
-    // reordenamiento por cambio de fecha no pierda ninguna edición ya hecha.
     function actualizarEstadoCelda(idSesion, matricula, estatus) {
         if (!estadoGrid) {
             return;
@@ -507,8 +453,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Reordenamiento cronológico inmediato: cada vez que cambia la fecha capturada arriba,
-    // la columna "sesión actual" se reubica entre las históricas según le corresponda.
     if (inputFecha) {
         inputFecha.addEventListener('input', renderizarDesdeEstado);
         inputFecha.addEventListener('change', renderizarDesdeEstado);
@@ -533,7 +477,6 @@ document.addEventListener('DOMContentLoaded', function () {
         contenedorAsistencia.style.display = 'block';
         mostrarFilaMensaje('Cargando alumnos...', 'text-muted');
 
-        // Utilizamos APP_CONTEXT definido en el JSP en lugar del EL tag
         var url = APP_CONTEXT + '/tutoria-grupal?accion=obtenerCuadricula'
             + '&idGrupo=' + encodeURIComponent(valor);
 
@@ -555,11 +498,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var formRegistroGrupal = document.getElementById('formRegistroGrupal');
 
-    // ==========================================================================
-    // VALIDACIÓN EN VIVO (mismo patrón que assets/js/coordinador/tutor.js):
-    // marca is-invalid en cada campo requerido y solo habilita "Guardar" cuando
-    // todo el formulario es válido.
-    // ==========================================================================
     var inputsRequeridos;
     var btnGuardarGrupal;
     var verificarFormularioGrupal = function () {};
@@ -575,9 +513,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     esValido = false;
                 }
             });
-            // "Guardar" también se habilita cuando el tutor solo corrigió/justificó
-            // asistencia de sesiones ya registradas, sin tocar Fecha/Hora/Acuerdos/Temas
-            // ni la columna "Sesión actual" (ver puedeGuardarSoloAsistencia()).
             if (btnGuardarGrupal) {
                 btnGuardarGrupal.disabled = !(esValido || puedeGuardarSoloAsistencia());
             }
@@ -613,15 +548,10 @@ document.addEventListener('DOMContentLoaded', function () {
         verificarFormularioGrupal();
     }
 
-    // Verificamos que el form exista (en caso de que la vista entre al <c:when test="${empty asignaciones}">)
     if (formRegistroGrupal) {
         formRegistroGrupal.addEventListener('submit', function (e) {
             e.preventDefault();
 
-            // Guardado parcial: solo se editaron celdas de sesiones ya registradas (ej.
-            // justificar una falta pasada) y los campos de una sesión nueva siguen vacíos.
-            // Se salta la validación de Fecha/Hora/Acuerdos/Temas y el servidor no crea
-            // ninguna sesión nueva, solo actualiza la asistencia marcada.
             if (puedeGuardarSoloAsistencia()) {
                 if (inputSoloAsistencia) {
                     inputSoloAsistencia.value = 'true';
@@ -644,7 +574,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (!formRegistroGrupal.checkValidity()) {
-                // Pintamos is-invalid en todo lo que falte antes de bloquear el envío
                 inputsRequeridos.forEach(function (input) {
                     if (!input.checkValidity()) {
                         input.classList.add('is-invalid');
@@ -654,8 +583,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            // Validación de fecha: no se permiten fechas futuras ni de más de 15 días de
-            // antigüedad (el backend vuelve a validar ambos casos).
             if (inputFecha && inputFecha.value) {
                 var fechaSeleccionada = new Date(inputFecha.value + 'T00:00:00');
                 var fechaHoy = new Date();

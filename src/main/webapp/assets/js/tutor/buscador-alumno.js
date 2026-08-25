@@ -1,9 +1,3 @@
-// Buscador de alumnos de tutor/reportes.jsp: solo encuentra alumnos que pertenecen a los
-// grupos de ESTE tutor (el servidor filtra por el tutor de la sesion, ver
-// ReportesServlet.responderBuscarAlumnosTutor). A diferencia de un modal aparte, al
-// seleccionar un resultado el mismo dashboard (tarjetas KPI + graficas de pastel/barras)
-// se recalcula acotado a ese alumno, reutilizando buscarReporteTutor() ya definido en la vista.
-// Requiere que la vista defina antes: const CONTEXT_PATH = "<context-path>";
 
 let temporizadorBusquedaAlumno = null;
 
@@ -65,9 +59,6 @@ function pintarResultadosBuscadorAlumno(lista) {
     resultados.dataset.items = JSON.stringify(lista);
 }
 
-// Al seleccionar un alumno no se abre ningun modal: se fija su matricula como filtro
-// (igual que Carrera/Cuatrimestre/Grupo) y se vuelve a pedir el mismo reporte de siempre,
-// que ahora la BD acota a ese alumno (ver ReportesDao.generarReporte con matricula).
 function seleccionarAlumnoBuscador(indice) {
     const resultados = document.getElementById('resultadosBuscadorAlumno');
     const lista = JSON.parse(resultados.dataset.items || '[]');

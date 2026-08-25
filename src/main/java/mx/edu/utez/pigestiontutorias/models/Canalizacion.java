@@ -12,9 +12,6 @@ public class Canalizacion {
     private String observaciones;
     private String idToken;
 
-    // Campos extra que NO existen en la tabla CANALIZACION, solo para mostrar datos
-    // del area y del motivo en la vista del alumno (se llenan con un JOIN, ver
-    // CanalizacionDao.getByMatricula)
     private String nombreArea;
     private String encargadoArea;
     private String correoContactoArea;

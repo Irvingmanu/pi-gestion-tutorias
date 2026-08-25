@@ -2,10 +2,6 @@ package mx.edu.utez.pigestiontutorias.models;
 
 import java.sql.Date;
 
-// Fila del modal "Solicitudes Pendientes" del reporte del coordinador (ver
-// ReportesGlobalesServlet/SolicitudDao.getSolicitudesPendientesGlobal). Combina SOLICITUD_TUTORIA
-// (ESTATUS = 'Pendiente') con el alumno/grupo que la creo y el tutor al que va dirigida, para
-// poder listarla y, desde el detalle, mandarle un recordatorio por correo a ese tutor.
 public class SolicitudPendienteDTO {
     private int idSolicitud;
     private String matricula;

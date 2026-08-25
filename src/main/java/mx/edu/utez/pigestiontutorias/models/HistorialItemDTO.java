@@ -3,14 +3,14 @@ package mx.edu.utez.pigestiontutorias.models;
 import java.sql.Date;
 
 public class HistorialItemDTO {
-    private String tipo; // "Grupal", "Individual" o "Espontanea"
+    private String tipo;
     private Date fecha;
     private String hora;
-    private String referencia; // grupo (Carrera/Cuatri/Letra) o matricula del alumno, segun el tipo
+    private String referencia;
     private String temasTratados;
     private String acuerdos;
     private String estado;
-    private Integer idGrupo; // solo para tipo "Grupal": alimenta el enlace a la cuadricula de asistencia
+    private Integer idGrupo;
 
     public HistorialItemDTO() {}
 

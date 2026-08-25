@@ -39,10 +39,6 @@ function prepararEdicionPeriodo(boton) {
     const tabNuevo = document.getElementById('tab-nuevo-periodo-btn');
     if (tabNuevo && window.bootstrap) new bootstrap.Tab(tabNuevo).show();
 
-    // Los campos se llenaron por JS directo (input.value = ...), lo que no
-    // dispara 'input'/'change'; se revalida todo el formulario a mano para
-    // que el marcado visual (rojo/verde) y el estado del boton Guardar
-    // reflejen los valores que se acaban de cargar.
     if (window.verificarFormularioPeriodo) window.verificarFormularioPeriodo();
 }
 
@@ -55,8 +51,6 @@ function cancelarEdicionPeriodo() {
     document.getElementById('btnGuardar').textContent = 'Guardar';
     document.getElementById('btnCancelarEdicionPeriodo').classList.add('d-none');
 
-    // form.reset() tampoco dispara 'input'/'change' en todos los navegadores
-    // de forma confiable; se revalida a mano para limpiar el marcado rojo.
     if (window.verificarFormularioPeriodo) window.verificarFormularioPeriodo();
 }
 
@@ -88,18 +82,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputObjetivo = document.getElementById('asistenciasGrupales');
     const inputsValidables = [inputNombre, inputInicio, inputFin, inputObjetivo];
 
-    // ==========================================================================
-    // VALIDACIÓN EN VIVO (misma logica que formulario-area.js / formulario-alumno.js):
-    // marca borde rojo + muestra el <div class="invalid-feedback"> de cada campo.
-    // ==========================================================================
     const MENSAJE_CAMPO_OBLIGATORIO = 'Este campo es obligatorio.';
     const MENSAJE_DURACION_INVALIDA = 'El periodo escolar debe durar entre 3 y 4 meses (91 a 123 días).';
 
-    // Modelo estricto de 3 cuatrimestres: un periodo solo puede arrancar en uno de estos
-    // meses (1=Enero, 5=Mayo, 9=Septiembre). NOMBRES_INICIO da el nombre que le corresponde
-    // a cada uno para el autocompletado de "Nombre del periodo" (ver
-    // actualizarNombreAutomatico() mas abajo); debe coincidir exactamente con
-    // PeriodoEscolarServlet#NOMBRES_MES_INICIO en el backend.
     const MESES_PERMITIDOS = [1, 5, 9];
     const NOMBRES_INICIO = {1: 'Enero - Abril', 5: 'Mayo - Agosto', 9: 'Septiembre - Diciembre'};
 
@@ -114,11 +99,6 @@ document.addEventListener('DOMContentLoaded', function () {
         return input.parentElement?.querySelector('.invalid-feedback') || null;
     }
 
-    // Candado de mes (Fecha de inicio) + rango/duracion (Fecha de fin): se integran al
-    // checkValidity() nativo via setCustomValidity, en vez de un classList suelto, para que
-    // entren al mismo flujo de marcarValidez() de abajo. dataset.motivoInvalido distingue,
-    // para fechaFin, si el problema es el ORDEN (fin <= inicio) o la DURACION (fuera de
-    // 91-123 dias) — cada uno tiene su propio mensaje (ver marcarValidez).
     function actualizarValidezFechas() {
         if (inputInicio.value && !mesValido(inputInicio.value)) {
             inputInicio.setCustomValidity('mes_invalido');
@@ -144,11 +124,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Autocompleta "Nombre del periodo" a partir de la Fecha de inicio (readonly, el
-    // coordinador ya no lo captura a mano). Solo SOBRESCRIBE el valor cuando el mes elegido
-    // es valido: si esta vacio o (en edicion) trae un mes fuera de regla de un periodo
-    // creado ANTES de esta validacion, se deja el nombre tal cual esta (nunca se borra solo
-    // que se este viendo un valor invalido en fecha de inicio).
     function actualizarNombreAutomatico() {
         if (inputInicio.value && mesValido(inputInicio.value)) {
             const [anio, mes] = inputInicio.value.split('-');
@@ -156,12 +131,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    // Marca (o desmarca) un input individual como invalido: borde rojo +
-    // mensaje visible. Si esta vacio (valueMissing) usa data-msg-requerido;
-    // para el rango/duracion de fechaFin usa el mensaje que corresponda segun
-    // dataset.motivoInvalido; para cualquier otro tipo de invalidez (pattern,
-    // o el candado de mes de fechaInicio) se usa el mensaje que ya trae el
-    // HTML en el .invalid-feedback (guardado la primera vez para no perderlo).
     function marcarValidez(input) {
         const feedback = obtenerFeedback(input);
 
@@ -208,8 +177,6 @@ document.addEventListener('DOMContentLoaded', function () {
         btnGuardar.disabled = !esValido;
     }
 
-    // Expuesta para que prepararEdicionPeriodo() y cancelarEdicionPeriodo()
-    // puedan pedir una revalidacion manual tras llenar/limpiar el form por JS.
     window.verificarFormularioPeriodo = verificarFormulario;
 
     inputsValidables.forEach(function (input) {
@@ -217,12 +184,6 @@ document.addEventListener('DOMContentLoaded', function () {
         input.addEventListener('change', verificarFormulario);
     });
 
-    // Candado del mes de inicio: si el coordinador elige (via el selector nativo de fecha)
-    // un mes que no sea Enero/Mayo/Septiembre, el campo se limpia solo de inmediato. Va
-    // aparte del listener generico de arriba (que solo marca en rojo sin tocar el valor)
-    // porque este SI debe modificar el <input>, y solo cuando el cambio viene de una
-    // eleccion activa del coordinador — nunca al precargar el formulario en modo edicion
-    // (ahi actualizarValidezFechas ya se encarga de mostrarlo en rojo sin borrar nada).
     inputInicio.addEventListener('change', function () {
         if (this.value && !mesValido(this.value)) {
             this.value = '';
@@ -230,10 +191,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Verificación inicial (ej. al cargar la pantalla, tab "Nuevo Periodo" vacío).
     verificarFormulario();
 
-    // Toasts/alertas de exito y error via parametros en la URL
     const parametros = new URLSearchParams(window.location.search);
     const exito = parametros.get('exito');
     if (exito === 'guardado') {

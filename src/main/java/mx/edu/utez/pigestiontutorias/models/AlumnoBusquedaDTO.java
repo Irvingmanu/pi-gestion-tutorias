@@ -1,8 +1,5 @@
 package mx.edu.utez.pigestiontutorias.models;
 
-// Fila liviana del buscador de alumnos (tarjeta de busqueda en Reportes): solo lo
-// necesario para pintar la lista de resultados y despues pedir el reporte individual
-// completo por matricula (ver AlumnoDAO.buscarAlumnos).
 public class AlumnoBusquedaDTO {
     private String matricula;
     private String nombreCompleto;

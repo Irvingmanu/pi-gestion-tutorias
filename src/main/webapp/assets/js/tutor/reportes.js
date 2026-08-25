@@ -70,9 +70,6 @@ function pintarKpi(id, valor) {
     if (el) el.textContent = (valor !== undefined && valor !== null) ? valor : '--';
 }
 
-// Escapa texto libre antes de insertarlo como HTML: nombreMotivo/observaciones puede venir
-// de un campo de texto libre que capturo el tutor (observacionesCanalizacion), asi que no es
-// seguro insertarlo directo en innerHTML.
 function escaparHtml(texto) {
     const div = document.createElement('div');
     div.textContent = texto === undefined || texto === null ? '' : String(texto);

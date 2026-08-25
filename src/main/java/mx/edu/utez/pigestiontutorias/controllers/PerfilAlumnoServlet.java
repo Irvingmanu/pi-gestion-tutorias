@@ -19,17 +19,12 @@ public class PerfilAlumnoServlet extends HttpServlet {
 
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();
 
-
-    /*
-     * Obtiene la matrícula del alumno que inició sesión.
-     */
     private String obtenerMatricula(HttpSession session) {
 
         if (session == null) {
             return null;
         }
 
-        // Opción 1: idUsuario
         Object idUsuario = session.getAttribute("idUsuario");
 
         if (idUsuario != null) {
@@ -37,20 +32,15 @@ public class PerfilAlumnoServlet extends HttpServlet {
                 return ((String) idUsuario).trim();
             }
 
-            // Por si por alguna razón se guardó otro tipo
             return String.valueOf(idUsuario).trim();
         }
 
-
-        // Opción 2: matricula
         Object matricula = session.getAttribute("matricula");
 
         if (matricula != null) {
             return String.valueOf(matricula).trim();
         }
 
-
-        // Opción 3: alumno como objeto completo
         Object alumnoSesion = session.getAttribute("alumno");
 
         if (alumnoSesion instanceof Alumno) {
@@ -58,10 +48,8 @@ public class PerfilAlumnoServlet extends HttpServlet {
             return alumno.getMatricula();
         }
 
-
         return null;
     }
-
 
     @Override
     protected void doGet(HttpServletRequest request,
@@ -96,7 +84,6 @@ public class PerfilAlumnoServlet extends HttpServlet {
         ).forward(request, response);
     }
 
-
     @Override
     protected void doPost(HttpServletRequest request,
                           HttpServletResponse response)
@@ -105,19 +92,10 @@ public class PerfilAlumnoServlet extends HttpServlet {
         response.setContentType("application/json");
         response.setCharacterEncoding("UTF-8");
 
-
-        // ==============================
-        // OBTENER SESIÓN Y MATRÍCULA
-        // ==============================
-
         HttpSession session = request.getSession(false);
 
         String matricula = obtenerMatricula(session);
 
-
-        // Si no encontramos la matrícula,
-        // entonces la sesión realmente no tiene
-        // información suficiente del alumno.
         if (matricula == null || matricula.isBlank()) {
 
             response.setStatus(
@@ -132,13 +110,7 @@ public class PerfilAlumnoServlet extends HttpServlet {
             return;
         }
 
-
-        // ==============================
-        // BUSCAR AL ALUMNO
-        // ==============================
-
         Alumno alumno = alumnoDAO.getById(matricula);
-
 
         if (alumno == null) {
 
@@ -154,13 +126,7 @@ public class PerfilAlumnoServlet extends HttpServlet {
             return;
         }
 
-
-        // ==============================
-        // OBTENER ACCIÓN
-        // ==============================
-
         String accion = request.getParameter("accion");
-
 
         if (accion == null || accion.isBlank()) {
 
@@ -172,16 +138,10 @@ public class PerfilAlumnoServlet extends HttpServlet {
             return;
         }
 
-
-        // ==========================================
-        // PASO 1: VERIFICAR CONTRASEÑA ACTUAL
-        // ==========================================
-
         if ("verificarPassword".equals(accion)) {
 
             String passwordActual =
                     request.getParameter("passwordActual");
-
 
             String resultado =
                     CambioPasswordUtil.verificarPassword(
@@ -189,16 +149,10 @@ public class PerfilAlumnoServlet extends HttpServlet {
                             alumno.getPass()
                     );
 
-
             response.getWriter().write(resultado);
 
             return;
         }
-
-
-        // ==========================================
-        // PASO 2: CAMBIAR CONTRASEÑA
-        // ==========================================
 
         if ("cambiarPassword".equals(accion)) {
 
@@ -210,7 +164,6 @@ public class PerfilAlumnoServlet extends HttpServlet {
 
             String passwordConfirmar =
                     request.getParameter("passwordConfirmar");
-
 
             String resultado =
                     CambioPasswordUtil.cambiarPassword(
@@ -230,11 +183,6 @@ public class PerfilAlumnoServlet extends HttpServlet {
                                     )
                     );
 
-
-            // ==========================================
-            // ENVIAR CORREO SI EL CAMBIO FUE EXITOSO
-            // ==========================================
-
             if (CambioPasswordUtil.fueExitoso(resultado)) {
 
                 try {
@@ -248,22 +196,14 @@ public class PerfilAlumnoServlet extends HttpServlet {
 
                 } catch (Exception e) {
 
-                    // No cancelamos el cambio de contraseña
-                    // si falla solamente el envío del correo.
                     e.printStackTrace();
                 }
             }
-
 
             response.getWriter().write(resultado);
 
             return;
         }
-
-
-        // ==========================================
-        // ACCIÓN DESCONOCIDA
-        // ==========================================
 
         response.getWriter().write(
                 "{\"exito\":false,"

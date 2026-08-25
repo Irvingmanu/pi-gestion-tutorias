@@ -1,8 +1,3 @@
-// Modal "Alumnos Atendidos" de tutor/reportes.jsp: lista las sesiones Individual y Espontánea
-// completadas por ESTE tutor (el servidor siempre filtra por el tutor de la sesion, ver
-// ReportesServlet), respetando los mismos filtros de la barra de Reportes.
-// Requiere que la vista defina antes: const CONTEXT_PATH = "<context-path>";
-// y que ya esten cargados alertas.js y bootstrap.js.
 
 let modalAlumnosAtendidosInstancia = null;
 let modalDetalleAtencionInstancia = null;

@@ -1,8 +1,3 @@
-// Modal "Seguimiento de Tutorías Grupales" de reportes-globales.jsp: lista el avance de
-// cada tutor-grupo contra el objetivo del periodo vigente, permite ver el detalle de las
-// sesiones registradas y enviar una alerta por correo al tutor.
-// Requiere que la vista defina antes: const CONTEXT_PATH = "<context-path>";
-// y que ya esten cargados alertas.js (mostrarConfirmacion/mostrarToast) y bootstrap.js.
 
 let modalTutoriasGrupalesInstancia = null;
 let modalDetalleSesionGrupalInstancia = null;
@@ -173,8 +168,6 @@ function verDetalleSesionesGrupal(indice) {
         });
 }
 
-// Misma distribucion de tarjetas blancas que el modal de detalle de Alumnos Atendidos
-// ("Detalles de la Sesión" + "Vínculo Directo"), repetida una vez por sesion registrada.
 function pintarListaSesionesGrupales(sesiones) {
     const contenedor = document.getElementById('listaSesionesGrupales');
 

@@ -1,8 +1,5 @@
 package mx.edu.utez.pigestiontutorias.models;
 
-// Renglon de la "Lista de Asistencia" de una SESION_GRUPAL puntual, para el
-// detalle que se muestra al dar clic en "Ver detalles" dentro del modal de
-// Seguimiento de Tutorías Grupales.
 public class AsistenciaDetalleDTO {
     private String matricula;
     private String nombreCompleto;

@@ -5,8 +5,8 @@ public class Horario {
     private int idHorario;
     private int idTutor;
     private String diaSemana;
-    private String horaDesde;   // ya formateada como "08:00" para mostrar en el <select>
-    private String horaHasta;   // ya formateada como "09:00"
+    private String horaDesde;
+    private String horaHasta;
     private String estado;
 
     public Horario() {
@@ -60,7 +60,6 @@ public class Horario {
         this.estado = estado;
     }
 
-    // Útil para mostrar directo en el <option> del select, ej: "Lunes 08:00 - 09:00"
     public String getEtiqueta() {
         return diaSemana + " " + horaDesde + " - " + horaHasta;
     }

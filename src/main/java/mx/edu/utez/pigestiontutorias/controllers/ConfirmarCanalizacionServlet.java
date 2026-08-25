@@ -9,9 +9,6 @@ import mx.edu.utez.pigestiontutorias.models.dao.CanalizacionDao;
 
 import java.io.IOException;
 
-// Endpoint publico (sin sesion): el encargado del area no tiene cuenta en el sistema,
-// llega aqui desde el link del correo de CanalizacionDao.enviarCorreoConfirmacion().
-// Ver FiltroAutenticacion para el bypass de autenticacion de esta ruta.
 @WebServlet("/confirmar-canalizacion")
 public class ConfirmarCanalizacionServlet extends HttpServlet {
 

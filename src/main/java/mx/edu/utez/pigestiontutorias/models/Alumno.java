@@ -29,8 +29,6 @@ public class Alumno {
     public String getApellidoMaterno() { return apellidoMaterno; }
     public void setApellidoMaterno(String apellidoMaterno) { this.apellidoMaterno = apellidoMaterno; }
 
-    // Concatena APELLIDO_PATERNO + APELLIDO_MATERNO (columnas separadas en BD) para
-    // mostrarlos como un solo nombre completo en listados, historial y correos.
     public String getApellidos() {
         if (apellidoMaterno == null || apellidoMaterno.isBlank()) return apellidoPaterno;
         return apellidoPaterno + " " + apellidoMaterno;

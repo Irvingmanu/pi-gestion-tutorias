@@ -60,12 +60,6 @@ public class TutorDao implements Dao<Tutor, Integer> {
         }
     }
 
-    // Carga masiva de tutores (Excel, ver TutoresServlet#procesarCargaMasivaTutores): mismo
-    // patron que AlumnoDAO#crearMasivo, un solo batch/commit para TUTOR y, por cada tutor
-    // con horarios, un batch de HORARIO_ATENCION (reutilizando insertarHorarios, el mismo
-    // metodo que ya usa el alta individual). NUMERO_EMPLEADO ya viene asignado desde el
-    // servlet (autogenerado secuencialmente antes de llegar aqui: la nomina nunca se pide en
-    // el Excel), asi que no hace falta leer generated keys.
     public int crearMasivo(List<Tutor> tutores) {
         if (tutores == null || tutores.isEmpty()) return 0;
 
@@ -117,10 +111,6 @@ public class TutorDao implements Dao<Tutor, Integer> {
         }
     }
 
-    // Inserta los horarios de atencion de un tutor (una fila por dia en HORARIO_ATENCION).
-    // Extractor "inteligente": el texto viene del JS del formulario (ej. "Lunes: 07:00 -
-    // 09:00"), por eso busca el dia y las horas en vez de exigir un formato exacto.
-    // Reutilizado por create() y update() para no repetir la misma extraccion.
     private void insertarHorarios(Connection con, int numeroEmpleado, List<String> horarios) throws SQLException {
         if (horarios == null || horarios.isEmpty()) return;
 
@@ -149,9 +139,6 @@ public class TutorDao implements Dao<Tutor, Integer> {
         }
     }
 
-    // La nomina (NUMERO_EMPLEADO) ya no la captura el coordinador a mano: se asigna
-    // automaticamente a partir de 1000 (primer tutor = 1000, luego MAX(NUMERO_EMPLEADO) + 1).
-    // La usa el alta individual (formulario-tutor.jsp).
     public int obtenerSiguienteNomina() {
         String sql = "SELECT NVL(MAX(NUMERO_EMPLEADO), 999) + 1 AS SIGUIENTE FROM TUTOR";
         try (Connection con = SQLConnector.getConnection();
@@ -166,10 +153,6 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return 1000;
     }
 
-    // CK_HORARIO_DIA (BD_INTEGRADORA_SGT.sql) solo acepta los dias SIN acento
-    // ('Lunes','Martes','Miercoles','Jueves','Viernes'), pero el <select> del
-    // formulario manda "Miércoles" con acento; se normaliza antes de guardar
-    // para no violar el constraint.
     private String normalizarDiaSemana(String dia) {
         if (dia == null) return dia;
         return switch (dia.toLowerCase()) {
@@ -247,8 +230,7 @@ public class TutorDao implements Dao<Tutor, Integer> {
     @Override
     public List<Tutor> getAll() {
         List<Tutor> lista = new ArrayList<>();
-        // Trae activos e inactivos: la pantalla de gestion decide que mostrar
-        // segun el filtro "mostrar dados de baja".
+
         String sql = "SELECT * FROM TUTOR";
 
         try (Connection con = SQLConnector.getConnection();
@@ -265,10 +247,6 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return lista;
     }
 
-    // Igual que getAll(), pero resuelve ademas el/los grupos que cada tutor tiene
-    // asignados actualmente via JOIN con ASIGNACION_TUTOR + GRUPO + CARRERA (LEFT JOIN
-    // para no perder tutores sin ningun grupo asignado). La usa gestion-tutores.jsp para
-    // pintar la columna "Grupo" sin una consulta aparte por cada fila de la tabla.
     public List<Tutor> getAllConGrupo() {
         Map<Integer, Tutor> tutoresPorNomina = new LinkedHashMap<>();
         String sql = "SELECT t.*, car.NOMBRE AS NOMBRE_CARRERA, g.CUATRIMESTRE, g.LETRA, g.GENERACION " +
@@ -293,9 +271,7 @@ public class TutorDao implements Dao<Tutor, Integer> {
 
                 String nombreCarrera = rs.getString("NOMBRE_CARRERA");
                 if (nombreCarrera != null) {
-                    // Mismo formato que gestion-grupos.jsp/alumnos.js: "Carrera - Cuatri° Letra
-                    // (Gen AAAA-AAAA)", para que el coordinador identifique la generacion sin
-                    // tener que ir a buscarla a la otra pantalla.
+
                     String generacion = rs.getString("GENERACION");
                     String etiquetaGeneracion = (generacion != null && !generacion.isBlank()) ? generacion : "Sin generación";
                     tutor.getGruposAsignados().add(nombreCarrera + " - " + rs.getInt("CUATRIMESTRE") + "° "
@@ -310,14 +286,10 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return new ArrayList<>(tutoresPorNomina.values());
     }
 
-    // El PK de TUTOR ahora es NUMERO_EMPLEADO directamente (ya no hay ID_TUTOR sintetico
-    // ni USUARIO de por medio), asi que getById() sirve tanto para el login/sesion como
-    // para el CRUD de gestion-tutores.
     @Override
     public Tutor getById(Integer numeroEmpleado) {
         String sql = "SELECT * FROM TUTOR WHERE NUMERO_EMPLEADO = ?";
 
-        // Extraemos el intervalo de Oracle y lo formateamos de vuelta a texto "HH:mm"
         String sqlHorarios = "SELECT DIA_SEMANA, " +
                 "TO_CHAR(EXTRACT(HOUR FROM HORA_DESDE), 'FM00') || ':' || TO_CHAR(EXTRACT(MINUTE FROM HORA_DESDE), 'FM00') AS DESDE, " +
                 "TO_CHAR(EXTRACT(HOUR FROM HORA_HASTA), 'FM00') || ':' || TO_CHAR(EXTRACT(MINUTE FROM HORA_HASTA), 'FM00') AS HASTA " +
@@ -343,7 +315,6 @@ public class TutorDao implements Dao<Tutor, Integer> {
                             String desde = rsH.getString("DESDE");
                             String hasta = rsH.getString("HASTA");
 
-                            // Juntamos los datos para que el HTML los pinte como un solo texto
                             horarios.add(dia + " " + desde + " - " + hasta);
                         }
                         tutor.setHorariosDispo(horarios);
@@ -365,8 +336,6 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return getById(numeroEmpleado);
     }
 
-    // Login: busca por correo institucional (ver LoginServlet). Incluye PASS para que
-    // el servlet valide la contraseña; ESTADO se revisa aparte.
     public Tutor findByCorreo(String correo) {
         String sql = "SELECT * FROM TUTOR WHERE UPPER(CORREO_INSTITUCIONAL) = UPPER(?)";
         try (Connection con = SQLConnector.getConnection();
@@ -424,7 +393,7 @@ public class TutorDao implements Dao<Tutor, Integer> {
 
     @Override
     public boolean delete(Integer numeroEmpleado) {
-        // Baja logica: preserva horarios, asignaciones y sesiones vinculadas y bloquea el acceso del tutor.
+
         String sql = "UPDATE TUTOR SET ESTADO = 'N' WHERE NUMERO_EMPLEADO = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -436,11 +405,6 @@ public class TutorDao implements Dao<Tutor, Integer> {
         }
     }
 
-    // Blindaje: un tutor NO puede eliminarse (dar de baja) si todavia tiene responsabilidades
-    // activas o pendientes en el sistema: grupos asignados, solicitudes sin atender, o
-    // sesiones (individuales/grupales) agendadas. Se revisa cada tabla por separado (SELECT
-    // COUNT(1) ... AND ROWNUM = 1) y se corta en cuanto una da positivo, en vez de un solo
-    // JOIN gigante, para que cada consulta sea rapida y facil de leer por separado.
     public boolean tienePendientes(int numeroEmpleado) {
         return existeRegistro("SELECT COUNT(1) FROM ASIGNACION_TUTOR WHERE ID_TUTOR = ? AND ESTADO = 'S' AND ROWNUM = 1", numeroEmpleado)
                 || existeRegistro("SELECT COUNT(1) FROM SOLICITUD_TUTORIA WHERE ID_TUTOR = ? AND ESTATUS = 'Pendiente' AND ROWNUM = 1", numeroEmpleado)
@@ -458,13 +422,11 @@ public class TutorDao implements Dao<Tutor, Integer> {
         } catch (SQLException e) {
             System.err.println("Error al validar pendientes del tutor: " + e.getMessage());
             e.printStackTrace();
-            // Ante un error de BD, se asume que SI tiene pendientes: mejor bloquear de mas
-            // una eliminacion que arriesgar borrar a un tutor con responsabilidades activas.
+
             return true;
         }
     }
 
-    // Reactiva a un tutor dado de baja y restaura su acceso al sistema.
     public boolean reactivar(int numeroEmpleado) {
         String sql = "UPDATE TUTOR SET ESTADO = 'S' WHERE NUMERO_EMPLEADO = ?";
         try (Connection con = SQLConnector.getConnection();

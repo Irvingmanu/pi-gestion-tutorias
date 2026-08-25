@@ -10,11 +10,9 @@ public class SesionGrupal {
     private String hora;
     private String temasTratados;
     private String acuerdos;
-    private String asesoriasGrupales; // puede ser null
+    private String asesoriasGrupales;
     private String estado;
 
-    // Campo transitorio (no es columna de SESION_GRUPAL): transporta las matriculas
-    // que asistieron para que el DAO las inserte en ASISTENCIA junto con la sesion.
     private String[] asistentes;
 
     public SesionGrupal() {}

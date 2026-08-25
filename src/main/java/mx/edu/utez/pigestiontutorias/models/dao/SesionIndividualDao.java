@@ -9,7 +9,6 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-
 public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
 
     private final CanalizacionDao canalizacionDao = new CanalizacionDao();
@@ -52,9 +51,6 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         return null;
     }
 
-    // Necesario para validar la FECHA programada de una sesion antes de dejar que el
-    // tutor la complete (ver SesionIndividualServlet, doPost, rama "esCompletado"):
-    // el tutor solo puede completar una sesion el dia programado o despues, nunca antes.
     @Override
     public SesionIndividual getById(Integer id) {
         String sql = "SELECT * FROM SESION_INDIVIDUAL WHERE ID_SESION_INDIVIDUAL = ?";
@@ -105,8 +101,6 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         return lista;
     }
 
-    // Citas que ya salieron de una Solicitud aceptada y siguen pendientes de que el tutor
-    // capture temas/acuerdos (ver SolicitudServlet, accion=aceptar).
     public List<SesionIndividual> getSesionesProgramadasByTutor(int idTutor) {
         List<SesionIndividual> lista = new ArrayList<>();
         String sql = "SELECT * FROM SESION_INDIVIDUAL WHERE ID_TUTOR = ? AND ESTADO = 'Pendiente' ORDER BY FECHA";
@@ -127,9 +121,6 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         return lista;
     }
 
-    // Historial: sesiones individuales YA REALIZADAS (Completado) del tutor, filtrables por
-    // origen ('Programada' o 'Espontanea') y por rango de fechas. Cualquiera de los
-    // filtros puede venir null/blank, en cuyo caso no se aplica esa condicion.
     public List<SesionIndividual> getHistorialByTutor(int idTutor, String origen, String fechaInicio, String fechaFin) {
         List<SesionIndividual> lista = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
@@ -172,14 +163,6 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         return lista;
     }
 
-    // Cierra una sesion pendiente: la marca 'Completado', guarda temas/acuerdos y registra
-    // en CANALIZACION cada motivo de vinculo directo seleccionado en el modal "Completar".
-    // La primera canalizacion creada queda enlazada a la sesion via ID_CANALIZACION;
-    // las demas quedan igual en CANALIZACION (por matricula/area) porque SESION_INDIVIDUAL
-    // solo tiene una columna de enlace.
-    // baseUrl se usa para armar el link del correo de confirmacion (ver CanalizacionDao);
-    // los correos se mandan DESPUES del commit, para no notificar al encargado de una
-    // canalizacion que la transaccion pudiera revertir mas adelante.
     public boolean completarSesion(int idSesion, String temas, String acuerdos, String[] idMotivos, String estatusAsistencia, String baseUrl) {
         String sqlMatricula = "SELECT MATRICULA FROM SESION_INDIVIDUAL WHERE ID_SESION_INDIVIDUAL = ?";
         String sqlMotivoArea = "SELECT ID_AREA FROM MOTIVO_AREA WHERE ID_MOTIVO = ?";
@@ -279,18 +262,11 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         }
     }
 
-    // Modal "Alumnos Atendidos" del reporte del coordinador: una fila por cada sesion
-    // individual/espontanea COMPLETADA, excluyendo estrictamente las grupales (viven en
-    // SESION_GRUPAL, tabla distinta). Reutiliza los mismos filtros opcionales que
-    // ReportesDao (idTutor/idCarrera/cuatrimestre/letra/rango de fechas) para que el
-    // desglose sea coherente con el KPI de la tarjeta.
     public List<AtencionAlumnoDTO> getAtencionesIndividuales(Integer idTutor, Integer idCarrera, Integer cuatrimestre,
                                                              String letra, Date desde, Date hasta) {
         return getAtencionesIndividuales(idTutor, idCarrera, cuatrimestre, letra, desde, hasta, null);
     }
 
-    // Sobrecarga con matricula: cuando el buscador de alumnos del dashboard selecciona un
-    // alumno, el modal "Alumnos Atendidos" se acota a ese alumno en vez del filtro/tutor general.
     public List<AtencionAlumnoDTO> getAtencionesIndividuales(Integer idTutor, Integer idCarrera, Integer cuatrimestre,
                                                              String letra, Date desde, Date hasta, String matricula) {
         List<AtencionAlumnoDTO> lista = new ArrayList<>();

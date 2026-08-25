@@ -30,14 +30,12 @@ public class SQLConnector {
             }
             walletPath = walletPath.replace("\\", "/");
 
-
             System.setProperty("oracle.net.tns_admin", walletPath);
 
             String dbUser = System.getenv("DB_USER");
             String dbPass = System.getenv("DB_PASS");
             String dbName = System.getenv("DB_NAME");
 
-            // Si falta alguno en el entorno, buscamos en el archivo .properties
             if (dbUser == null || dbPass == null || dbName == null) {
                 System.err.println("Advertencia: Faltan variables de entorno de la BD. Buscando en credentials.properties...");
                 Properties creds = new Properties();
@@ -57,8 +55,6 @@ public class SQLConnector {
                         creds.load(reader);
                     }
 
-
-                    // Si ya se habían leído del entorno, conservamos ese valor; si no, del archivo
                     if (dbUser == null) dbUser = creds.getProperty("db.user");
                     if (dbPass == null) dbPass = creds.getProperty("db.pass");
                     if (dbName == null) dbName = creds.getProperty("db.name");
@@ -90,7 +86,7 @@ public class SQLConnector {
 
         } catch (Exception e) {
             System.err.println("Error crítico al inicializar la base de datos");
-            e.printStackTrace(); // Esto mostrará el error exacto que causó que HikariCP fallara
+            e.printStackTrace();
             throw new ExceptionInInitializerError(e);
         }
     }

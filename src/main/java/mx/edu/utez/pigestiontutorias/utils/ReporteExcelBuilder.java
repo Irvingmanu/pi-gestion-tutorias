@@ -18,9 +18,6 @@ import java.io.OutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
-// Genera el libro de Excel (.xlsx) del reporte global del coordinador, en 4 hojas
-// independientes (Resumen Global, Tutorías Grupales, Alumnos Atendidos, Canalizaciones) para
-// no encimar datos de distinta naturaleza en una sola tabla.
 public class ReporteExcelBuilder {
 
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -98,8 +95,6 @@ public class ReporteExcelBuilder {
         }
     }
 
-    // Hoja 1: metricas de las tarjetas + datos numericos de las 2 graficas
-    // (Distribución de Canalizados y Estado de Solicitudes de Asesoría).
     private void construirResumenGlobal(XSSFWorkbook libro, ReporteExportDatos datos, CellStyle estiloEncabezado,
                                         CellStyle estiloTitulo, CellStyle estiloEtiqueta) {
         Sheet hoja = libro.createSheet("Resumen Global");
@@ -116,9 +111,6 @@ public class ReporteExcelBuilder {
         filaPeriodo.getCell(0).setCellStyle(estiloEtiqueta);
         celda(filaPeriodo, 1, datos.getTituloPeriodo());
 
-        // La fila de Carrera/Cuatrimestre/Grupo/Tutor solo aporta en el reporte agregado: en el
-        // reporte de un alumno especifico siempre queda en "Todas/Todos" y el bloque "Datos del
-        // Alumno" de abajo ya cubre esa informacion, asi que se omite para no duplicarla.
         if (datos.getDatosAlumno() == null) {
             Row filaFiltros = nuevaFila(hoja, i++);
             celda(filaFiltros, 0, "Filtros:");
@@ -173,10 +165,6 @@ public class ReporteExcelBuilder {
         autoajustarColumnas(hoja, 2);
     }
 
-    // Ficha academica del alumno filtrado (buscador de alumnos del dashboard): nombre completo +
-    // matricula, carrera, nivel, cuatrimestre-grupo y generacion, resueltos server-side a partir
-    // de su trayectoria (ver ReportesServlet/ReportesGlobalesServlet.resolverDatosAlumno). Si no
-    // hay alumno filtrado no se agrega nada y se devuelve el mismo indice de fila recibido.
     private int agregarDatosAlumno(Sheet hoja, ReporteExportDatos datos, int indiceFila,
                                    CellStyle estiloEncabezado, CellStyle estiloEtiqueta) {
         ReporteExportDatos.DatosAcademicosAlumno da = datos.getDatosAlumno();
@@ -205,9 +193,6 @@ public class ReporteExcelBuilder {
         return indiceFila + 1;
     }
 
-    // Inserta la imagen (PNG capturada del canvas de Chart.js en el navegador) debajo de las
-    // tablas de la hoja, en las columnas [colInicio, colFin]. Devuelve el indice de fila
-    // siguiente disponible (para poder encadenar varias graficas una debajo de otra).
     private int insertarGrafica(XSSFWorkbook libro, Sheet hoja, byte[] imagenPng, int filaInicio,
                                 int colInicio, int colFin, CellStyle estiloEtiqueta, String etiqueta) {
         if (imagenPng == null || imagenPng.length == 0) {
@@ -229,9 +214,6 @@ public class ReporteExcelBuilder {
         return filaImagenFin + 1;
     }
 
-    // Hoja 2: desglose de cumplimiento grupal por tutor (misma info que el modal de
-    // "Seguimiento de Tutorías Grupales", sin el filtro de carrera/cuatrimestre/tutor porque
-    // ese modal tampoco lo aplica: siempre muestra a todos los tutores del periodo vigente).
     private void construirTutoriasGrupales(XSSFWorkbook libro, ReporteExportDatos datos, CellStyle estiloEncabezado,
                                            CellStyle estiloTitulo) {
         Sheet hoja = libro.createSheet("Tutorías Grupales");
@@ -258,8 +240,6 @@ public class ReporteExcelBuilder {
         autoajustarColumnas(hoja, 4);
     }
 
-    // Hoja 3: registros de tutorías Individual/Espontánea completadas (mismos filtros que el
-    // modal "Alumnos Atendidos").
     private void construirAlumnosAtendidos(XSSFWorkbook libro, ReporteExportDatos datos, CellStyle estiloEncabezado,
                                            CellStyle estiloTitulo) {
         Sheet hoja = libro.createSheet("Alumnos Atendidos");
@@ -284,8 +264,6 @@ public class ReporteExcelBuilder {
         autoajustarColumnas(hoja, 10);
     }
 
-    // Hoja 4: lista completa de alumnos canalizados a areas de apoyo (mismos filtros que el
-    // modal "Alumnos Canalizados").
     private void construirCanalizaciones(XSSFWorkbook libro, ReporteExportDatos datos, CellStyle estiloEncabezado,
                                          CellStyle estiloTitulo) {
         Sheet hoja = libro.createSheet("Canalizaciones");

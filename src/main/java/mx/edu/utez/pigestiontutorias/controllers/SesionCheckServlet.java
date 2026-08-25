@@ -11,10 +11,6 @@ import mx.edu.utez.pigestiontutorias.utils.SesionActivaManager;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-// Endpoint AJAX consumido por session-guard.js (incluido en los 3 navbars): el navegador
-// pregunta cada cierto tiempo si su sesion sigue siendo la activa para ese correo, para
-// que si el usuario inicio sesion en otro dispositivo/navegador se le saque del sistema
-// de inmediato, sin esperar a que haga clic en algo y dispare el FiltroAutenticacion.
 @WebServlet(name = "SesionCheckServlet", urlPatterns = {"/verificar-sesion"})
 public class SesionCheckServlet extends HttpServlet {
 

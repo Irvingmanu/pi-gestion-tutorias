@@ -1,9 +1,3 @@
-// Modal "Tutorías Grupales" de tutor/reportes.jsp: a diferencia del modal del coordinador
-// (que lista a TODOS los tutores), aqui solo se muestra el avance del grupo (o grupos) a cargo
-// de ESTE tutor (el servidor filtra por el tutor de la sesion, ver ReportesServlet), y en vez de
-// un boton de alerta por correo hay un boton directo a "Tutoría Grupal" para registrar la sesion.
-// Requiere que la vista defina antes: const CONTEXT_PATH = "<context-path>";
-// y que ya esten cargados alertas.js y bootstrap.js.
 
 let modalTutoriasGrupalesInstancia = null;
 let modalDetalleSesionGrupalInstancia = null;
@@ -127,8 +121,6 @@ function verDetalleSesionesGrupal(indice) {
         });
 }
 
-// Misma distribucion de tarjetas blancas que el modal de detalle de Alumnos Atendidos
-// ("Detalles de la Sesión" + "Asesorías Grupales"), repetida una vez por sesion registrada.
 function pintarListaSesionesGrupales(sesiones) {
     const contenedor = document.getElementById('listaSesionesGrupales');
 

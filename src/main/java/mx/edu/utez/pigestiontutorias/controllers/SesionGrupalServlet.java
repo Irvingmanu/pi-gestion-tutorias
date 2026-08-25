@@ -59,10 +59,6 @@ public class SesionGrupalServlet extends HttpServlet {
         request.setAttribute("paginaActiva", "grupal");
         request.setAttribute("periodoVigente", periodoVigente);
 
-        // Permite llegar aqui con un grupo pre-seleccionado (ej. desde el enlace "Ver
-        // asistencia" del Historial), siempre que ese grupo este entre los asignados
-        // del periodo vigente (arriba); si no aparece en el <select> simplemente no
-        // queda pre-seleccionado.
         String idGrupoParam = request.getParameter("idGrupo");
         if (idGrupoParam != null && !idGrupoParam.isBlank()) {
             request.setAttribute("idGrupoPreseleccionado", idGrupoParam);
@@ -71,11 +67,6 @@ public class SesionGrupalServlet extends HttpServlet {
         request.getRequestDispatcher("/tutor/registro-grupal.jsp").forward(request, response);
     }
 
-    // AJAX consumido desde registro-grupal.jsp al elegir un grupo: arma en JSON la cuadricula
-    // completa de asistencia (meses agrupados, sesiones del periodo del grupo y, por alumno,
-    // su estatus en cada una con los totales ya calculados). El front agrega ademas, del lado
-    // del cliente, una columna virtual "nueva sesion" (id "nueva") para la tutoria que se esta
-    // registrando en este mismo formulario.
     private void obtenerCuadriculaPorGrupo(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
 
@@ -95,8 +86,6 @@ public class SesionGrupalServlet extends HttpServlet {
             return;
         }
 
-        // Blindaje de servidor: el grupo pedido debe ser uno de los que el tutor
-        // realmente tiene asignados, sin confiar en que el <select> no fue manipulado.
         if (!asignacionTutorDao.existeAsignacionParaTutor(idTutor, idGrupo)) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.getWriter().write("{}");
@@ -113,9 +102,6 @@ public class SesionGrupalServlet extends HttpServlet {
 
         StringBuilder json = new StringBuilder("{");
 
-        // El agrupado por mes y el orden de las columnas se calculan del lado del cliente
-        // (registro-grupal.js), porque la columna "sesion actual" (fecha capturada en el
-        // formulario) se reordena en vivo entre las sesiones historicas segun corresponda.
         json.append("\"sesiones\":[");
         for (int i = 0; i < sesiones.size(); i++) {
             if (i > 0) json.append(",");
@@ -175,10 +161,6 @@ public class SesionGrupalServlet extends HttpServlet {
         String temas = request.getParameter("temas");
         String asesorias = request.getParameter("asesorias");
 
-        // Guardado parcial: el tutor solo justifico/corrigio asistencia de sesiones ya
-        // registradas (columna "Sesion actual" del front sin tocar), asi que no se exige
-        // llenar Fecha/Hora/Acuerdos/Temas ni se crea ninguna SESION_GRUPAL nueva -- solo
-        // se actualiza la asistencia marcada. La bandera la pone registro-grupal.js.
         if ("true".equals(request.getParameter("soloAsistencia"))) {
             guardarSoloAsistencia(request, response, tutor);
             return;
@@ -209,9 +191,6 @@ public class SesionGrupalServlet extends HttpServlet {
             return;
         }
 
-        // Blindaje de servidor: solo se permite registrar/justificar sesiones de hasta 15
-        // dias de antiguedad (el <input type="date"> ya limita esto con min/max, pero eso
-        // es ajustable desde el cliente).
         if (fechaSesion.isBefore(hoy.minusDays(15))) {
             response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=fecha_fuera_rango_15_dias");
             return;
@@ -222,31 +201,22 @@ public class SesionGrupalServlet extends HttpServlet {
             response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=fecha_fuera_periodo");
             return;
         }
-        // Blindaje de servidor: el grupo enviado debe ser uno de los que el tutor
-        // realmente tiene asignados, sin confiar en que el <select> del formulario
-        // no fue manipulado.
         if (!asignacionTutorDao.existeAsignacionParaTutor(tutor.getNumeroEmpleado(), idGrupo)) {
             response.sendRedirect(request.getContextPath() + "/tutoria-grupal?error=grupo_no_asignado");
             return;
         }
 
-        // "asesorias" es opcional: se guarda NULL en ASESORIAS_GRUPALES si no se captura
         asesorias = (asesorias != null && !asesorias.isBlank()) ? asesorias.trim() : null;
 
         SesionGrupal sesion = new SesionGrupal();
         sesion.setIdGrupo(idGrupo);
         sesion.setIdTutor(tutor.getNumeroEmpleado());
         sesion.setFecha(fecha);
-        // El tutor ya no captura la hora manualmente: se registra la hora real
-        // del servidor en el momento en que se guarda la sesion.
         sesion.setHora(java.time.LocalTime.now().format(java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
         sesion.setTemasTratados(temas.trim());
         sesion.setAcuerdos(acuerdos.trim());
         sesion.setAsesoriasGrupales(asesorias);
         sesion.setEstado("Completado");
-        // La asistencia ya no se manda como una simple lista de "presentes": la cuadricula
-        // completa (historica + la columna de esta sesion nueva) se guarda abajo via
-        // guardarCeldas(), con sus 3 estados posibles (Presente/Falta/Justificado).
 
         boolean guardado = sesionGrupalDao.create(sesion);
 
@@ -263,9 +233,6 @@ public class SesionGrupalServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/tutoria-grupal?idGrupo=" + idGrupo + "&exito=grupal_guardada");
     }
 
-    // Cada input hidden "celda" viaja como "idSesion|matricula|estatus". La columna virtual
-    // de la sesion que se acaba de crear en este POST llega con el token "nueva" en vez de
-    // un ID real, y aqui se sustituye por el ID recien generado.
     private List<CeldaAsistenciaDTO> parsearCeldas(String[] valores, int idSesionNueva) {
         List<CeldaAsistenciaDTO> celdas = new ArrayList<>();
         if (valores == null) {
@@ -292,18 +259,11 @@ public class SesionGrupalServlet extends HttpServlet {
             celdas.add(new CeldaAsistenciaDTO(idSesion, partes[1], partes[2]));
         }
 
-        // Descarta celdas de la columna "nueva" cuando no hay una sesion nueva que crear
-        // (guardarSoloAsistencia llama con idSesionNueva = -1): no hay sesion a la que
-        // asociarlas, asi que se ignoran en vez de guardarse con un ID invalido.
         celdas.removeIf(c -> c.getIdSesionGrupal() <= 0);
 
         return celdas;
     }
 
-    // Guardado parcial (bandera "soloAsistencia"): el tutor solo corrigio/justifico
-    // asistencia de sesiones ya registradas, sin llenar los campos de una sesion nueva.
-    // No se crea SESION_GRUPAL: se autoriza el grupo y se guarda unicamente la asistencia
-    // marcada en la cuadricula (la columna "nueva" se descarta via parsearCeldas).
     private void guardarSoloAsistencia(HttpServletRequest request, HttpServletResponse response, Tutor tutor) throws IOException {
         String idGrupoStr = request.getParameter("idGrupo");
 

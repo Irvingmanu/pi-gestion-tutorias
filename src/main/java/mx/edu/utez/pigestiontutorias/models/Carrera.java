@@ -3,7 +3,7 @@ package mx.edu.utez.pigestiontutorias.models;
 public class Carrera {
     private int idCarrera;
     private String nombre;
-    private String nivel; // 'TSU' o 'ING'
+    private String nivel;
     private int idAcademia;
 
     public Carrera() {}

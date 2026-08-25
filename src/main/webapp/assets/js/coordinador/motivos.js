@@ -1,10 +1,3 @@
-// Logica dinamica usada en formulario-area.jsp para la seccion "Motivos de Canalización".
-// Modo "Nueva Área": el input+boton '+' fijo de arriba agrega filas editables a la lista
-// con scroll de abajo (el texto se puede seguir corrigiendo ahi mismo); cada fila trae su
-// propio boton '-' que pide confirmacion antes de quitarla.
-// Modo edicion: cada motivo ya tiene su propio form de alta/edicion/baja en el JSP;
-// toggleEditarMotivo/prepararEliminacionMotivo solo controlan mostrar ese form y
-// disparar el submit (los forms en si ya se manejan solos, sin AJAX).
 
 var REGEX_MOTIVO = '^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\\s.,()/-]+$';
 
@@ -93,8 +86,6 @@ function agregarMotivo() {
         }
     }
 
-    // El input queda visible y editable (no readonly): el usuario puede corregirlo
-    // directamente en la fila en cualquier momento antes de guardar el area.
     var fila = document.createElement('div');
     fila.className = 'd-flex align-items-center gap-2 motivo-row';
     fila.innerHTML =
@@ -102,8 +93,6 @@ function agregarMotivo() {
         'pattern="' + REGEX_MOTIVO + '" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>' +
         '<button type="button" class="btn-cancelar-figma btn-cancelar-figma-sm flex-shrink-0 btn-eliminar-motivo" title="Eliminar motivo">-</button>';
 
-    // Se asigna por JS (no en el innerHTML) para que las comillas/caracteres del texto
-    // no puedan romper el HTML armado a mano arriba.
     fila.querySelector('input[name="motivos[]"]').value = valor;
 
     container.appendChild(fila);
@@ -111,22 +100,11 @@ function agregarMotivo() {
     inputNuevo.value = '';
     inputNuevo.focus();
 
-    // El appendChild no dispara 'input'/'focusout' del form, asi que "Guardar" no se
-    // re-evalua solo: hay que dispararlo a mano (afecta el chequeo de "al menos un motivo").
     if (typeof window.verificarFormularioArea === 'function') {
         window.verificarFormularioArea();
     }
 }
 
-/**
- * Valida el input de "nuevo motivo" del modo "Editar área" antes de enviarlo al servidor.
- * A diferencia del resto de campos del formulario, el input ya no tiene "required": una
- * caja vacia no debe verse ni tratarse como un error (solo significa "todavia no escribiste
- * nada"), igual que el input equivalente de "Nueva Área". La validacion real pasa aqui, al
- * intentar agregar, en vez de dejar el boton "+" deshabilitado desde que carga la pantalla.
- * @param {SubmitEvent} evento
- * @returns {boolean}
- */
 function validarAgregarMotivo(evento) {
     var input = evento.target.querySelector('input[name="nuevoMotivo"]');
     if (!input) {
@@ -159,11 +137,6 @@ function validarAgregarMotivo(evento) {
     return true;
 }
 
-/**
- * Alterna entre el texto del motivo (modo lectura) y su form de edicion inline,
- * en la tabla de motivos del modo "Editar área" (formulario-area.jsp).
- * @param {number} idMotivo
- */
 function toggleEditarMotivo(idMotivo) {
     var lbl = document.getElementById('lbl-motivo-' + idMotivo);
     var form = document.getElementById('form-edit-' + idMotivo);
@@ -181,12 +154,6 @@ function toggleEditarMotivo(idMotivo) {
     }
 }
 
-/**
- * Confirma y elimina un motivo puntual de un área, vía el form oculto
- * formEliminarMotivo compartido en formulario-area.jsp.
- * @param {number} idMotivo
- * @param {number} idArea
- */
 function prepararEliminacionMotivo(idMotivo, idArea) {
     mostrarConfirmacion(
         'critica',

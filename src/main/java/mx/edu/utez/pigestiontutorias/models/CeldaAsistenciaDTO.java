@@ -1,7 +1,5 @@
 package mx.edu.utez.pigestiontutorias.models;
 
-// Transporte servlet -> DAO de una celda editada en la cuadricula de "Pase de Lista"
-// (una sesion grupal x un alumno) al guardar en lote.
 public class CeldaAsistenciaDTO {
     private int idSesionGrupal;
     private String matricula;

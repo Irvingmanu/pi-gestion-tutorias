@@ -37,7 +37,6 @@ public class HistorialServlet extends HttpServlet {
             return;
         }
 
-        // Filtros: tipo = "grupal" | "individual" | "espontanea" | "" (todos)
         String tipo = request.getParameter("tipo");
         String fechaInicio = request.getParameter("fechaInicio");
         String fechaFin = request.getParameter("fechaFin");
@@ -46,7 +45,7 @@ public class HistorialServlet extends HttpServlet {
         List<HistorialItemDTO> historial = new ArrayList<>();
 
         if (tipo.isBlank() || tipo.equals("grupal")) {
-            // Cache local para no repetir GrupoDao.getById() si varias sesiones son del mismo grupo.
+
             Map<Integer, Grupo> gruposCache = new HashMap<>();
             List<SesionGrupal> grupales = sesionGrupalDao.getHistorialByTutor(tutor.getNumeroEmpleado(), fechaInicio, fechaFin);
             for (SesionGrupal sg : grupales) {

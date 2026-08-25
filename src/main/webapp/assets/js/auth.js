@@ -1,4 +1,4 @@
-// Alterna la visibilidad del campo de contraseña en el login
+
 document.addEventListener('DOMContentLoaded', function () {
     const toggleBtn = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');

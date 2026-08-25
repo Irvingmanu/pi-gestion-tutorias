@@ -31,8 +31,6 @@ public class Tutor {
     public String getApellidoMaterno() { return apellidoMaterno; }
     public void setApellidoMaterno(String apellidoMaterno) { this.apellidoMaterno = apellidoMaterno; }
 
-    // Concatena APELLIDO_PATERNO + APELLIDO_MATERNO (columnas separadas en BD) para
-    // mostrarlos como un solo nombre completo en listados, historial y correos.
     public String getApellidos() {
         if (apellidoMaterno == null || apellidoMaterno.isBlank()) return apellidoPaterno;
         return apellidoPaterno + " " + apellidoMaterno;
@@ -62,9 +60,6 @@ public class Tutor {
     public List<String> getGruposAsignados() { return gruposAsignados; }
     public void setGruposAsignados(List<String> gruposAsignados) { this.gruposAsignados = gruposAsignados; }
 
-    // Concatena los grupos resueltos via JOIN en TutorDao#getAllConGrupo() en un solo
-    // texto legible, para pintar la columna "Grupo" de gestion-tutores.jsp sin logica
-    // adicional en la vista (mismo criterio que getApellidos()).
     public String getGrupoAsignadoTexto() {
         if (gruposAsignados == null || gruposAsignados.isEmpty()) return "Sin grupo asignado";
         return String.join(", ", gruposAsignados);

@@ -45,12 +45,9 @@ public class AcuerdosServlet extends HttpServlet {
                 ? sesionGrupalDao.getAcuerdosPorAlumno(alumno.getMatricula())
                 : Collections.emptyList();
 
-        // Se mantienen ambas listas originales por si se usan en otro lado.
         request.setAttribute("listaIndividuales", listaIndividuales);
         request.setAttribute("listaGrupales", listaGrupales);
 
-        // Lista combinada, solo para pintar la vista con lo mas reciente arriba,
-        // intercalando individuales y grupales segun su fecha.
         List<AcuerdoAgenda> listaAcuerdos = new ArrayList<>();
         for (SesionIndividual individual : listaIndividuales) {
             listaAcuerdos.add(new AcuerdoAgenda("Individual", individual.getFecha(), individual.getAcuerdos()));

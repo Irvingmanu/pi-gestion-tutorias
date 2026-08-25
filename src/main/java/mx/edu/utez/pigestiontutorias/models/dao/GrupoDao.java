@@ -10,8 +10,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-// GRUPO reemplaza el antiguo cruce de 3 catalogos (CARRERA + CUATRIMESTRE + LETRA_GRUPO):
-// CUATRIMESTRE y LETRA ahora son columnas propias de GRUPO, no FKs a tablas catalogo.
 public class GrupoDao implements Dao<Grupo, Integer> {
 
     private static final String SELECT_BASE =
@@ -101,13 +99,6 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         return false;
     }
 
-    // Busca el GRUPO (Carrera+Cuatrimestre+Letra+Periodo) que corresponde a esa combinacion
-    // exacta; si nadie lo ha usado todavia, lo crea. GRUPO tiene UQ_GRUPO sobre estas 4
-    // columnas (GENERACION queda fuera del UNIQUE a proposito), asi que nunca se duplica.
-    // La usan los formularios que capturan Carrera+Cuatrimestre+Letra (alta de alumno,
-    // asignacion de tutor) para resolver el ID_GRUPO real que hay que guardar.
-    // "generacion" solo se usa si hay que CREAR el grupo (si ya existe, se respeta la
-    // generacion que ya tenia, no se sobreescribe con la que llegue esta vez).
     public Integer findOrCreate(int idCarrera, int cuatrimestre, String letra, int idPeriodo, String generacion) {
         String sqlBuscar = "SELECT ID_GRUPO FROM GRUPO WHERE ID_CARRERA = ? AND CUATRIMESTRE = ? AND LETRA = ? AND ID_PERIODO = ?";
 
@@ -141,9 +132,6 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         return create(nuevo) ? nuevo.getIdGrupo() : null;
     }
 
-    // A diferencia de findOrCreate() (que reutiliza en silencio el grupo si ya existe,
-    // pensado para el alta de alumno), el alta de grupo independiente (gestion-grupos.jsp)
-    // necesita distinguir "ya existe" de "se creo" para no confundir al coordinador.
     public boolean existeGrupo(int idCarrera, int cuatrimestre, String letra, int idPeriodo) {
         String sql = "SELECT 1 FROM GRUPO WHERE ID_CARRERA = ? AND CUATRIMESTRE = ? AND LETRA = ? AND ID_PERIODO = ? AND ESTADO = 'S'";
 
@@ -162,21 +150,12 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         } catch (SQLException e) {
             System.err.println("Error al verificar el grupo: " + e.getMessage());
             e.printStackTrace();
-            return true; // ante error de BD, se asume que existe para no arriesgar un duplicado
+            return true;
         }
     }
 
-    // Grupos que puede recibir un tutor en "Nueva Asignacion": ademas de estar activos,
-    // deben tener por lo menos un alumno con ESTADO = 'S' (un grupo vacio o con todos sus
-    // alumnos dados de baja no tiene a quien tutorar, asi que ni siquiera aparece en el
-    // <select> de grupos de asignacion.jsp).
     public List<Grupo> getDisponiblesParaAsignacion() {
         List<Grupo> lista = new ArrayList<>();
-        // NOT EXISTS contra ASIGNACION_TUTOR con ESTADO = 'S': un grupo con una asignacion
-        // activa ya tiene tutor, asi que ni siquiera aparece como opcion en el <select> de
-        // "Nueva Asignacion" (antes solo se bloqueaba al guardar, via
-        // AsignacionTutorDao.existeAsignacionActiva(), que sigue ahi como blindaje de
-        // servidor por si el <select> es manipulado).
         String sql = SELECT_BASE +
                 "WHERE g.ESTADO = 'S' AND EXISTS (SELECT 1 FROM ALUMNO a WHERE a.ID_GRUPO = g.ID_GRUPO AND a.ESTADO = 'S') " +
                 "AND NOT EXISTS (SELECT 1 FROM ASIGNACION_TUTOR at WHERE at.ID_GRUPO = g.ID_GRUPO AND at.ESTADO = 'S') " +
@@ -198,9 +177,6 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         return lista;
     }
 
-    // Blindaje de servidor para "Nueva Asignacion": confirma que el grupo tenga al menos
-    // un alumno con ESTADO = 'S', sin confiar en que el <select> del formulario no fue
-    // manipulado.
     public boolean tieneAlumnosActivos(int idGrupo) {
         String sql = "SELECT 1 FROM ALUMNO WHERE ID_GRUPO = ? AND ESTADO = 'S' AND ROWNUM = 1";
 
@@ -220,8 +196,6 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         }
     }
 
-    // Grupos que un tutor tiene asignados actualmente, con la etiqueta amigable lista
-    // para pintar el <select> de "Tutoria Grupal"/"Tutoria Espontanea" (ej. "DSM 3°A").
     public List<Grupo> getGruposByTutor(int idTutor) {
         List<Grupo> lista = new ArrayList<>();
         String sql = "SELECT g.ID_GRUPO, g.ID_CARRERA, g.CUATRIMESTRE, g.LETRA, g.ID_PERIODO, g.GENERACION, g.ESTADO, " +

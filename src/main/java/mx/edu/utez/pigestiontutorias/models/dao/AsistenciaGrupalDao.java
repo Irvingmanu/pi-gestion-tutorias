@@ -18,8 +18,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-// ALUMNO ya no tiene ID_ALUMNO surrogate ni ID_CARRERA/ID_CUATRIMESTRE/ID_LETRA_GRUPO
-// propios: todo se resuelve via ID_GRUPO, y MATRICULA es la unica PK/identificador.
 public class AsistenciaGrupalDao {
 
     private static final double UMBRAL_RIESGO = 80.0;
@@ -53,8 +51,6 @@ public class AsistenciaGrupalDao {
         return lista;
     }
 
-    // Columnas de la cuadricula: cada SESION_GRUPAL "Completado" del grupo dentro del
-    // rango del periodo escolar al que pertenece ese grupo, ordenadas por fecha.
     public List<SesionGrupal> getSesionesDelGrupoEnPeriodo(int idGrupo, Date fechaInicio, Date fechaFin) {
         List<SesionGrupal> lista = new ArrayList<>();
         String sql = "SELECT * FROM SESION_GRUPAL WHERE ID_GRUPO = ? AND ESTADO = 'Completado' " +
@@ -88,10 +84,6 @@ public class AsistenciaGrupalDao {
         return lista;
     }
 
-    // Filas de la cuadricula: un renglon por alumno del grupo (ordenados por apellidos),
-    // con su estatus en cada sesion recibida y los totales/% ya calculados. Una celda sin
-    // registro en ASISTENCIA para una sesion que si existe se toma como "Falta" (no marcado
-    // = ausente, mismo criterio que ya usaba el checklist anterior).
     public List<AsistenciaFilaDTO> construirFilasAsistencia(int idGrupo, List<SesionGrupal> sesiones) {
         List<AsistenciaFilaDTO> filas = new ArrayList<>();
 
@@ -124,7 +116,6 @@ public class AsistenciaGrupalDao {
             return filas;
         }
 
-        // matricula -> (idSesionGrupal -> estatus)
         Map<String, Map<Integer, String>> matriz = new HashMap<>();
 
         StringBuilder inClause = new StringBuilder();
@@ -203,10 +194,6 @@ public class AsistenciaGrupalDao {
         return fila;
     }
 
-    // Guardado en lote de la cuadricula completa: agrupa las celdas por sesion y, por cada
-    // una, reemplaza (DELETE + INSERT batch) su asistencia -- mismo patron delete+insert que
-    // ya usaba el registro de una sola fecha, pero iterado sobre todas las sesiones recibidas
-    // en una unica transaccion.
     public boolean guardarCeldas(List<CeldaAsistenciaDTO> celdas) {
         if (celdas == null || celdas.isEmpty()) {
             return true;
@@ -217,14 +204,6 @@ public class AsistenciaGrupalDao {
             porSesion.computeIfAbsent(celda.getIdSesionGrupal(), k -> new ArrayList<>()).add(celda);
         }
 
-        // Blindaje de servidor: las reglas de negocio de asistencia (ver registro-grupal.js)
-        // tambien se aplican aqui, sin confiar en que el estatus que viaja en cada celda no
-        // fue manipulado en el cliente. Se corrige en silencio en vez de rechazar el guardado
-        // completo.
-        // - Fecha de hoy: no se permite "Justificado" (se corrige a "Falta").
-        // - Fecha pasada: si la sesion ya tenia asistencia "Presente" registrada para ese
-        //   alumno, se conserva tal cual (ya no se puede quitar); si no, solo se permite
-        //   "Justificado" (se corrige cualquier otro valor).
         Map<Integer, LocalDate> fechasPorSesion = obtenerFechasDeSesiones(porSesion.keySet());
         LocalDate hoy = LocalDate.now();
         for (Map.Entry<Integer, List<CeldaAsistenciaDTO>> entrySesion : porSesion.entrySet()) {
@@ -239,8 +218,7 @@ public class AsistenciaGrupalDao {
                 for (CeldaAsistenciaDTO celda : entrySesion.getValue()) {
                     String previo = estatusPrevio.get(celda.getMatricula());
                     if (previo == null) {
-                        // Sesion recien creada en este mismo guardado: no habia asistencia
-                        // previa que proteger, se confia en el estatus ya validado en el cliente.
+
                         continue;
                     }
                     if ("Presente".equals(previo)) {
@@ -291,8 +269,6 @@ public class AsistenciaGrupalDao {
         }
     }
 
-    // idSesionGrupal -> FECHA, usado por guardarCeldas() para aplicar las reglas de
-    // negocio de asistencia/justificacion segun que tan pasada este cada sesion.
     private Map<Integer, LocalDate> obtenerFechasDeSesiones(java.util.Set<Integer> idsSesion) {
         Map<Integer, LocalDate> fechas = new HashMap<>();
         if (idsSesion == null || idsSesion.isEmpty()) {
@@ -323,8 +299,6 @@ public class AsistenciaGrupalDao {
         return fechas;
     }
 
-    // matricula -> estatus ya guardado en ASISTENCIA para una sesion, usado por
-    // guardarCeldas() para proteger un "Presente" ya registrado en una sesion pasada.
     private Map<String, String> obtenerEstatusExistente(int idSesionGrupal) {
         Map<String, String> estatus = new HashMap<>();
         String sql = "SELECT MATRICULA, ESTATUS_ASISTENCIA FROM ASISTENCIA WHERE ID_SESION_GRUPAL = ?";

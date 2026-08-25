@@ -1,9 +1,3 @@
-// Buscador de alumnos de coordinador/reportes-globales.jsp: a diferencia del buscador del
-// tutor (ver assets/js/tutor/buscador-alumno.js), aqui se puede encontrar a CUALQUIER alumno
-// del sistema (el coordinador no esta atado a un tutor). Al seleccionar un resultado no se
-// abre ningun modal: se fija su matricula como filtro (igual que Carrera/Cuatrimestre/Grupo/
-// Tutor) y se recalculan las mismas tarjetas KPI y graficas del dashboard, acotadas a ese alumno.
-// Requiere que la vista defina antes: const CONTEXT_PATH = "<context-path>";
 
 let temporizadorBusquedaAlumno = null;
 

@@ -149,12 +149,9 @@
                             <label class="form-label fs-6 fw-bold">Motivos de Canalización</label>
 
                             <!-- Input fijo para agregar: siempre visible arriba, no se recorre con la lista -->
-                            <div class="d-flex gap-2 mb-2 align-items-start">
-                                <div class="w-100">
-                                    <input type="text" id="nuevoMotivoInput" class="form-control form-control-figma w-100 fs-6"
-                                           placeholder="Escribe el motivo de atención" maxlength="150">
-                                    <div id="feedbackNuevoMotivo" class="invalid-feedback" style="display:none;">Solo se permiten letras, números, espacios y . , ( ) / -</div>
-                                </div>
+                            <div class="d-flex gap-2 mb-2">
+                                <input type="text" id="nuevoMotivoInput" class="form-control form-control-figma w-100 fs-6"
+                                       placeholder="Escribe el motivo de atención" maxlength="150">
                                 <button type="button" id="btnAgregarMotivoNuevo" class="btn-figma btn-figma-sm flex-shrink-0"
                                         onclick="agregarMotivo()" title="Agregar motivo">+</button>
                             </div>
@@ -163,7 +160,6 @@
                             <div id="motivosContainer" class="d-flex flex-column gap-2 p-2 rounded-figma border bg-white shadow-sm"
                                  style="height: 180px !important; max-height: 180px !important; overflow-y: auto !important; overflow-x: hidden;">
                             </div>
-                            <div id="feedbackMotivoRequerido" class="invalid-feedback" style="display:none;">Es necesario agregar al menos un motivo de canalización.</div>
 
                         </div>
 
@@ -263,12 +259,11 @@
                             <input type="hidden" name="accion" value="agregarMotivo">
                             <input type="hidden" name="idArea" value="${areaEdit.idArea}">
                             <div class="w-100 position-relative">
-                                <input type="text" name="nuevoMotivo" id="inputAgregarMotivo"
+                                <input type="text" name="nuevoMotivo"
                                        class="form-control form-control-figma w-100 fs-6 ${areaBloqueada ? 'campo-bloqueado' : ''}"
                                        placeholder="Escribe el motivo de atención"
                                        pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$" title="Solo se permiten letras, números, espacios y . , ( ) / -"
                                     ${areaBloqueada ? 'disabled' : ''}>
-                                <div id="feedbackAgregarMotivo" class="invalid-feedback" style="display:none;">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                             </div>
                             <button type="submit" id="btnAgregarMotivo" class="btn-figma btn-figma-sm flex-shrink-0 ${areaBloqueada ? 'd-none' : ''}" ${areaBloqueada ? 'disabled' : ''}>+</button>
                         </form>
@@ -291,7 +286,6 @@
                                                    class="form-control form-control-figma w-100 fs-6"
                                                    pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s.,\(\)\/\-]+$"
                                                    title="Solo se permiten letras, números, espacios y . , ( ) / -" required>
-                                            <div class="invalid-feedback">Solo se permiten letras, números, espacios y . , ( ) / -</div>
                                         </div>
                                         <button type="submit" class="btn-figma btn-figma-sm flex-shrink-0" title="Guardar motivo" disabled>
                                             <img src="${pageContext.request.contextPath}/assets/img/coordinador/check.png" width="16" alt="Guardar">

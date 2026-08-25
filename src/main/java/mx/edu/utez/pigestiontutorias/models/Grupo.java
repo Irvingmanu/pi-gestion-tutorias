@@ -1,8 +1,5 @@
 package mx.edu.utez.pigestiontutorias.models;
 
-// Representa un GRUPO real (Carrera + Cuatrimestre + Letra + Periodo), que ahora es
-// una tabla propia en BD en vez de resolverse cruzando 3 catalogos (CARRERA, CUATRIMESTRE,
-// LETRA_GRUPO ya no existen: CUATRIMESTRE y LETRA son columnas directas de GRUPO).
 public class Grupo {
     private int idGrupo;
     private int idCarrera;
@@ -12,7 +9,6 @@ public class Grupo {
     private String generacion;
     private String estado;
 
-    // Resueltos via JOIN, no son columnas propias de GRUPO
     private String nombreCarrera;
     private String nombreGrupo;
     private int idAcademia;

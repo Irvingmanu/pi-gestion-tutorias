@@ -16,11 +16,6 @@ import java.util.List;
 @WebServlet(name = "AreaServlet", value = "/areas-apoyo")
 public class AreaServlet extends HttpServlet {
 
-    // Se amplio para aceptar numeros, comas, guion y parentesis: nombres de encargado con
-    // guion (ej. "Perez-Garcia") y motivos de canalizacion en texto libre (ej. "TDAH (dx),
-    // seguimiento 2") ya existian en BD y fallaban contra el patron original, dejando el
-    // campo pre-cargado como "invalido" sin que el usuario tocara nada (Guardar quedaba
-    // deshabilitado desde que cargaba la pantalla).
     private static final String REGEX_NOMBRE = "^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\\s.,()/-]+$";
     private static final String REGEX_CORREO = "^[a-zA-Z0-9._-]+@utez\\.edu\\.mx$";
 
@@ -41,8 +36,6 @@ public class AreaServlet extends HttpServlet {
         if ("agregarMotivo".equals(accion)) {
             int idArea = Integer.parseInt(request.getParameter("idArea"));
 
-            // El area ya tiene alumnos canalizados: sus motivos quedan bloqueados aunque el
-            // cliente manipule el HTML para saltarse el disabled/hidden del formulario.
             if (areaDAO.contarCanalizados(idArea) > 0) {
                 redirigirAEdicion(request, response, idArea, null, "area_bloqueada");
                 return;
@@ -108,14 +101,10 @@ public class AreaServlet extends HttpServlet {
 
             boolean eliminado = motivoDAO.delete(Integer.parseInt(request.getParameter("idMotivo")));
 
-            // Si falla (p.ej. FK: ya hay alumnos canalizados con este motivo), no se puede
-            // reportar "eliminado" como si nada, hay que avisar el motivo real del fallo.
             redirigirAEdicion(request, response, idArea, eliminado ? "eliminado" : null, eliminado ? null : "motivo_en_uso");
             return;
         }
 
-        // accion=guardarArea: alta de un area nueva (con sus motivos iniciales)
-        // o actualizacion de los datos del area (sin tocar sus motivos)
         String idAreaParam = request.getParameter("idArea");
         boolean esEdicion = idAreaParam != null && !idAreaParam.isEmpty();
 
@@ -125,13 +114,9 @@ public class AreaServlet extends HttpServlet {
         area.setApellidoMaternoEncargado(request.getParameter("apellidoMaternoEncargado"));
         area.setCorreoContacto(request.getParameter("correo"));
 
-        // Opcional: si viene vacio del formulario, se guarda como null en vez de "".
         String enlaceCita = request.getParameter("enlaceCita");
         area.setEnlaceCita((enlaceCita != null && !enlaceCita.isBlank()) ? enlaceCita.trim() : null);
 
-        // Si el area ya tiene alumnos canalizados, su nombre queda bloqueado: se ignora lo
-        // que venga en "nombreArea" (el input es readonly en el cliente, pero un cliente
-        // manipulado podria enviar otro valor) y se conserva el nombre real de BD.
         if (esEdicion && areaDAO.contarCanalizados(Integer.parseInt(idAreaParam)) > 0) {
             Area actual = areaDAO.getById(Integer.parseInt(idAreaParam));
             area.setNombre(actual != null ? actual.getNombre() : request.getParameter("nombreArea"));
@@ -147,8 +132,6 @@ public class AreaServlet extends HttpServlet {
                 && (area.getApellidoMaternoEncargado() == null || area.getApellidoMaternoEncargado().isBlank() || area.getApellidoMaternoEncargado().trim().matches(REGEX_NOMBRE))
                 && area.getCorreoContacto() != null && area.getCorreoContacto().trim().matches(REGEX_CORREO);
 
-        // Al menos un motivo es obligatorio al crear un area (el <input> required estatico
-        // se quito del HTML porque ahora los motivos se agregan dinamicamente por JS).
         if (formatoValido && !esEdicion && (motivos == null || motivos.length == 0)) {
             formatoValido = false;
         }
@@ -220,26 +203,20 @@ public class AreaServlet extends HttpServlet {
             return;
         }
 
-        // Listado principal: carga las areas y reenvia (forward) al JSP,
-        // conservando exito/error que vengan en la query string.
         List<Area> listaAreas = areaDAO.getAll();
         request.setAttribute("listaAreas", listaAreas);
         request.getRequestDispatcher("/coordinador/areas-apoyo.jsp").forward(request, response);
     }
 
-    // Vuelve al maestro-detalle de un area ya existente tras agregar/editar un motivo
     private void redirigirAEdicion(HttpServletRequest request, HttpServletResponse response, int idArea, String exito) throws IOException {
         redirigirAEdicion(request, response, idArea, exito, null);
     }
 
-    // Variante con error: usada por eliminarMotivo, que puede fallar (p.ej. motivo con
-    // canalizaciones vinculadas) y necesita avisarlo en vez de reportar exito a ciegas.
     private void redirigirAEdicion(HttpServletRequest request, HttpServletResponse response, int idArea, String exito, String error) throws IOException {
         String parametro = exito != null ? "exito=" + exito : "error=" + error;
         response.sendRedirect(request.getContextPath() + "/areas-apoyo?accion=prepararEdicion&idArea=" + idArea + "&" + parametro);
     }
 
-    // Reenvia al formulario tras un error de validacion, conservando lo que el usuario capturo
     private void reenviarAFormulario(HttpServletRequest request, HttpServletResponse response,
                                      Area areaSubmitted, boolean esEdicion, String idAreaParam)
             throws ServletException, IOException {

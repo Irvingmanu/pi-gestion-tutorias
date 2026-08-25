@@ -1,8 +1,5 @@
 package mx.edu.utez.pigestiontutorias.models;
 
-// DTO para el modal "Seguimiento de Tutorías Grupales" del reporte del coordinador:
-// combina la asignacion tutor-grupo vigente con el conteo de sesiones ya registradas
-// en "Registro de Tutoria Grupal" durante el periodo actual.
 public class AvanceTutorGrupal {
     private int idTutor;
     private String nombreTutor;
@@ -11,7 +8,7 @@ public class AvanceTutorGrupal {
     private String grupoAsignado;
     private int realizadas;
     private int objetivo;
-    private String estatus; // RIESGO | AL_DIA | SIN_OBJETIVO
+    private String estatus;
 
     public int getIdTutor() { return idTutor; }
     public void setIdTutor(int idTutor) { this.idTutor = idTutor; }

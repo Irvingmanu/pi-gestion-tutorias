@@ -1,8 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
 
-    // ==========================================
-    // 1. LÓGICA DE CONFIRMACIÓN (ACEPTAR/NEGAR)
-    // ==========================================
     var modalEl = document.getElementById('modalConfirmacion');
     if (modalEl) {
         var modalConfirmacion = new bootstrap.Modal(modalEl);
@@ -53,7 +50,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Mostrar/Ocultar panel de reprogramar
     var btnReprogramar = document.getElementById('btnReprogramar');
     var panelReprogramar = document.getElementById('panelReprogramar');
 
@@ -63,16 +59,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // ==========================================
-    // 2. LÓGICA DE REPROGRAMACIÓN (FECHAS/HORAS)
-    // ==========================================
     var selectDia = document.getElementById('nuevaFecha');
     var selectHora = document.getElementById('nuevaHora');
 
-    // Validamos que los selects existan y que las variables globales hayan sido declaradas
     if (selectDia && selectHora && window.DISPONIBILIDAD_REPROGRAMAR) {
 
-        // Consumimos las variables globales que inyectamos desde el JSP
         var disponibilidadReprogramar = window.DISPONIBILIDAD_REPROGRAMAR;
         var duracionSolicitud = window.DURACION_SOLICITUD;
 

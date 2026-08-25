@@ -60,13 +60,6 @@ public class ReportesServlet extends HttpServlet {
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter FORMATO_FECHA_ARCHIVO = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
-    // Cualquier excepcion no controlada dentro de doGetInterno (SQLException de una consulta
-    // rota, NullPointerException, etc.) antes se colaba hasta el contenedor y Tomcat devolvia
-    // su pagina HTML de error 500 -- que rompia el fetch().then(r => r.json()) del dashboard
-    // (SyntaxError: Unexpected token '<') y el usuario solo veia "No se pudo cargar el
-    // reporte." sin ninguna pista de la causa real. Ahora se atrapa aqui, se deja el stack
-    // trace completo en el log del servidor (unico lugar donde se puede ver la linea exacta
-    // que fallo) y se responde JSON valido para que el front no truene al parsearlo.
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
@@ -103,14 +96,9 @@ public class ReportesServlet extends HttpServlet {
         String formato = request.getParameter("formato");
         String accion = request.getParameter("accion");
 
-        // 1. MOSTRAR LA VISTA JSP (Por Defecto)
         if (accion == null && formato == null) {
             request.setAttribute("listaCarreras", alumnoDao.getAllCarreras());
 
-            // El filtro de "Grupo Asignado" del dashboard del tutor solo debe ofrecer los
-            // grupos que ASIGNACION_TUTOR realmente le asigno (getGruposByTutor ya filtra
-            // por ID_TUTOR + ESTADO='S') -- asi el tutor no puede ni siquiera armar, desde
-            // el propio <select>, una combinacion de carrera/cuatrimestre/grupo ajena.
             String rolSesionVista = (String) session.getAttribute("rol");
             if ("Tutor".equals(rolSesionVista)) {
                 Integer idUsuarioVista = (Integer) session.getAttribute("idUsuario");
@@ -121,17 +109,12 @@ public class ReportesServlet extends HttpServlet {
 
             request.setAttribute("paginaActiva", "reportes");
             request.getRequestDispatcher("/tutor/reportes.jsp").forward(request, response);
-            return; // Detenemos la ejecución aquí para que no intente generar el JSON
+            return;
         }
 
         Integer idUsuario = (Integer) session.getAttribute("idUsuario");
         String rolSesion = (String) session.getAttribute("rol");
 
-        // Acciones del dashboard de Reportes del Tutor (tarjetas "Tutorías Grupales", "Pendientes",
-        // "Canalizados" y "Alumnos Atendidos", ver tutor/reportes.jsp y assets/js/tutor/*-modal.js):
-        // mismos modales que el coordinador, pero el alcance de datos SIEMPRE se ata al tutor de la
-        // sesion — nunca a un idTutor que mande el cliente — para que un tutor no pueda ver datos
-        // de otro tutor.
         if ("avanceGrupal".equals(accion) || "detalleSesiones".equals(accion)
                 || "canalizacionesDetalle".equals(accion) || "solicitudesPendientes".equals(accion)
                 || "atencionesIndividuales".equals(accion) || "buscarAlumnos".equals(accion)) {
@@ -163,19 +146,11 @@ public class ReportesServlet extends HttpServlet {
 
         Integer idTutorFiltro;
 
-        // El rol viene de la sesion (seteado por LoginServlet), no de una busqueda en TUTOR
-        // por idUsuario: TUTOR y COORDINADOR son tablas independientes, cada una con su propio
-        // NUMERO_EMPLEADO, y un coordinador puede coincidir en numero con un tutor cualquiera
-        // (ej. ambos con NUMERO_EMPLEADO = 1), lo que hacia que tutorDao.getById(idUsuario)
-        // devolviera ese tutor "por casualidad" y el reporte del coordinador quedara filtrado
-        // (en cero/vacio) a los datos de ese unico tutor en vez de mostrar el global.
         if ("Tutor".equals(rolSesion)) {
-            // El usuario es tutor: siempre se filtra por si mismo, sin importar
-            // que venga un idTutor distinto en la URL (evita que un tutor vea datos de otro).
+
             idTutorFiltro = idUsuario;
         } else {
-            // El usuario es coordinador (u otro rol sin tutor asociado):
-            // puede elegir un tutor especifico desde el select, o dejarlo vacio para ver todo.
+
             idTutorFiltro = parseIntOrNull(request.getParameter("idTutor"));
         }
 
@@ -192,11 +167,8 @@ public class ReportesServlet extends HttpServlet {
         LocalDate desde = parseFechaOrDefault(desdeParam, FECHA_DEFAULT_DESDE);
         LocalDate hasta = parseFechaOrDefault(hastaParam, LocalDate.now());
 
-        // Si el buscador de alumnos del dashboard tiene un alumno seleccionado, las mismas
-        // tarjetas/graficas (KPIs + pastel/barras) se recalculan acotadas a ESE alumno.
         ReportesDao.ReporteResumen reporte = reportesDao.generarReporte(
                 idTutorFiltro, idCarrera, cuatrimestre, letra, desde, hasta, matricula);
-
 
         if ("csv".equalsIgnoreCase(formato)) {
             String nombreCarrera = request.getParameter("nombreCarrera");
@@ -286,8 +258,6 @@ public class ReportesServlet extends HttpServlet {
         }
     }
 
-    // Tarjeta "Tutorías Grupales" del tutor: mismo calculo que el modal del coordinador
-    // (SesionGrupalDao.getAvancePorPeriodo), pero filtrado a solo los grupos de este tutor.
     private void responderAvanceGrupalTutor(HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -328,9 +298,6 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
-    // "Ver detalles" del grupo dentro del modal "Tutorías Grupales": el idGrupo lo manda el
-    // cliente, pero el idTutor es siempre el de la sesion, asi que solo puede ver el detalle de
-    // sus propios grupos.
     private void responderDetalleSesionesTutor(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -367,9 +334,6 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Modal "Canalizados" del tutor: unicamente las canalizaciones que EL registro (mismo filtro
-    // idTutor que ya soportaba CanalizacionDao.getCanalizacionesDetalladas para el coordinador),
-    // reutilizando los filtros de cuatrimestre/grupo/carrera/fechas de la barra de Reportes.
     private void responderCanalizacionesTutor(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -411,8 +375,6 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Tarjeta "Pendientes" del tutor: solo las solicitudes de sus propios alumnos asignados
-    // (mismo metodo que usa el coordinador, con idTutor fijo al de la sesion).
     private void responderSolicitudesPendientesTutor(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -453,8 +415,6 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Modal "Alumnos Atendidos" del tutor: mismas sesiones Individual/Espontanea que ve el
-    // coordinador en su modal, pero fijas al idTutor de la sesion.
     private void responderAtencionesIndividualesTutor(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -497,9 +457,6 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Buscador de alumnos del dashboard del tutor: solo devuelve alumnos cuyo grupo esta
-    // asignado a ESTE tutor (ver AlumnoDAO.buscarAlumnos con idTutor fijo), para que un
-    // tutor no pueda ni siquiera enterarse de la existencia de alumnos ajenos.
     private void responderBuscarAlumnosTutor(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -524,9 +481,6 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Boton "Enviar correo de recordatorio" del modal "Canalizados": re-consulta por
-    // ID_CANALIZACION exigiendo que pertenezca al tutor de la sesion (ver
-    // CanalizacionDao.getDetalleParaRecordatorio) y solo manda el correo si sigue 'En proceso'.
     private void responderRecordarAreaApoyo(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -563,9 +517,6 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Exportacion Excel/PDF del tutor: mismos builders que el coordinador (ReporteExcelBuilder/
-    // ReportePdfBuilder), pero el avance grupal se filtra a solo los grupos de este tutor y el
-    // idTutor de las demas consultas queda fijo al de la sesion.
     private void exportarExcelTutor(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         ReporteExportDatos datos = recolectarDatosExportacionTutor(request, idTutorSesion);
 

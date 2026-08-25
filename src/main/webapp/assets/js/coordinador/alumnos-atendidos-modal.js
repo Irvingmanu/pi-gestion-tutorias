@@ -1,9 +1,3 @@
-// Modal "Alumnos Atendidos" de reportes-globales.jsp: lista las sesiones Individual y
-// Espontánea completadas (excluye estrictamente las grupales, que tienen su propio modal
-// de "Tutorías Grupales"), respetando los mismos filtros de la barra de Reportes Globales
-// para que el desglose sea coherente con el KPI de la tarjeta.
-// Requiere que la vista defina antes: const CONTEXT_PATH = "<context-path>";
-// y que ya esten cargados alertas.js y bootstrap.js.
 
 let modalAlumnosAtendidosInstancia = null;
 let modalDetalleAtencionInstancia = null;

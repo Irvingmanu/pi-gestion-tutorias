@@ -1,4 +1,4 @@
-// Confirmacion para el boton 'Cancelar' de formulario-area.jsp (nueva y edicion)
+
 function confirmarCancelacionArea() {
     let boton = document.getElementById('btnCancelarFormularioArea');
     let urlDestino = boton ? boton.dataset.urlCancelar : '/';
@@ -14,20 +14,10 @@ function confirmarCancelacionArea() {
     );
 }
 
-/**
- *
- * @param evento
- * @returns {boolean}
- *
- */
-
-// Intercepta el submit del formulario principal del area (nueva o edicion)
 function confirmarGuardarArea(evento) {
     evento.preventDefault();
     let formulario = evento.target;
 
-    // Solo aplica a "Nueva Área": ahi los motivos son hidden inputs agregados por JS,
-    // asi que el navegador no los puede exigir por si solo via required.
     let contenedorMotivos = document.getElementById('motivosContainer');
     if (contenedorMotivos && contenedorMotivos.querySelectorAll('input[name="motivos[]"]').length === 0) {
         mostrarAlerta('error', 'Motivo requerido', 'Agrega al menos un motivo de canalización antes de guardar.');
@@ -47,7 +37,6 @@ function confirmarGuardarArea(evento) {
     return false;
 }
 
-// Elimina un area completa (con sus motivos) desde la tabla/tarjetas principales
 function prepararEliminacionArea(idArea) {
     mostrarConfirmacion(
         'critica',
@@ -61,7 +50,6 @@ function prepararEliminacionArea(idArea) {
     );
 }
 
-// Toasts/alertas de exito y error via parametros en la URL (?exito=, ?error=)
 document.addEventListener('DOMContentLoaded', function () {
     const parametros = new URLSearchParams(window.location.search);
     const exito = parametros.get('exito');

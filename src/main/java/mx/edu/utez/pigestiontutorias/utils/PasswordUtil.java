@@ -4,8 +4,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
-// Hash de contrasenas para ALUMNO/TUTOR/COORDINADOR.PASS (VARCHAR2(64)): SHA-256
-// en hexadecimal siempre produce 64 caracteres, por eso ese es el tamano de columna.
 public final class PasswordUtil {
 
     private PasswordUtil() {

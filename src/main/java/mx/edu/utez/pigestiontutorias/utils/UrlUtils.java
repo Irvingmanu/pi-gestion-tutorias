@@ -6,9 +6,6 @@ public class UrlUtils {
 
     private UrlUtils() {}
 
-    // Reconstruye "esquema://host[:puerto]/contextPath" a partir del request.
-    // Se usa para armar links absolutos en correos (EmailSender no tiene acceso
-    // al HttpServletRequest, asi que el link se arma en el servlet y se pasa como parametro).
     public static String baseUrl(HttpServletRequest request) {
         String esquema = request.getScheme();
         String host = request.getServerName();

@@ -2,12 +2,9 @@ package mx.edu.utez.pigestiontutorias.models;
 
 import java.sql.Date;
 
-// DTO para el modal "Alumnos Atendidos" del reporte del coordinador: una fila por cada
-// SESION_INDIVIDUAL completada (Individual o Espontanea), con los datos ya resueltos de
-// grupo/alumno/vinculo directo para no requerir una segunda consulta al pedir "Ver detalles".
 public class AtencionAlumnoDTO {
     private int idSesion;
-    private String tipo; // "Individual" | "Espontánea"
+    private String tipo;
     private Date fecha;
     private String hora;
     private String grupoAsignado;
@@ -16,7 +13,7 @@ public class AtencionAlumnoDTO {
     private String estado;
     private String temasTratados;
     private String acuerdos;
-    private String vinculoDirecto; // null si la sesion no genero una canalizacion
+    private String vinculoDirecto;
 
     public int getIdSesion() { return idSesion; }
     public void setIdSesion(int idSesion) { this.idSesion = idSesion; }

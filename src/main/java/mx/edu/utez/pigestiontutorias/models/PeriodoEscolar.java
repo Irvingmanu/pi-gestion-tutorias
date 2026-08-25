@@ -27,8 +27,6 @@ public class PeriodoEscolar {
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
 
-    // Meta de tutorias grupales que cada tutor debe cumplir durante este periodo,
-    // definida por el coordinador al crear el periodo.
     public int getAsistenciasGrupales() { return asistenciasGrupales; }
     public void setAsistenciasGrupales(int asistenciasGrupales) { this.asistenciasGrupales = asistenciasGrupales; }
 }

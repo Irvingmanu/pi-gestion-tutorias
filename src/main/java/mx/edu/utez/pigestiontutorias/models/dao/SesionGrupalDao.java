@@ -10,9 +10,6 @@ import java.util.List;
 
 public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
 
-    // Inserta la SESION_GRUPAL y, con el ID generado, la ASISTENCIA de cada matricula
-    // recibida en entidad.getAsistentes() (checkboxes marcados en el registro). Todo en
-    // una sola transaccion: si falla la asistencia, tampoco debe quedar la sesion huerfana.
     @Override
     public boolean create(SesionGrupal entidad) {
         String sqlSesion = "INSERT INTO SESION_GRUPAL " +
@@ -53,8 +50,7 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
                         return false;
                     }
                     idSesionGrupal = keys.getInt(1);
-                    // Se refleja en la entidad recibida para que el caller pueda usar el ID
-                    // recien generado (ej. para asociarle la asistencia de la cuadricula).
+
                     entidad.setIdSesionGrupal(idSesionGrupal);
                 }
             }
@@ -132,8 +128,6 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
         return lista;
     }
 
-    // Historial: sesiones grupales YA REALIZADAS (Completado) del tutor, filtrables por
-    // rango de fechas (cualquiera de los dos limites puede venir null/blank).
     public List<SesionGrupal> getHistorialByTutor(int idTutor, String fechaInicio, String fechaFin) {
         List<SesionGrupal> lista = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
@@ -184,10 +178,6 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
         return s;
     }
 
-    // Modal "Seguimiento de Tutorias Grupales" del reporte del coordinador: una fila por
-    // cada asignacion tutor-grupo activa dentro del periodo, con el conteo de sesiones
-    // "Completado" que ese tutor ya registro en ese grupo durante el rango del periodo.
-    // Ordenado de MENOR a MAYOR avance, tal como lo pide el reporte.
     public List<AvanceTutorGrupal> getAvancePorPeriodo(int idPeriodo, Date fechaInicio, Date fechaFin, int objetivo) {
         List<AvanceTutorGrupal> lista = new ArrayList<>();
         String sql = "SELECT asg.ID_TUTOR, t.NOMBRES, t.APELLIDO_PATERNO, t.APELLIDO_MATERNO, t.CORREO_INSTITUCIONAL, " +
@@ -237,16 +227,12 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
         return lista;
     }
 
-    // Umbral de negocio: sin avance o por debajo de la mitad del objetivo se marca
-    // "En Riesgo" para que el coordinador priorice el envio de alertas a esos tutores.
     private String calcularEstatus(int realizadas, int objetivo) {
         if (objetivo <= 0) return "SIN_OBJETIVO";
         if (realizadas == 0 || realizadas < objetivo / 2.0) return "RIESGO";
         return "AL_DIA";
     }
 
-    // "Ver detalles" del modal de seguimiento: sesiones que un tutor especifico registro
-    // en un grupo especifico, dentro del rango de fechas del periodo.
     public List<SesionGrupal> getSesionesPorTutorYGrupo(int idTutor, int idGrupo, Date fechaInicio, Date fechaFin) {
         List<SesionGrupal> lista = new ArrayList<>();
         String sql = "SELECT * FROM SESION_GRUPAL WHERE ID_TUTOR = ? AND ID_GRUPO = ? AND ESTADO = 'Completado' " +

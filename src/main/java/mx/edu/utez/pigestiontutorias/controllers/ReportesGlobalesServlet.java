@@ -55,10 +55,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final java.sql.Date FECHA_DEFAULT_DESDE = java.sql.Date.valueOf(LocalDate.of(2000, 1, 1));
 
-    // Mismo motivo que ReportesServlet.doGet: sin este try-catch, una excepcion no controlada
-    // en cualquiera de las ramas JSON de abajo (incluida trayectoriaAlumno) llegaba a Tomcat
-    // como pagina HTML de error 500, que rompe el fetch().then(r => r.json()) del dashboard
-    // con "Unexpected token '<'" y no deja ver la causa real en ningun lado del cliente.
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -140,10 +136,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
         request.setAttribute("listaCarreras", listaCarreras);
         request.setAttribute("listaTutores", listaTutores);
 
-        // Accesos directos desde gestion-grupos.jsp ("Ver historial de tutorias"/"Ver
-        // historial del alumno"): si vienen estos parametros en la URL, se exponen como
-        // atributos para que reportes-globales.jsp preseleccione los filtros y dispare la
-        // busqueda solo, sin que el coordinador tenga que volver a elegirlos a mano.
         request.setAttribute("prefiltroIdCarrera", request.getParameter("idCarrera"));
         request.setAttribute("prefiltroCuatrimestre", request.getParameter("cuatrimestre"));
         request.setAttribute("prefiltroLetra", request.getParameter("letra"));
@@ -186,9 +178,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
         }
     }
 
-    // Modal "Seguimiento de Tutorias Grupales": avance de cada tutor-grupo dentro del
-    // periodo vigente, comparado contra el objetivo (ASISTENCIASGRUPALES) definido por
-    // el coordinador al crear ese periodo.
     private void responderAvanceGrupal(HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -231,8 +220,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
-    // "Ver detalles" dentro del modal de seguimiento: datos exactos capturados en
-    // "Registro de Tutoria Grupal" por ese tutor, en ese grupo, durante el periodo vigente.
     private void responderDetalleSesiones(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -270,7 +257,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Boton de correo del modal: alerta directa al tutor con su avance actual.
     private void responderAlertarTutor(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -317,10 +303,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Modal "Alumnos Atendidos": listado de sesiones Individual/Espontanea completadas,
-    // EXCLUYENDO estrictamente las grupales. Reutiliza los mismos filtros de la barra de
-    // Reportes Globales (carrera/cuatrimestre/grupo/tutor/fechas) para que el desglose
-    // sea coherente con el KPI de la tarjeta.
     private void responderAtencionesIndividuales(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -364,9 +346,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Modal "Alumnos Canalizados": listado detallado de canalizaciones a areas de apoyo.
-    // Reutiliza los mismos filtros de la barra de Reportes Globales para que el desglose
-    // sea coherente con el KPI de la tarjeta "Canalizados".
     private void responderCanalizacionesDetalle(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -411,9 +390,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Modal "Solicitudes Pendientes": solicitudes de tutoria creadas por los alumnos que aun no
-    // han sido procesadas (ESTATUS = 'Pendiente'). Reutiliza los mismos filtros de la barra de
-    // Reportes Globales para que el desglose sea coherente con el KPI de la tarjeta "Pendientes".
     private void responderSolicitudesPendientes(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -457,9 +433,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Buscador de alumnos del dashboard del coordinador: a diferencia del tutor (ver
-    // ReportesServlet.responderBuscarAlumnosTutor), aqui idTutor va en null porque el
-    // coordinador puede ver a TODOS los alumnos, sin importar el tutor asignado.
     private void responderBuscarAlumnos(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -484,10 +457,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Seccion "Trayectoria academica" del historial del alumno (Parte A): recorrido completo
-    // por ALUMNO_GRUPO_HISTORICO, sin importar el tutor/carrera/periodo actual del coordinador
-    // en sesion -- un alumno solo tiene una MATRICULA, asi que no hace falta mas autorizacion
-    // que estar logueado como coordinador.
     private void responderTrayectoriaAlumno(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -525,10 +494,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Boton "Enviar recordatorio" del detalle de una solicitud pendiente: le manda un correo
-    // directo al tutor asignado para que la atienda. Vuelve a consultar el detalle por
-    // ID_SOLICITUD (no confia en el nombre/correo que mando el cliente) para tomar el correo
-    // institucional real del tutor.
     private void responderRecordarTutorSolicitud(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -558,10 +523,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
-    // Exportacion a Excel del reporte global: reutiliza exactamente los mismos filtros y las
-    // mismas consultas (ReportesDao/SesionGrupalDao/SesionIndividualDao/CanalizacionDao) que
-    // alimentan las tarjetas y los modales, para que el archivo descargado sea consistente con
-    // lo que el coordinador ve en pantalla.
     private void exportarExcel(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ReporteExportDatos datos = recolectarDatosExportacion(request);
 
@@ -576,9 +537,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
         }
     }
 
-    // Exportacion a PDF (formato ejecutivo) del reporte global: mismos datos que exportarExcel,
-    // con encabezado institucional, resumen de metricas y tablas paginadas de tutorías
-    // grupales/canalizaciones con la paleta verde institucional.
     private void exportarPdf(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ReporteExportDatos datos = recolectarDatosExportacion(request);
 
@@ -611,11 +569,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
         ReportesDao.ReporteResumen resumen = reportesDao.generarReporte(
                 idTutor, idCarrera, cuatrimestre, letra, desde.toLocalDate(), hasta.toLocalDate(), matricula);
 
-        // El modal/hoja de Tutorías Grupales no aplica los filtros de carrera/cuatrimestre/tutor
-        // (ver responderAvanceGrupal): siempre es el avance de todos los tutores en el periodo vigente.
-        // Excepcion: si hay un alumno filtrado (buscador de alumnos del dashboard), el reporte
-        // descargado debe acotarse a las tutorias grupales del tutor de ESE alumno unicamente
-        // -- de lo contrario el Excel/PDF mezclaba el avance de tutores ajenos al alumno elegido.
         PeriodoEscolar periodoVigente = periodoDao.getPeriodoVigente();
         List<AvanceTutorGrupal> avanceGrupal = periodoVigente != null
                 ? sesionGrupalDao.getAvancePorPeriodo(periodoVigente.getIdPeriodo(), periodoVigente.getFechaInicio(),
@@ -652,10 +605,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
                 decodificarImagenBase64(request.getParameter("imagenBarras")));
     }
 
-    // Datos academicos completos del alumno filtrado (encabezado enriquecido del Excel/PDF):
-    // nombre + matricula vienen de ALUMNO, carrera/nivel/cuatrimestre-grupo/generacion del
-    // renglon vigente (FECHA_FIN IS NULL) de su trayectoria (ALUMNO_GRUPO_HISTORICO), la misma
-    // fuente que ya usa la seccion "Trayectoria academica" de esta misma pantalla.
     private ReporteExportDatos.DatosAcademicosAlumno resolverDatosAlumno(String matricula, Alumno alumno) {
         if (alumno == null) return null;
 
@@ -667,8 +616,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
 
         String nombreCompleto = alumno.getNombres() + " " + alumno.getApellidos();
         String nivel = actual != null ? actual.getNivel() : null;
-        // "Carrera" combina nivel + nombre (ej. "TSU en Contabilidad"), como se ve en el resto
-        // del sistema; el nivel tambien se expone por separado (ej. "TSU").
         String carrera = actual != null
                 ? (nivel != null && !nivel.isBlank() ? nivel + " en " + actual.getNombreCarrera() : actual.getNombreCarrera())
                 : null;
@@ -679,9 +626,6 @@ public class ReportesGlobalesServlet extends HttpServlet {
                 matricula, nombreCompleto, carrera, nivel, cuatrimestreGrupo, generacion);
     }
 
-    // Las graficas (Chart.js) solo existen en el navegador: el JS las captura con
-    // canvas.toBase64Image() antes de exportar y las manda como "data:image/png;base64,..."
-    // para que Excel/PDF incluyan la misma imagen que ve el coordinador en pantalla.
     private byte[] decodificarImagenBase64(String dataUrl) {
         if (dataUrl == null || dataUrl.isBlank()) return null;
         int coma = dataUrl.indexOf(',');

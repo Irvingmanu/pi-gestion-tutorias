@@ -88,10 +88,6 @@ public class LoginServlet extends HttpServlet {
         credencialesInvalidas(request, response);
     }
 
-    // Invalida cualquier sesion previa de ESTE navegador (evita session fixation),
-    // crea una nueva y la registra como la unica sesion valida para ese correo,
-    // desplazando automaticamente cualquier otra sesion activa (otro navegador,
-    // otra pestaña de incognito, etc).
     private HttpSession iniciarSesionSegura(HttpServletRequest request, String correoInstitucional) {
         HttpSession sesionPrevia = request.getSession(false);
         if (sesionPrevia != null) {

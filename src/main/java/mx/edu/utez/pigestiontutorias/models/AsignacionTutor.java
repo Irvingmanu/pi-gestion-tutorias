@@ -1,15 +1,11 @@
 package mx.edu.utez.pigestiontutorias.models;
 
-// ASIGNACION_TUTOR ahora solo enlaza ID_TUTOR con ID_GRUPO: el grupo (Carrera+Cuatrimestre+
-// Letra+Periodo) ya es una sola entidad en BD, no 3 FKs sueltas.
 public class AsignacionTutor {
     private int idAsignacion;
     private int idTutor;
     private int idGrupo;
     private String estado;
 
-    // Campos extra que NO existen en la tabla, solo para mostrar datos
-    // del tutor/grupo en la lista (se llenan con un JOIN)
     private String nombresTutor;
     private String apellidosTutor;
     private String nombreGrupo;

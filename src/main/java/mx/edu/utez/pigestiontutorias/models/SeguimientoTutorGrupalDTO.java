@@ -1,8 +1,5 @@
 package mx.edu.utez.pigestiontutorias.models;
 
-// Fila de la tabla "Seguimiento de Tutorías Grupales" (modal de la tarjeta
-// "Tutorías Grupales" en Reportes Globales): avance de UN tutor en UN grupo
-// real (Carrera+Cuatrimestre+Letra) dentro del periodo escolar vigente.
 public class SeguimientoTutorGrupalDTO {
     private int idTutor;
     private String nombreTutor;
@@ -13,7 +10,7 @@ public class SeguimientoTutorGrupalDTO {
     private String grupoAsignado;
     private int realizadas;
     private int objetivo;
-    private String estatus; // "En Riesgo" | "Al día"
+    private String estatus;
 
     public int getIdTutor() { return idTutor; }
     public void setIdTutor(int idTutor) { this.idTutor = idTutor; }

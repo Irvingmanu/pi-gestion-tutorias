@@ -142,9 +142,6 @@ public class EmailSender {
         }
     }
 
-    // Boton "Enviar correo de recordatorio" del modal "Canalizados" del tutor: la canalizacion
-    // sigue en 'En proceso' (el encargado del area aun no confirma que atendio al alumno), asi
-    // que se le reenvia el mismo link de confirmacion del correo original.
     public boolean enviarRecordatorioCanalizacion(String destEmail, String nombreEncargado, String nombreArea,
                                                   String nombreAlumno, String matricula, String motivoODetalle,
                                                   String linkConfirmacion) {
