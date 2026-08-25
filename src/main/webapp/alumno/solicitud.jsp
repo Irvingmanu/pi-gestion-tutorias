@@ -57,7 +57,7 @@
                 <div class="mb-3">
                     <label for="asunto" class="form-label fw-bold">Asunto</label>
                     <input type="text" class="form-control form-control-figma" id="asunto" name="asunto"
-                           maxlength="150" required>
+                           maxlength="150"  pattern="^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\s\-]+$" required>
                     <div class="invalid-feedback">Escribe el asunto de tu solicitud.</div>
                 </div>
 
