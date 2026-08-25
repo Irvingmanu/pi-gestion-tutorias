@@ -52,9 +52,16 @@
     // Caso 3: peticiones fetch() (AJAX sin recargar la pagina, ej. generarCredenciales,
     // verificarPassword, exportar CSV). finally() garantiza que se oculte tanto si la
     // peticion sale bien como si falla.
+    // Excepcion: /verificar-sesion (session-guard.js) hace polling cada 5s en segundo
+    // plano; si se dejara pasar por aqui, el overlay parpadearia cada 5s sin que el
+    // usuario haya hecho ninguna accion.
     if (window.fetch) {
         var fetchOriginal = window.fetch;
         window.fetch = function () {
+            var url = arguments[0];
+            if (typeof url === 'string' && url.indexOf('/verificar-sesion') !== -1) {
+                return fetchOriginal.apply(this, arguments);
+            }
             mostrarCargando();
             return fetchOriginal.apply(this, arguments).finally(ocultarCargando);
         };

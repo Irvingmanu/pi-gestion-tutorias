@@ -133,17 +133,6 @@ public class AsignacionServlet extends HttpServlet {
         }
     }
 
-    // TSU: cuatrimestres 1-6. Ingenieria (ING): cuatrimestres 7-10.
-    private boolean esCuatrimestreValidoParaNivel(int cuatrimestre, String nivel) {
-        if ("TSU".equals(nivel)) {
-            return cuatrimestre >= 1 && cuatrimestre <= 6;
-        }
-        if ("ING".equals(nivel)) {
-            return cuatrimestre >= 7 && cuatrimestre <= 10;
-        }
-        return false;
-    }
-
     // Unica carrera exceptuada de la regla de abajo: sus grupos de 6° y 10° si pueden
     // llevar tutor asignado. Comparacion sin acentos/mayusculas para no depender de como
     // este capturado el nombre exacto en el catalogo CARRERA (poblado a mano via SQL).

@@ -15,6 +15,7 @@
     <link href="${pageContext.request.contextPath}/assets/css/bootstrap.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/global.css" rel="stylesheet">
     <link href="${pageContext.request.contextPath}/assets/css/coordinador/navbar.css" rel="stylesheet">
+    <link href="${pageContext.request.contextPath}/assets/css/alertas.css" rel="stylesheet">
 </head>
 <body>
 
@@ -75,6 +76,7 @@
                                         </c:when>
                                         <c:when test="${not empty c.correoContactoArea}">
                                             <a href="mailto:${c.correoContactoArea}"
+                                               onclick="mostrarToast('exito', '¡Espera!', 'Abriendo correo...')"
                                                class="btn-figma fw-medium text-decoration-none px-3 py-2">Contactar por correo</a>
                                         </c:when>
                                     </c:choose>
@@ -95,7 +97,9 @@
 </div>
 
 <jsp:include page="../includes/cargando.jsp" />
+<jsp:include page="../includes/alertas.jsp" />
 <script src="${pageContext.request.contextPath}/assets/js/bootstrap.js"></script>
 <script src="${pageContext.request.contextPath}/assets/js/cargando.js"></script>
+<script src="${pageContext.request.contextPath}/assets/js/alertas.js"></script>
 </body>
 </html>

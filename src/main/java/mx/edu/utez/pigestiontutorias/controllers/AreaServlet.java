@@ -125,6 +125,10 @@ public class AreaServlet extends HttpServlet {
         area.setApellidoMaternoEncargado(request.getParameter("apellidoMaternoEncargado"));
         area.setCorreoContacto(request.getParameter("correo"));
 
+        // Opcional: si viene vacio del formulario, se guarda como null en vez de "".
+        String enlaceCita = request.getParameter("enlaceCita");
+        area.setEnlaceCita((enlaceCita != null && !enlaceCita.isBlank()) ? enlaceCita.trim() : null);
+
         // Si el area ya tiene alumnos canalizados, su nombre queda bloqueado: se ignora lo
         // que venga en "nombreArea" (el input es readonly en el cliente, pero un cliente
         // manipulado podria enviar otro valor) y se conserva el nombre real de BD.
@@ -246,6 +250,7 @@ public class AreaServlet extends HttpServlet {
             areaEdit.setApellidoPaternoEncargado(areaSubmitted.getApellidoPaternoEncargado());
             areaEdit.setApellidoMaternoEncargado(areaSubmitted.getApellidoMaternoEncargado());
             areaEdit.setCorreoContacto(areaSubmitted.getCorreoContacto());
+            areaEdit.setEnlaceCita(areaSubmitted.getEnlaceCita());
             request.setAttribute("areaEdit", areaEdit);
         } else {
             request.setAttribute("area", areaSubmitted);

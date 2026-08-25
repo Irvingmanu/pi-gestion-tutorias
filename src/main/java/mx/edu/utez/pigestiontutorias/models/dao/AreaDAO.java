@@ -149,11 +149,8 @@ public class AreaDAO implements Dao<Area, Integer> {
 
     @Override
     public boolean update(Area entidad) {
-        // ENLACE_CITA usa COALESCE porque el formulario de coordinador (formulario-area.jsp)
-        // todavia no tiene un campo para capturarlo: si viene null aqui, se conserva el valor
-        // que ya estaba en BD en vez de borrarlo en cada edicion de nombre/encargado/correo.
         String sql = "UPDATE AREA_APOYO SET NOMBRE = ?, NOMBRES = ?, APELLIDO_PATERNO = ?, APELLIDO_MATERNO = ?, CORREO_CONTACTO = ?, " +
-                "ENLACE_CITA = COALESCE(?, ENLACE_CITA) WHERE ID_AREA = ?";
+                "ENLACE_CITA = ? WHERE ID_AREA = ?";
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
 

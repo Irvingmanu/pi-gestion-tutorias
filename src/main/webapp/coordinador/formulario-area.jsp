@@ -134,6 +134,13 @@
                                 <div class="invalid-feedback">El correo debe tener un formato válido y terminar en @utez.edu.mx.</div>
                             </div>
 
+                            <div class="mb-4">
+                                <label for="enlaceCita" class="form-label fs-6 fw-bold">Enlace para cita (Opcional)</label>
+                                <input type="url" id="enlaceCita" name="enlaceCita" class="form-control form-control-figma w-100 fs-6"
+                                       value="${area.enlaceCita}" placeholder="https://...">
+                                <div class="invalid-feedback">El enlace debe ser una URL válida (ej. https://...).</div>
+                            </div>
+
                         </div>
 
                         <!-- Columna derecha: motivos dinamicos, se insertan junto con el area -->
@@ -233,6 +240,13 @@
                                        value="${areaEdit.correoContacto}" placeholder="Escribe el correo del encargado"
                                        pattern="^[a-zA-Z0-9._\-]+@utez\.edu\.mx$" title="El correo debe terminar en @utez.edu.mx" required>
                                 <div class="invalid-feedback">El correo debe tener un formato válido y terminar en @utez.edu.mx.</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="enlaceCita" class="form-label fs-6 fw-bold">Enlace para cita (Opcional)</label>
+                                <input type="url" id="enlaceCita" name="enlaceCita" class="form-control form-control-figma w-100 fs-6"
+                                       value="${areaEdit.enlaceCita}" placeholder="https://...">
+                                <div class="invalid-feedback">El enlace debe ser una URL válida (ej. https://...).</div>
                             </div>
 
                         </form>
