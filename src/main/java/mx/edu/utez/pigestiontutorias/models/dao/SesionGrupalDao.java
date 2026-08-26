@@ -8,8 +8,23 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO de acceso a datos para las sesiones grupales de tutoría (tabla SESION_GRUPAL) y su
+ * asistencia asociada, con registro transaccional de sesión + asistentes, consultas de
+ * historial por tutor/grupo/alumno y cálculo del avance de tutorías grupales por periodo.
+ * @author 20253ds074-art
+ * @version 1.0
+ * @since 2026-07-28
+ */
 public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
 
+    /**
+     * Registra una nueva sesión grupal junto con la asistencia de los alumnos indicados,
+     * de forma transaccional (inserta la sesión, obtiene su id generado, inserta la asistencia
+     * en lote y confirma; revierte todo si algo falla).
+     * @param entidad la sesión grupal a crear, incluyendo el arreglo de matrículas asistentes
+     * @return {@code true} si la sesión y su asistencia se registraron correctamente; {@code false} en caso contrario
+     */
     @Override
     public boolean create(SesionGrupal entidad) {
         String sqlSesion = "INSERT INTO SESION_GRUPAL " +
@@ -86,26 +101,51 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
         }
     }
 
+    /**
+     * Operación no implementada del contrato {@link Dao}.
+     * @return siempre {@code null}
+     */
     @Override
     public List<SesionGrupal> getAll() {
         return null;
     }
 
+    /**
+     * Operación no implementada del contrato {@link Dao}.
+     * @param id el identificador de la sesión grupal
+     * @return siempre {@code null}
+     */
     @Override
     public SesionGrupal getById(Integer id) {
         return null;
     }
 
+    /**
+     * Operación no implementada del contrato {@link Dao}.
+     * @param entidad la sesión grupal a actualizar
+     * @return siempre {@code false}
+     */
     @Override
     public boolean update(SesionGrupal entidad) {
         return false;
     }
 
+    /**
+     * Operación no implementada del contrato {@link Dao}.
+     * @param id el identificador de la sesión grupal
+     * @return siempre {@code false}
+     */
     @Override
     public boolean delete(Integer id) {
         return false;
     }
 
+    /**
+     * Obtiene el historial de sesiones grupales completadas del grupo al que pertenece un alumno,
+     * ordenadas de la más reciente a la más antigua.
+     * @param matricula la matrícula del alumno
+     * @return la lista de sesiones grupales completadas de su grupo; vacía si no hay o si ocurre un error de base de datos
+     */
     public List<SesionGrupal> getAcuerdosPorAlumno(String matricula) {
         List<SesionGrupal> lista = new ArrayList<>();
         String sql = "SELECT sg.* FROM SESION_GRUPAL sg " +
@@ -128,6 +168,14 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
         return lista;
     }
 
+    /**
+     * Obtiene el historial de sesiones grupales completadas registradas por un tutor, con filtro
+     * opcional de rango de fechas, ordenadas de la más reciente a la más antigua.
+     * @param idTutor el identificador del tutor
+     * @param fechaInicio la fecha inicial del rango en formato ISO (yyyy-MM-dd), o {@code null}/vacía para no filtrar
+     * @param fechaFin la fecha final del rango en formato ISO (yyyy-MM-dd), o {@code null}/vacía para no filtrar
+     * @return la lista de sesiones grupales del tutor; vacía si no hay o si ocurre un error de base de datos
+     */
     public List<SesionGrupal> getHistorialByTutor(int idTutor, String fechaInicio, String fechaFin) {
         List<SesionGrupal> lista = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
@@ -164,6 +212,12 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
         return lista;
     }
 
+    /**
+     * Construye un objeto {@link SesionGrupal} a partir de la fila actual de un ResultSet.
+     * @param rs el ResultSet posicionado en la fila a mapear
+     * @return la sesión grupal mapeada con sus campos principales
+     * @throws SQLException si ocurre un error al leer las columnas del ResultSet
+     */
     private SesionGrupal mapearSesion(ResultSet rs) throws SQLException {
         SesionGrupal s = new SesionGrupal();
         s.setIdSesionGrupal(rs.getInt("ID_SESION_GRUPAL"));
@@ -178,6 +232,16 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
         return s;
     }
 
+    /**
+     * Calcula el avance de tutorías grupales de cada tutor asignado en un periodo escolar,
+     * comparando el número de sesiones completadas dentro del rango de fechas contra un objetivo,
+     * y determinando su estatus (SIN_OBJETIVO, RIESGO o AL_DIA).
+     * @param idPeriodo el identificador del periodo escolar
+     * @param fechaInicio la fecha inicial del rango a considerar para contar sesiones realizadas
+     * @param fechaFin la fecha final del rango a considerar para contar sesiones realizadas
+     * @param objetivo el número de sesiones grupales objetivo por tutor/grupo
+     * @return la lista de avances por tutor/grupo, ordenada por sesiones realizadas ascendente y luego por apellido paterno
+     */
     public List<AvanceTutorGrupal> getAvancePorPeriodo(int idPeriodo, Date fechaInicio, Date fechaFin, int objetivo) {
         List<AvanceTutorGrupal> lista = new ArrayList<>();
         String sql = "SELECT asg.ID_TUTOR, t.NOMBRES, t.APELLIDO_PATERNO, t.APELLIDO_MATERNO, t.CORREO_INSTITUCIONAL, " +
@@ -227,12 +291,28 @@ public class SesionGrupalDao implements Dao<SesionGrupal, Integer> {
         return lista;
     }
 
+    /**
+     * Determina el estatus de avance de tutorías grupales de un tutor/grupo comparando las
+     * sesiones realizadas contra el objetivo definido.
+     * @param realizadas el número de sesiones grupales completadas
+     * @param objetivo el número de sesiones grupales objetivo
+     * @return "SIN_OBJETIVO" si el objetivo es 0 o negativo, "RIESGO" si no se ha alcanzado la mitad del objetivo, o "AL_DIA" en otro caso
+     */
     private String calcularEstatus(int realizadas, int objetivo) {
         if (objetivo <= 0) return "SIN_OBJETIVO";
         if (realizadas == 0 || realizadas < objetivo / 2.0) return "RIESGO";
         return "AL_DIA";
     }
 
+    /**
+     * Obtiene las sesiones grupales completadas de un tutor con un grupo específico dentro de un
+     * rango de fechas, ordenadas de la más reciente a la más antigua.
+     * @param idTutor el identificador del tutor
+     * @param idGrupo el identificador del grupo
+     * @param fechaInicio la fecha inicial del rango
+     * @param fechaFin la fecha final del rango
+     * @return la lista de sesiones grupales encontradas; vacía si no hay o si ocurre un error de base de datos
+     */
     public List<SesionGrupal> getSesionesPorTutorYGrupo(int idTutor, int idGrupo, Date fechaInicio, Date fechaFin) {
         List<SesionGrupal> lista = new ArrayList<>();
         String sql = "SELECT * FROM SESION_GRUPAL WHERE ID_TUTOR = ? AND ID_GRUPO = ? AND ESTADO = 'Completado' " +

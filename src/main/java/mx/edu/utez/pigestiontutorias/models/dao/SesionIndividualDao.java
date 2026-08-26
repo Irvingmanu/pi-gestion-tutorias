@@ -9,10 +9,23 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO de acceso a datos para las sesiones individuales de tutoría (tabla SESION_INDIVIDUAL),
+ * incluyendo su registro, consulta de historial y pendientes, y el proceso transaccional de
+ * completar una sesión generando las canalizaciones correspondientes a sus motivos.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-23
+ */
 public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
 
     private final CanalizacionDao canalizacionDao = new CanalizacionDao();
 
+    /**
+     * Inserta una nueva sesión individual de tutoría.
+     * @param s la sesión individual a crear, con tutor, matrícula, fecha, hora, temas y acuerdos
+     * @return {@code true} si la inserción afectó al menos una fila; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     @Override
     public boolean create(SesionIndividual s) {
         String sql = "INSERT INTO SESION_INDIVIDUAL " +
@@ -46,11 +59,20 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         }
     }
 
+    /**
+     * Operación no implementada del contrato {@link Dao}.
+     * @return siempre {@code null}
+     */
     @Override
     public List<SesionIndividual> getAll() {
         return null;
     }
 
+    /**
+     * Busca una sesión individual por su identificador.
+     * @param id el identificador de la sesión individual
+     * @return la sesión encontrada, o {@code null} si no existe o si ocurre un error de base de datos
+     */
     @Override
     public SesionIndividual getById(Integer id) {
         String sql = "SELECT * FROM SESION_INDIVIDUAL WHERE ID_SESION_INDIVIDUAL = ?";
@@ -71,16 +93,31 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         return null;
     }
 
+    /**
+     * Operación no implementada del contrato {@link Dao}.
+     * @param entidad la sesión individual a actualizar
+     * @return siempre {@code false}
+     */
     @Override
     public boolean update(SesionIndividual entidad) {
         return false;
     }
 
+    /**
+     * Operación no implementada del contrato {@link Dao}.
+     * @param id el identificador de la sesión individual
+     * @return siempre {@code false}
+     */
     @Override
     public boolean delete(Integer id) {
         return false;
     }
 
+    /**
+     * Obtiene el historial de sesiones individuales completadas de un alumno, ordenadas de la más reciente a la más antigua.
+     * @param matricula la matrícula del alumno
+     * @return la lista de sesiones individuales completadas del alumno; vacía si no hay o si ocurre un error de base de datos
+     */
     public List<SesionIndividual> getAcuerdosPorAlumno(String matricula) {
         List<SesionIndividual> lista = new ArrayList<>();
         String sql = "SELECT * FROM SESION_INDIVIDUAL WHERE MATRICULA = ? AND ESTADO = 'Completado' ORDER BY FECHA DESC";
@@ -101,6 +138,11 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         return lista;
     }
 
+    /**
+     * Obtiene las sesiones individuales pendientes (programadas) de un tutor, ordenadas por fecha ascendente.
+     * @param idTutor el identificador del tutor
+     * @return la lista de sesiones pendientes del tutor; vacía si no hay o si ocurre un error de base de datos
+     */
     public List<SesionIndividual> getSesionesProgramadasByTutor(int idTutor) {
         List<SesionIndividual> lista = new ArrayList<>();
         String sql = "SELECT * FROM SESION_INDIVIDUAL WHERE ID_TUTOR = ? AND ESTADO = 'Pendiente' ORDER BY FECHA";
@@ -121,6 +163,15 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         return lista;
     }
 
+    /**
+     * Obtiene el historial de sesiones individuales completadas de un tutor, con filtros opcionales
+     * de origen y rango de fechas, ordenadas de la más reciente a la más antigua.
+     * @param idTutor el identificador del tutor
+     * @param origen el origen de la sesión ("Programada" o "Espontanea") a filtrar, o {@code null}/vacío para no filtrar
+     * @param fechaInicio la fecha inicial del rango en formato ISO (yyyy-MM-dd), o {@code null}/vacía para no filtrar
+     * @param fechaFin la fecha final del rango en formato ISO (yyyy-MM-dd), o {@code null}/vacía para no filtrar
+     * @return la lista de sesiones individuales del tutor; vacía si no hay o si ocurre un error de base de datos
+     */
     public List<SesionIndividual> getHistorialByTutor(int idTutor, String origen, String fechaInicio, String fechaFin) {
         List<SesionIndividual> lista = new ArrayList<>();
         StringBuilder sql = new StringBuilder(
@@ -163,6 +214,19 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         return lista;
     }
 
+    /**
+     * Marca una sesión individual como completada, de forma transaccional: registra los temas,
+     * acuerdos y asistencia, genera una canalización por cada motivo seleccionado (resolviendo su
+     * área correspondiente), enlaza la sesión con la primera canalización creada y, al confirmar,
+     * envía los correos de confirmación de las canalizaciones generadas.
+     * @param idSesion el identificador de la sesión individual a completar
+     * @param temas los temas tratados durante la sesión
+     * @param acuerdos los acuerdos alcanzados durante la sesión
+     * @param idMotivos los identificadores de los motivos de canalización seleccionados, como cadenas
+     * @param estatusAsistencia el estatus de asistencia del alumno a la sesión
+     * @param baseUrl la URL base usada para construir los enlaces de los correos de confirmación, o {@code null} para omitir el envío
+     * @return {@code true} si la actualización de la sesión afectó al menos una fila; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     public boolean completarSesion(int idSesion, String temas, String acuerdos, String[] idMotivos, String estatusAsistencia, String baseUrl) {
         String sqlMatricula = "SELECT MATRICULA FROM SESION_INDIVIDUAL WHERE ID_SESION_INDIVIDUAL = ?";
         String sqlMotivoArea = "SELECT ID_AREA FROM MOTIVO_AREA WHERE ID_MOTIVO = ?";
@@ -262,11 +326,35 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         }
     }
 
+    /**
+     * Obtiene el detalle de las atenciones individuales completadas dentro de un rango de fechas,
+     * con los filtros opcionales indicados, sin filtrar por matrícula.
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacía para no filtrar
+     * @param desde la fecha inicial del rango
+     * @param hasta la fecha final del rango
+     * @return la lista de atenciones individuales encontradas, ordenada por fecha y hora descendente
+     */
     public List<AtencionAlumnoDTO> getAtencionesIndividuales(Integer idTutor, Integer idCarrera, Integer cuatrimestre,
                                                              String letra, Date desde, Date hasta) {
         return getAtencionesIndividuales(idTutor, idCarrera, cuatrimestre, letra, desde, hasta, null);
     }
 
+    /**
+     * Obtiene el detalle de las atenciones individuales completadas dentro de un rango de fechas,
+     * con los filtros opcionales indicados, incluyendo datos del alumno, su grupo y la
+     * canalización asociada (área y motivo) si la sesión originó una.
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacía para no filtrar
+     * @param desde la fecha inicial del rango
+     * @param hasta la fecha final del rango
+     * @param matricula la matrícula del alumno a filtrar, o {@code null}/vacía para no filtrar
+     * @return la lista de atenciones individuales encontradas, ordenada por fecha y hora descendente
+     */
     public List<AtencionAlumnoDTO> getAtencionesIndividuales(Integer idTutor, Integer idCarrera, Integer cuatrimestre,
                                                              String letra, Date desde, Date hasta, String matricula) {
         List<AtencionAlumnoDTO> lista = new ArrayList<>();
@@ -360,6 +448,12 @@ public class SesionIndividualDao implements Dao<SesionIndividual, Integer> {
         return lista;
     }
 
+    /**
+     * Construye un objeto {@link SesionIndividual} a partir de la fila actual de un ResultSet.
+     * @param rs el ResultSet posicionado en la fila a mapear
+     * @return la sesión individual mapeada con sus campos principales, incluyendo el identificador de canalización si existe
+     * @throws SQLException si ocurre un error al leer las columnas del ResultSet
+     */
     private SesionIndividual mapearSesion(ResultSet rs) throws SQLException {
         SesionIndividual s = new SesionIndividual();
         s.setIdSesionIndividual(rs.getInt("ID_SESION_INDIVIDUAL"));

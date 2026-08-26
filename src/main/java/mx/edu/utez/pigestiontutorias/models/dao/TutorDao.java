@@ -5,18 +5,29 @@ import mx.edu.utez.pigestiontutorias.models.Tutor;
 import mx.edu.utez.pigestiontutorias.utils.PasswordUtil;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * DAO de acceso a datos para los tutores (tabla TUTOR) y sus horarios de atención
+ * asociados, con operaciones CRUD, alta individual y masiva, validaciones de
+ * duplicados, baja lógica/reactivación y consultas auxiliares para el login y
+ * la gestión de tutores.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-22
+ */
 public class TutorDao implements Dao<Tutor, Integer> {
 
+    /**
+     * Inserta un nuevo tutor junto con sus horarios de atención, de forma transaccional.
+     * Si no se indica contraseña, genera una por defecto a partir del número de empleado.
+     * @param entidad el tutor a crear, incluyendo sus horarios disponibles en texto
+     * @return {@code true} si la operación se completó correctamente; {@code false} en caso contrario
+     */
     @Override
     public boolean create(Tutor entidad) {
         String sqlTutor = "INSERT INTO TUTOR(NUMERO_EMPLEADO, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, CORREO_INSTITUCIONAL, TELEFONO, ID_ACADEMIA, PASS) " +
@@ -60,6 +71,12 @@ public class TutorDao implements Dao<Tutor, Integer> {
         }
     }
 
+    /**
+     * Inserta en lote una lista de tutores junto con sus respectivos horarios de atención,
+     * de forma transaccional (todo o nada), generando la contraseña por defecto para cada uno.
+     * @param tutores la lista de tutores a crear
+     * @return el número de tutores insertados correctamente; 0 si la lista es nula/vacía o si ocurre un error
+     */
     public int crearMasivo(List<Tutor> tutores) {
         if (tutores == null || tutores.isEmpty()) return 0;
 
@@ -111,6 +128,14 @@ public class TutorDao implements Dao<Tutor, Integer> {
         }
     }
 
+    /**
+     * Inserta en lote los horarios de atención de un tutor, extrayendo día de la semana y
+     * horas de inicio/fin desde cada cadena de texto mediante expresiones regulares.
+     * @param con la conexión abierta a la base de datos, ya en la transacción activa
+     * @param numeroEmpleado el número de empleado del tutor dueño de los horarios
+     * @param horarios la lista de horarios en formato de texto libre (p. ej. "Lunes 08:00 - 09:00"); si es nula o vacía no hace nada
+     * @throws SQLException si ocurre un error al insertar los horarios
+     */
     private void insertarHorarios(Connection con, int numeroEmpleado, List<String> horarios) throws SQLException {
         if (horarios == null || horarios.isEmpty()) return;
 
@@ -139,6 +164,11 @@ public class TutorDao implements Dao<Tutor, Integer> {
         }
     }
 
+    /**
+     * Obtiene el siguiente número de nómina (número de empleado) disponible para un nuevo tutor,
+     * con un piso mínimo de 1000.
+     * @return el siguiente número de nómina disponible
+     */
     public int obtenerSiguienteNomina() {
         String sql = "SELECT NVL(MAX(NUMERO_EMPLEADO), 999) + 1 AS SIGUIENTE FROM TUTOR";
         try (Connection con = SQLConnector.getConnection();
@@ -153,6 +183,11 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return 1000;
     }
 
+    /**
+     * Normaliza el nombre de un día de la semana a su forma canónica sin acentos usada en base de datos.
+     * @param dia el nombre del día a normalizar
+     * @return el día normalizado, o el mismo valor recibido si no coincide con ninguno conocido o es {@code null}
+     */
     private String normalizarDiaSemana(String dia) {
         if (dia == null) return dia;
         return switch (dia.toLowerCase()) {
@@ -165,6 +200,11 @@ public class TutorDao implements Dao<Tutor, Integer> {
         };
     }
 
+    /**
+     * Verifica si ya existe un tutor con el número de empleado indicado.
+     * @param numeroEmpleado el número de empleado a validar
+     * @return {@code true} si ya existe un tutor con ese número de empleado; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     public boolean existeNomina(int numeroEmpleado) {
         String sql = "SELECT COUNT(*) FROM TUTOR WHERE NUMERO_EMPLEADO = ?";
         try (Connection con = SQLConnector.getConnection();
@@ -177,6 +217,11 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return false;
     }
 
+    /**
+     * Verifica si ya existe un tutor con el correo institucional indicado.
+     * @param correo el correo institucional a validar
+     * @return {@code true} si ya existe un tutor con ese correo; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     public boolean existeCorreo(String correo) {
         String sql = "SELECT COUNT(*) FROM TUTOR WHERE CORREO_INSTITUCIONAL = ?";
         try (Connection con = SQLConnector.getConnection();
@@ -189,6 +234,11 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return false;
     }
 
+    /**
+     * Verifica si ya existe un tutor con el teléfono indicado.
+     * @param telefono el teléfono a validar
+     * @return {@code true} si ya existe un tutor con ese teléfono; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     public boolean existeTelefono(String telefono) {
         String sql = "SELECT COUNT(*) FROM TUTOR WHERE TELEFONO = ?";
         try (Connection con = SQLConnector.getConnection();
@@ -201,6 +251,12 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return false;
     }
 
+    /**
+     * Verifica si ya existe otro tutor (distinto al indicado) con el mismo correo institucional.
+     * @param correo el correo institucional a validar
+     * @param numeroEmpleadoExcluido el número de empleado del tutor que debe excluirse de la comparación
+     * @return {@code true} si existe otro tutor con ese correo; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     public boolean existeCorreo(String correo, int numeroEmpleadoExcluido) {
         String sql = "SELECT COUNT(*) FROM TUTOR WHERE CORREO_INSTITUCIONAL = ? AND NUMERO_EMPLEADO <> ?";
         try (Connection con = SQLConnector.getConnection();
@@ -214,6 +270,12 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return false;
     }
 
+    /**
+     * Verifica si ya existe otro tutor (distinto al indicado) con el mismo teléfono.
+     * @param telefono el teléfono a validar
+     * @param numeroEmpleadoExcluido el número de empleado del tutor que debe excluirse de la comparación
+     * @return {@code true} si existe otro tutor con ese teléfono; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     public boolean existeTelefono(String telefono, int numeroEmpleadoExcluido) {
         String sql = "SELECT COUNT(*) FROM TUTOR WHERE TELEFONO = ? AND NUMERO_EMPLEADO <> ?";
         try (Connection con = SQLConnector.getConnection();
@@ -227,6 +289,10 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return false;
     }
 
+    /**
+     * Obtiene todos los tutores registrados en el sistema, sin filtrar por estado.
+     * @return la lista completa de tutores; vacía si no hay registros o si ocurre un error de base de datos
+     */
     @Override
     public List<Tutor> getAll() {
         List<Tutor> lista = new ArrayList<>();
@@ -247,6 +313,11 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return lista;
     }
 
+    /**
+     * Obtiene todos los tutores con la lista de grupos activos que tienen asignados actualmente,
+     * agrupando las filas del join en un solo objeto {@link Tutor} por número de empleado.
+     * @return la lista de tutores con sus grupos asignados; vacía si no hay registros o si ocurre un error de base de datos
+     */
     public List<Tutor> getAllConGrupo() {
         Map<Integer, Tutor> tutoresPorNomina = new LinkedHashMap<>();
         String sql = "SELECT t.*, car.NOMBRE AS NOMBRE_CARRERA, g.CUATRIMESTRE, g.LETRA, g.GENERACION " +
@@ -286,6 +357,12 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return new ArrayList<>(tutoresPorNomina.values());
     }
 
+    /**
+     * Busca un tutor por su número de empleado, incluyendo sus horarios de atención formateados
+     * y los datos completos de su academia.
+     * @param numeroEmpleado el número de empleado del tutor
+     * @return el tutor encontrado con horarios y academia cargados, o {@code null} si no existe o si ocurre un error de base de datos
+     */
     @Override
     public Tutor getById(Integer numeroEmpleado) {
         String sql = "SELECT * FROM TUTOR WHERE NUMERO_EMPLEADO = ?";
@@ -332,10 +409,20 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return tutor;
     }
 
+    /**
+     * Busca un tutor por su número de nómina (equivalente a su número de empleado).
+     * @param numeroEmpleado el número de empleado/nómina del tutor
+     * @return el tutor encontrado, o {@code null} si no existe
+     */
     public Tutor getByNomina(int numeroEmpleado) {
         return getById(numeroEmpleado);
     }
 
+    /**
+     * Busca un tutor por su correo institucional, sin distinguir mayúsculas/minúsculas.
+     * @param correo el correo institucional a buscar
+     * @return el tutor encontrado, o {@code null} si no existe o si ocurre un error de base de datos
+     */
     public Tutor findByCorreo(String correo) {
         String sql = "SELECT * FROM TUTOR WHERE UPPER(CORREO_INSTITUCIONAL) = UPPER(?)";
         try (Connection con = SQLConnector.getConnection();
@@ -348,6 +435,12 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return null;
     }
 
+    /**
+     * Actualiza los datos generales de un tutor y reemplaza por completo sus horarios de
+     * atención, de forma transaccional (elimina los horarios previos e inserta los nuevos).
+     * @param entidad el tutor con el número de empleado y los nuevos datos y horarios a aplicar
+     * @return {@code true} si la operación se completó correctamente; {@code false} en caso contrario
+     */
     @Override
     public boolean update(Tutor entidad) {
         String sqlTutor = "UPDATE TUTOR SET NOMBRES = ?, APELLIDO_PATERNO = ?, APELLIDO_MATERNO = ?, CORREO_INSTITUCIONAL = ?, TELEFONO = ?, ID_ACADEMIA = ? WHERE NUMERO_EMPLEADO = ?";
@@ -391,6 +484,11 @@ public class TutorDao implements Dao<Tutor, Integer> {
         }
     }
 
+    /**
+     * Da de baja lógica a un tutor, marcándolo como inactivo (ESTADO = 'N').
+     * @param numeroEmpleado el número de empleado del tutor a desactivar
+     * @return {@code true} si la actualización afectó al menos una fila; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     @Override
     public boolean delete(Integer numeroEmpleado) {
 
@@ -405,6 +503,12 @@ public class TutorDao implements Dao<Tutor, Integer> {
         }
     }
 
+    /**
+     * Verifica si un tutor tiene registros pendientes que impidan su eliminación: asignaciones
+     * activas, solicitudes pendientes, o sesiones individuales o grupales pendientes.
+     * @param numeroEmpleado el número de empleado del tutor
+     * @return {@code true} si tiene al menos un registro pendiente asociado; {@code false} en caso contrario
+     */
     public boolean tienePendientes(int numeroEmpleado) {
         return existeRegistro("SELECT COUNT(1) FROM ASIGNACION_TUTOR WHERE ID_TUTOR = ? AND ESTADO = 'S' AND ROWNUM = 1", numeroEmpleado)
                 || existeRegistro("SELECT COUNT(1) FROM SOLICITUD_TUTORIA WHERE ID_TUTOR = ? AND ESTATUS = 'Pendiente' AND ROWNUM = 1", numeroEmpleado)
@@ -412,6 +516,14 @@ public class TutorDao implements Dao<Tutor, Integer> {
                 || existeRegistro("SELECT COUNT(1) FROM SESION_GRUPAL WHERE ID_TUTOR = ? AND ESTADO = 'Pendiente' AND ROWNUM = 1", numeroEmpleado);
     }
 
+    /**
+     * Ejecuta una consulta de conteo parametrizada con el identificador del tutor y determina
+     * si existe al menos un registro. Ante un error de base de datos, retorna {@code true} como
+     * medida preventiva para evitar eliminar un tutor cuyo estado real no pudo verificarse.
+     * @param sql la sentencia SQL de conteo a ejecutar, con un único parámetro posicional para el id del tutor
+     * @param idTutor el identificador (número de empleado) del tutor
+     * @return {@code true} si existe al menos un registro o si ocurre un error al consultar; {@code false} en caso contrario
+     */
     private boolean existeRegistro(String sql, int idTutor) {
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {
@@ -427,6 +539,11 @@ public class TutorDao implements Dao<Tutor, Integer> {
         }
     }
 
+    /**
+     * Reactiva un tutor previamente dado de baja, marcándolo como activo (ESTADO = 'S').
+     * @param numeroEmpleado el número de empleado del tutor a reactivar
+     * @return {@code true} si la actualización afectó al menos una fila; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     public boolean reactivar(int numeroEmpleado) {
         String sql = "UPDATE TUTOR SET ESTADO = 'S' WHERE NUMERO_EMPLEADO = ?";
         try (Connection con = SQLConnector.getConnection();
@@ -439,6 +556,12 @@ public class TutorDao implements Dao<Tutor, Integer> {
         }
     }
 
+    /**
+     * Actualiza la contraseña de un tutor, almacenando su valor ya cifrado (hash).
+     * @param numeroEmpleado el número de empleado del tutor
+     * @param nuevaPassword la nueva contraseña en texto plano, que se cifra antes de guardarse
+     * @return {@code true} si la actualización afectó al menos una fila; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     public boolean actualizarPassword(int numeroEmpleado, String nuevaPassword) {
         String sql = "UPDATE TUTOR SET PASS = ? WHERE NUMERO_EMPLEADO = ?";
         try (Connection con = SQLConnector.getConnection();
@@ -452,10 +575,20 @@ public class TutorDao implements Dao<Tutor, Integer> {
         }
     }
 
+    /**
+     * Obtiene el catálogo completo de academias, delegando en {@link AcademiaDao}.
+     * @return la lista de academias registradas
+     */
     public List<Academia> getAllAcademias() {
         return new AcademiaDao().getAll();
     }
 
+    /**
+     * Construye un objeto {@link Tutor} a partir de la fila actual de un ResultSet.
+     * @param rs el ResultSet posicionado en la fila a mapear
+     * @return el tutor mapeado con sus campos principales
+     * @throws SQLException si ocurre un error al leer las columnas del ResultSet
+     */
     private Tutor mapearTutor(ResultSet rs) throws SQLException {
         Tutor tutor = new Tutor();
         tutor.setNumeroEmpleado(rs.getInt("NUMERO_EMPLEADO"));
@@ -470,6 +603,11 @@ public class TutorDao implements Dao<Tutor, Integer> {
         return tutor;
     }
 
+    /**
+     * Obtiene los tutores activos con datos básicos (identificador, nombre y academia), usado
+     * para listados ligeros como selects de formularios.
+     * @return la lista de tutores activos; vacía si no hay o si ocurre un error de base de datos
+     */
     public List<Tutor> findAll() {
         List<Tutor> lista = new ArrayList<>();
         String sql = "SELECT NUMERO_EMPLEADO, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, ID_ACADEMIA FROM TUTOR WHERE ESTADO = 'S'";

@@ -23,6 +23,14 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Servlet que gestiona el registro de tutorías grupales del tutor: muestra la
+ * cuadrícula de asistencia de un grupo, registra una nueva sesión grupal con sus
+ * acuerdos, temas y asistencias, o actualiza solamente la asistencia de sesiones existentes.
+ * @author 20253ds074-art
+ * @version 1.0
+ * @since 2026-08-01
+ */
 @WebServlet(name = "SesionGrupalServlet", value = "/tutoria-grupal")
 public class SesionGrupalServlet extends HttpServlet {
 
@@ -35,6 +43,15 @@ public class SesionGrupalServlet extends HttpServlet {
     private final PeriodoEscolarDao periodoDao = new PeriodoEscolarDao();
     private final GrupoDao grupoDao = new GrupoDao();
 
+    /**
+     * Atiende las peticiones GET del registro de tutorías grupales: responde la
+     * cuadrícula de asistencia en JSON si la acción es "obtenerCuadricula", o carga
+     * la vista de registro grupal con los grupos asignados al tutor en el periodo vigente.
+     * @param request petición HTTP con el parámetro "accion" opcional y el idGrupo asociado
+     * @param response respuesta HTTP usada para redirigir, reenviar o responder JSON
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if ("obtenerCuadricula".equals(request.getParameter("accion"))) {
@@ -67,6 +84,14 @@ public class SesionGrupalServlet extends HttpServlet {
         request.getRequestDispatcher("/tutor/registro-grupal.jsp").forward(request, response);
     }
 
+    /**
+     * Responde en JSON la cuadrícula de asistencia (sesiones del grupo en el periodo
+     * y el estatus de cada alumno por sesión), verificando que el tutor autenticado
+     * tenga asignado ese grupo.
+     * @param request petición HTTP con el parámetro idGrupo
+     * @param response respuesta HTTP donde se escribe el JSON con las sesiones y filas de asistencia
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void obtenerCuadriculaPorGrupo(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
 
@@ -132,6 +157,12 @@ public class SesionGrupalServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Escapa los caracteres especiales de una cadena para que pueda incrustarse
+     * de forma segura como valor de texto dentro de un documento JSON construido manualmente.
+     * @param valor el texto a escapar
+     * @return el texto escapado, o cadena vacía si el valor es {@code null}
+     */
     private String escaparJson(String valor) {
         if (valor == null) {
             return "";
@@ -139,6 +170,17 @@ public class SesionGrupalServlet extends HttpServlet {
         return valor.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
+    /**
+     * Atiende las peticiones POST del registro de tutorías grupales: si el
+     * parámetro "soloAsistencia" es verdadero, actualiza solo la asistencia; de lo
+     * contrario valida y registra una nueva sesión grupal (fecha dentro de los
+     * últimos 15 días y no futura, dentro del periodo vigente, grupo asignado al
+     * tutor), junto con las asistencias capturadas.
+     * @param request petición HTTP con los datos de la sesión grupal y las celdas de asistencia
+     * @param response respuesta HTTP usada para redirigir con el resultado de la operación
+     * @throws ServletException si ocurre un error al procesar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
@@ -233,6 +275,14 @@ public class SesionGrupalServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/tutoria-grupal?idGrupo=" + idGrupo + "&exito=grupal_guardada");
     }
 
+    /**
+     * Convierte el arreglo de valores del parámetro "celda" (formato "idSesion|matricula|estatus")
+     * en objetos {@link CeldaAsistenciaDTO}, resolviendo el marcador "nueva" al id de la
+     * sesión recién creada y descartando entradas malformadas o con id de sesión inválido.
+     * @param valores los valores crudos del parámetro "celda" recibidos en la petición
+     * @param idSesionNueva el id de la sesión grupal recién creada, usado para las celdas marcadas como "nueva"
+     * @return la lista de celdas de asistencia parseadas y válidas
+     */
     private List<CeldaAsistenciaDTO> parsearCeldas(String[] valores, int idSesionNueva) {
         List<CeldaAsistenciaDTO> celdas = new ArrayList<>();
         if (valores == null) {
@@ -264,6 +314,14 @@ public class SesionGrupalServlet extends HttpServlet {
         return celdas;
     }
 
+    /**
+     * Actualiza únicamente las celdas de asistencia de sesiones grupales existentes
+     * para un grupo, verificando que el grupo esté asignado al tutor autenticado.
+     * @param request petición HTTP con el idGrupo y las celdas de asistencia a actualizar
+     * @param response respuesta HTTP usada para redirigir con el resultado de la operación
+     * @param tutor el tutor autenticado que registra la asistencia
+     * @throws IOException si ocurre un error de entrada/salida al redirigir la respuesta
+     */
     private void guardarSoloAsistencia(HttpServletRequest request, HttpServletResponse response, Tutor tutor) throws IOException {
         String idGrupoStr = request.getParameter("idGrupo");
 

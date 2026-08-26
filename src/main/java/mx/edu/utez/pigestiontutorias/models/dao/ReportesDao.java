@@ -10,8 +10,20 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * DAO de acceso a datos para la generación de reportes estadísticos de tutorías:
+ * alumnos atendidos, solicitudes, canalizaciones, grupos atendidos y asistencias,
+ * con filtros opcionales por tutor, carrera, cuatrimestre, letra de grupo y matrícula.
+ * @author 20253ds074-art
+ * @version 1.0
+ * @since 2026-07-30
+ */
 public class ReportesDao {
 
+    /**
+     * Estructura de resultado que agrupa los totales e información detallada
+     * de un reporte generado por {@link #generarReporte}.
+     */
     public static class ReporteResumen {
         public int totalAtendidos;
         public int totalPidieronTutorias;
@@ -23,11 +35,32 @@ public class ReportesDao {
         public List<Canalizacion> canalizaciones = new ArrayList<>();
     }
 
+    /**
+     * Genera un reporte estadístico de tutorías para el rango de fechas y filtros indicados, sin filtrar por matrícula.
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar por tutor
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar por carrera
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar por cuatrimestre
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacío para no filtrar por letra
+     * @param desde la fecha inicial del rango del reporte
+     * @param hasta la fecha final del rango del reporte
+     * @return el resumen del reporte con los totales, la distribución por área y el detalle de canalizaciones
+     */
     public ReporteResumen generarReporte(Integer idTutor, Integer idCarrera, Integer cuatrimestre,
                                          String letra, LocalDate desde, LocalDate hasta) {
         return generarReporte(idTutor, idCarrera, cuatrimestre, letra, desde, hasta, null);
     }
 
+    /**
+     * Genera un reporte estadístico de tutorías para el rango de fechas, filtros y matrícula indicados.
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar por tutor
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar por carrera
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar por cuatrimestre
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacío para no filtrar por letra
+     * @param desde la fecha inicial del rango del reporte
+     * @param hasta la fecha final del rango del reporte
+     * @param matricula la matrícula del alumno a filtrar, o {@code null}/vacía para no filtrar por alumno
+     * @return el resumen del reporte con los totales, la distribución por área y el detalle de canalizaciones
+     */
     public ReporteResumen generarReporte(Integer idTutor, Integer idCarrera, Integer cuatrimestre,
                                          String letra, LocalDate desde, LocalDate hasta, String matricula) {
         ReporteResumen reporte = new ReporteResumen();
@@ -51,6 +84,18 @@ public class ReportesDao {
         return reporte;
     }
 
+    /**
+     * Agrega a una consulta SQL las cláusulas de filtro opcionales por tutor asignado al grupo actual
+     * del alumno, carrera/cuatrimestre/letra del grupo y matrícula, añadiendo sus parámetros en orden.
+     * @param sql el StringBuilder de la consulta SQL a la que se agregan las cláusulas de filtro
+     * @param params la lista de parámetros donde se agregan, en orden, los valores de los filtros aplicados
+     * @param aliasAlumno el alias de la tabla ALUMNO usado en la consulta
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacía para no filtrar
+     * @param matricula la matrícula a filtrar, o {@code null}/vacía para no filtrar
+     */
     private void agregarFiltrosAlumno(StringBuilder sql, List<Object> params, String aliasAlumno,
                                       Integer idTutor, Integer idCarrera, Integer cuatrimestre, String letra, String matricula) {
         if (idTutor != null) {
@@ -90,6 +135,21 @@ public class ReportesDao {
     // del conteo/grafica/exportacion, aunque si aparecia en ese modal. Se usa EXISTS (no JOIN)
     // para no duplicar filas si una canalizacion llegara a quedar referenciada por mas de una
     // sesion.
+    /**
+     * Agrega a una consulta SQL las cláusulas de filtro opcionales para reportes sobre CANALIZACION.
+     * A diferencia de {@link #agregarFiltrosAlumno}, el filtro de tutor se resuelve contra quien
+     * realmente registró la SESION_INDIVIDUAL que originó la canalización, no contra la asignación
+     * actual del grupo del alumno.
+     * @param sql el StringBuilder de la consulta SQL a la que se agregan las cláusulas de filtro
+     * @param params la lista de parámetros donde se agregan, en orden, los valores de los filtros aplicados
+     * @param aliasAlumno el alias de la tabla ALUMNO usado en la consulta
+     * @param aliasCanalizacion el alias de la tabla CANALIZACION usado en la consulta
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacía para no filtrar
+     * @param matricula la matrícula a filtrar, o {@code null}/vacía para no filtrar
+     */
     private void agregarFiltrosCanalizacion(StringBuilder sql, List<Object> params, String aliasAlumno,
                                             String aliasCanalizacion, Integer idTutor, Integer idCarrera,
                                             Integer cuatrimestre, String letra, String matricula) {
@@ -120,6 +180,14 @@ public class ReportesDao {
         }
     }
 
+    /**
+     * Ejecuta una consulta SQL de conteo, aplicando los parámetros indicados, y devuelve el valor de la columna TOTAL.
+     * @param con la conexión abierta a la base de datos
+     * @param sql la sentencia SQL de conteo a ejecutar, con una columna alias "TOTAL"
+     * @param params la lista de parámetros a aplicar a la sentencia, en orden
+     * @return el valor de TOTAL devuelto por la consulta, o 0 si no hay resultados
+     * @throws SQLException si ocurre un error al ejecutar la consulta
+     */
     private int ejecutarConteo(Connection con, String sql, List<Object> params) throws SQLException {
         try (PreparedStatement ps = con.prepareStatement(sql)) {
             aplicarParametros(ps, params);
@@ -129,6 +197,12 @@ public class ReportesDao {
         }
     }
 
+    /**
+     * Aplica en orden una lista de parámetros heterogéneos (fecha, texto o entero) a un PreparedStatement.
+     * @param ps el PreparedStatement al que se aplican los parámetros
+     * @param params la lista de valores a aplicar, en el mismo orden que los marcadores "?" de la sentencia
+     * @throws SQLException si ocurre un error al asignar alguno de los parámetros
+     */
     private void aplicarParametros(PreparedStatement ps, List<Object> params) throws SQLException {
         for (int i = 0; i < params.size(); i++) {
             Object valor = params.get(i);
@@ -142,6 +216,20 @@ public class ReportesDao {
         }
     }
 
+    /**
+     * Cuenta los alumnos distintos con al menos una sesión individual completada dentro del rango de fechas,
+     * aplicando los filtros opcionales indicados.
+     * @param con la conexión abierta a la base de datos
+     * @param desde la fecha inicial del rango
+     * @param hasta la fecha final del rango
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacía para no filtrar
+     * @param matricula la matrícula a filtrar, o {@code null}/vacía para no filtrar
+     * @return el total de alumnos distintos atendidos
+     * @throws SQLException si ocurre un error al ejecutar la consulta
+     */
     private int contarAlumnosAtendidos(Connection con, Date desde, Date hasta, Integer idTutor,
                                        Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
@@ -158,6 +246,20 @@ public class ReportesDao {
         return ejecutarConteo(con, sql.toString(), params);
     }
 
+    /**
+     * Cuenta los alumnos distintos que registraron al menos una solicitud de tutoría dentro del rango de fechas,
+     * aplicando los filtros opcionales indicados.
+     * @param con la conexión abierta a la base de datos
+     * @param desde la fecha inicial del rango
+     * @param hasta la fecha final del rango
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacía para no filtrar
+     * @param matricula la matrícula a filtrar, o {@code null}/vacía para no filtrar
+     * @return el total de alumnos distintos que solicitaron tutoría
+     * @throws SQLException si ocurre un error al ejecutar la consulta
+     */
     private int contarPidieronTutorias(Connection con, Date desde, Date hasta, Integer idTutor,
                                        Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
@@ -174,6 +276,20 @@ public class ReportesDao {
         return ejecutarConteo(con, sql.toString(), params);
     }
 
+    /**
+     * Cuenta los alumnos distintos canalizados a un área de apoyo dentro del rango de fechas,
+     * aplicando los filtros opcionales indicados.
+     * @param con la conexión abierta a la base de datos
+     * @param desde la fecha inicial del rango
+     * @param hasta la fecha final del rango
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacía para no filtrar
+     * @param matricula la matrícula a filtrar, o {@code null}/vacía para no filtrar
+     * @return el total de alumnos distintos canalizados
+     * @throws SQLException si ocurre un error al ejecutar la consulta
+     */
     private int contarCanalizados(Connection con, Date desde, Date hasta, Integer idTutor,
                                   Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
@@ -190,6 +306,20 @@ public class ReportesDao {
         return ejecutarConteo(con, sql.toString(), params);
     }
 
+    /**
+     * Cuenta las solicitudes de tutoría con estatus "Pendiente" registradas dentro del rango de fechas,
+     * aplicando los filtros opcionales indicados.
+     * @param con la conexión abierta a la base de datos
+     * @param desde la fecha inicial del rango
+     * @param hasta la fecha final del rango
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacía para no filtrar
+     * @param matricula la matrícula a filtrar, o {@code null}/vacía para no filtrar
+     * @return el total de solicitudes pendientes
+     * @throws SQLException si ocurre un error al ejecutar la consulta
+     */
     private int contarPendientes(Connection con, Date desde, Date hasta, Integer idTutor,
                                  Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
@@ -206,6 +336,20 @@ public class ReportesDao {
         return ejecutarConteo(con, sql.toString(), params);
     }
 
+    /**
+     * Cuenta las sesiones grupales completadas dentro del rango de fechas, aplicando los filtros
+     * opcionales indicados (aplicados directamente sobre SESION_GRUPAL y el grupo del alumno).
+     * @param con la conexión abierta a la base de datos
+     * @param desde la fecha inicial del rango
+     * @param hasta la fecha final del rango
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacía para no filtrar
+     * @param matricula la matrícula de un alumno del grupo a filtrar, o {@code null}/vacía para no filtrar
+     * @return el total de sesiones grupales completadas
+     * @throws SQLException si ocurre un error al ejecutar la consulta
+     */
     private int contarGruposAtendidos(Connection con, Date desde, Date hasta, Integer idTutor,
                                       Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
@@ -243,6 +387,20 @@ public class ReportesDao {
         return ejecutarConteo(con, sql.toString(), params);
     }
 
+    /**
+     * Cuenta los registros de asistencia con estatus "Presente" en sesiones grupales dentro del rango
+     * de fechas, aplicando los filtros opcionales indicados.
+     * @param con la conexión abierta a la base de datos
+     * @param desde la fecha inicial del rango
+     * @param hasta la fecha final del rango
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacía para no filtrar
+     * @param matricula la matrícula a filtrar, o {@code null}/vacía para no filtrar
+     * @return el total de asistencias registradas como presente
+     * @throws SQLException si ocurre un error al ejecutar la consulta
+     */
     private int contarAsistencias(Connection con, Date desde, Date hasta, Integer idTutor,
                                   Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         StringBuilder sql = new StringBuilder(
@@ -282,6 +440,20 @@ public class ReportesDao {
         return ejecutarConteo(con, sql.toString(), params);
     }
 
+    /**
+     * Calcula la distribución de alumnos canalizados por área de apoyo dentro del rango de fechas,
+     * aplicando los filtros opcionales indicados, ordenada de mayor a menor total.
+     * @param con la conexión abierta a la base de datos
+     * @param desde la fecha inicial del rango
+     * @param hasta la fecha final del rango
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacía para no filtrar
+     * @param matricula la matrícula a filtrar, o {@code null}/vacía para no filtrar
+     * @return un mapa ordenado del nombre del área hacia el total de alumnos canalizados a ella
+     * @throws SQLException si ocurre un error al ejecutar la consulta
+     */
     private Map<String, Integer> distribucionPorArea(Connection con, Date desde, Date hasta, Integer idTutor,
                                                      Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         Map<String, Integer> distribucion = new LinkedHashMap<>();
@@ -311,6 +483,20 @@ public class ReportesDao {
         return distribucion;
     }
 
+    /**
+     * Obtiene el detalle de las canalizaciones registradas dentro del rango de fechas, con área y
+     * motivo, aplicando los filtros opcionales indicados, ordenadas por fecha descendente.
+     * @param con la conexión abierta a la base de datos
+     * @param desde la fecha inicial del rango
+     * @param hasta la fecha final del rango
+     * @param idTutor el identificador del tutor a filtrar, o {@code null} para no filtrar
+     * @param idCarrera el identificador de la carrera a filtrar, o {@code null} para no filtrar
+     * @param cuatrimestre el cuatrimestre a filtrar, o {@code null} para no filtrar
+     * @param letra la letra de grupo a filtrar, o {@code null}/vacía para no filtrar
+     * @param matricula la matrícula a filtrar, o {@code null}/vacía para no filtrar
+     * @return la lista de canalizaciones encontradas, con nombre de área y motivo incluidos
+     * @throws SQLException si ocurre un error al ejecutar la consulta
+     */
     private List<Canalizacion> listarCanalizaciones(Connection con, Date desde, Date hasta, Integer idTutor,
                                                     Integer idCarrera, Integer cuatrimestre, String letra, String matricula) throws SQLException {
         List<Canalizacion> lista = new ArrayList<>();

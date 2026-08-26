@@ -6,22 +6,28 @@ import mx.edu.utez.pigestiontutorias.models.CeldaAsistenciaDTO;
 import mx.edu.utez.pigestiontutorias.models.SesionGrupal;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
-import java.sql.Connection;
+import java.sql.*;
 import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
+/**
+ * DAO responsable de construir y persistir la matriz de asistencia grupal (tabla ASISTENCIA)
+ * a partir de las sesiones grupales completadas de un grupo, incluyendo el cálculo de
+ * porcentajes de asistencia y la detección de alumnos en riesgo por baja asistencia.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-25
+ */
 public class AsistenciaGrupalDao {
 
     private static final double UMBRAL_RIESGO = 80.0;
 
+    /**
+     * Obtiene los alumnos activos pertenecientes a un grupo.
+     * @param idGrupo el identificador del grupo
+     * @return la lista de alumnos activos del grupo
+     */
     public List<Alumno> getAlumnosPorGrupo(int idGrupo) {
         List<Alumno> lista = new ArrayList<>();
         String sql = "SELECT * FROM ALUMNO WHERE ID_GRUPO = ? AND ESTADO = 'S'";
@@ -51,6 +57,13 @@ public class AsistenciaGrupalDao {
         return lista;
     }
 
+    /**
+     * Obtiene las sesiones grupales completadas de un grupo dentro de un rango de fechas, ordenadas cronológicamente.
+     * @param idGrupo el identificador del grupo
+     * @param fechaInicio la fecha inicial del rango
+     * @param fechaFin la fecha final del rango
+     * @return la lista de sesiones grupales completadas dentro del rango
+     */
     public List<SesionGrupal> getSesionesDelGrupoEnPeriodo(int idGrupo, Date fechaInicio, Date fechaFin) {
         List<SesionGrupal> lista = new ArrayList<>();
         String sql = "SELECT * FROM SESION_GRUPAL WHERE ID_GRUPO = ? AND ESTADO = 'Completado' " +
@@ -84,6 +97,14 @@ public class AsistenciaGrupalDao {
         return lista;
     }
 
+    /**
+     * Construye la matriz de asistencia (una fila por alumno del grupo) con el estatus de cada
+     * alumno en cada sesión indicada, calculando el porcentaje de asistencia (excluyendo faltas
+     * justificadas del denominador) y marcando en riesgo a quienes queden por debajo del umbral.
+     * @param idGrupo el identificador del grupo cuyos alumnos se incluirán en la matriz
+     * @param sesiones las sesiones grupales completadas a considerar en el cálculo
+     * @return la lista de filas de asistencia, una por cada alumno activo del grupo
+     */
     public List<AsistenciaFilaDTO> construirFilasAsistencia(int idGrupo, List<SesionGrupal> sesiones) {
         List<AsistenciaFilaDTO> filas = new ArrayList<>();
 
@@ -181,6 +202,12 @@ public class AsistenciaGrupalDao {
         return filas;
     }
 
+    /**
+     * Construye una fila de asistencia vacía (sin sesiones registradas) para un alumno,
+     * con porcentaje 100% y sin marca de riesgo.
+     * @param alumno el alumno para el cual construir la fila vacía
+     * @return la fila de asistencia inicializada sin datos de sesiones
+     */
     private AsistenciaFilaDTO mapearFilaVacia(Alumno alumno) {
         AsistenciaFilaDTO fila = new AsistenciaFilaDTO();
         fila.setMatricula(alumno.getMatricula());
@@ -194,6 +221,15 @@ public class AsistenciaGrupalDao {
         return fila;
     }
 
+    /**
+     * Persiste en bloque las celdas de asistencia capturadas, agrupándolas por sesión grupal.
+     * Para sesiones de fechas pasadas, preserva el estatus "Presente" ya registrado y convierte
+     * cualquier otro estatus no capturado previamente a "Justificado"; para sesiones del día actual,
+     * degrada cualquier celda marcada como "Justificado" a "Falta". Reemplaza los registros existentes
+     * de cada sesión (borra e inserta) dentro de una transacción.
+     * @param celdas las celdas de asistencia a guardar, con matrícula, sesión y estatus
+     * @return {@code true} si la operación se completó con éxito (o si la lista está vacía/nula); {@code false} si ocurre un error
+     */
     public boolean guardarCeldas(List<CeldaAsistenciaDTO> celdas) {
         if (celdas == null || celdas.isEmpty()) {
             return true;
@@ -269,6 +305,11 @@ public class AsistenciaGrupalDao {
         }
     }
 
+    /**
+     * Obtiene la fecha de cada sesión grupal indicada.
+     * @param idsSesion el conjunto de identificadores de sesión grupal a consultar
+     * @return un mapa de identificador de sesión a su fecha, vacío si el conjunto es nulo o está vacío
+     */
     private Map<Integer, LocalDate> obtenerFechasDeSesiones(java.util.Set<Integer> idsSesion) {
         Map<Integer, LocalDate> fechas = new HashMap<>();
         if (idsSesion == null || idsSesion.isEmpty()) {
@@ -299,6 +340,11 @@ public class AsistenciaGrupalDao {
         return fechas;
     }
 
+    /**
+     * Obtiene el estatus de asistencia ya registrado por alumno para una sesión grupal específica.
+     * @param idSesionGrupal el identificador de la sesión grupal
+     * @return un mapa de matrícula a estatus de asistencia registrado
+     */
     private Map<String, String> obtenerEstatusExistente(int idSesionGrupal) {
         Map<String, String> estatus = new HashMap<>();
         String sql = "SELECT MATRICULA, ESTATUS_ASISTENCIA FROM ASISTENCIA WHERE ID_SESION_GRUPAL = ?";

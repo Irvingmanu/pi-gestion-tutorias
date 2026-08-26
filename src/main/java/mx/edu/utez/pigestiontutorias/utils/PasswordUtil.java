@@ -4,11 +4,24 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * Utilidad para calcular el hash SHA-256 de contraseñas en texto plano, usado para
+ * almacenar y verificar contraseñas de usuario sin guardarlas en texto claro.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-08-19
+ */
 public final class PasswordUtil {
 
     private PasswordUtil() {
     }
 
+    /**
+     * Calcula el hash SHA-256 de un texto plano y lo devuelve como cadena hexadecimal.
+     * @param textoPlano el texto (contraseña) a hashear
+     * @return la representación hexadecimal del hash SHA-256 del texto
+     * @throws IllegalStateException si el algoritmo SHA-256 no está disponible en la JVM
+     */
     public static String hash(String textoPlano) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

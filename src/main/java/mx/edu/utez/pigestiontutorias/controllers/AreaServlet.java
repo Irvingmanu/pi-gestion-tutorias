@@ -16,6 +16,14 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Servlet que gestiona las áreas de apoyo institucional y sus motivos de canalización:
+ * alta, edición y baja de áreas (vía formulario web) y operaciones CRUD de motivos
+ * asociados a un área (vía peticiones JSON POST/PUT/DELETE).
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-17
+ */
 @WebServlet(name = "AreaServlet", value = "/areas-apoyo")
 public class AreaServlet extends HttpServlet {
 
@@ -25,6 +33,16 @@ public class AreaServlet extends HttpServlet {
     private final AreaDAO areaDAO = new AreaDAO();
     private final MotivoDAO motivoDAO = new MotivoDAO();
 
+    /**
+     * Atiende las peticiones POST del formulario web: si el contenido es JSON delega
+     * en la creación de un motivo; en caso contrario procesa eliminación de área o
+     * el alta/edición de un área validando formato y nombre duplicado, y creando
+     * sus motivos iniciales cuando es un alta nueva.
+     * @param request petición HTTP con los datos del área/motivo o el parámetro "accion"
+     * @param response respuesta HTTP usada para redirigir o reenviar a la vista JSP
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String contentType = request.getContentType();
@@ -120,6 +138,15 @@ public class AreaServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Atiende las peticiones GET del módulo de áreas de apoyo: elimina un área,
+     * prepara el formulario de edición precargando sus datos, o carga el listado
+     * general de áreas para la vista de gestión.
+     * @param request petición HTTP con el parámetro "accion" y, según el caso, "idArea"
+     * @param response respuesta HTTP usada para redirigir o reenviar a la vista JSP
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String accion = request.getParameter("accion");
@@ -145,6 +172,13 @@ public class AreaServlet extends HttpServlet {
         request.getRequestDispatcher("/coordinador/areas-apoyo.jsp").forward(request, response);
     }
 
+    /**
+     * Crea un nuevo motivo de canalización para un área a partir de un cuerpo JSON,
+     * validando el formato del nombre y que el área no tenga alumnos ya canalizados.
+     * @param request petición HTTP cuyo cuerpo JSON contiene "idArea" y "nombreMotivo"
+     * @param response respuesta HTTP en formato JSON con el resultado de la operación
+     * @throws IOException si ocurre un error de entrada/salida al leer el cuerpo o escribir la respuesta
+     */
     private void crearMotivoJson(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         String cuerpo = leerCuerpo(request);
@@ -179,6 +213,14 @@ public class AreaServlet extends HttpServlet {
         response.getWriter().write("{\"exito\":true,\"idMotivo\":" + idMotivo + ",\"nombreMotivo\":\"" + motivo.getNombreMotivo() + "\"}");
     }
 
+    /**
+     * Actualiza un motivo de canalización existente a partir de un cuerpo JSON,
+     * validando formato del nombre y que el área asociada no esté bloqueada por
+     * tener alumnos ya canalizados.
+     * @param request petición HTTP cuyo cuerpo JSON contiene "idArea", "idMotivo" y "nombreMotivo"
+     * @param response respuesta HTTP en formato JSON con el resultado de la actualización
+     * @throws IOException si ocurre un error de entrada/salida al leer el cuerpo o escribir la respuesta
+     */
     @Override
     protected void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
@@ -210,6 +252,13 @@ public class AreaServlet extends HttpServlet {
         response.getWriter().write("{\"exito\":" + motivoDAO.update(motivo) + "}");
     }
 
+    /**
+     * Elimina un motivo de canalización a partir de un cuerpo JSON, validando que
+     * el área asociada no esté bloqueada por tener alumnos ya canalizados.
+     * @param request petición HTTP cuyo cuerpo JSON contiene "idArea" y "idMotivo"
+     * @param response respuesta HTTP en formato JSON con el resultado de la eliminación
+     * @throws IOException si ocurre un error de entrada/salida al leer el cuerpo o escribir la respuesta
+     */
     @Override
     protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
@@ -237,6 +286,12 @@ public class AreaServlet extends HttpServlet {
                 : "{\"exito\":false,\"mensaje\":\"motivo_en_uso\"}");
     }
 
+    /**
+     * Lee por completo el cuerpo de la petición HTTP como texto plano.
+     * @param request petición HTTP de la cual leer el cuerpo
+     * @return el contenido íntegro del cuerpo de la petición
+     * @throws IOException si ocurre un error de entrada/salida al leer el cuerpo
+     */
     private String leerCuerpo(HttpServletRequest request) throws IOException {
         StringBuilder cuerpo = new StringBuilder();
         try (BufferedReader reader = request.getReader()) {
@@ -248,6 +303,13 @@ public class AreaServlet extends HttpServlet {
         return cuerpo.toString();
     }
 
+    /**
+     * Extrae el valor asociado a una clave dentro de una cadena JSON simple,
+     * ya sea de tipo texto o numérico, mediante expresión regular.
+     * @param json la cadena JSON de la cual extraer el valor
+     * @param clave el nombre de la clave a buscar
+     * @return el valor asociado a la clave, o {@code null} si no se encuentra
+     */
     private String extraerJson(String json, String clave) {
         Matcher matcher = Pattern.compile("\"" + clave + "\"\\s*:\\s*(?:\"([^\"]*)\"|(-?\\d+))").matcher(json);
         if (!matcher.find()) {
@@ -256,15 +318,45 @@ public class AreaServlet extends HttpServlet {
         return matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
     }
 
+    /**
+     * Redirige de vuelta al formulario de edición de un área indicando un mensaje de éxito.
+     * @param request petición HTTP en curso
+     * @param response respuesta HTTP usada para realizar la redirección
+     * @param idArea el identificador del área a la que se redirige
+     * @param exito el código del mensaje de éxito a mostrar
+     * @throws IOException si ocurre un error de entrada/salida al redirigir la respuesta
+     */
     private void redirigirAEdicion(HttpServletRequest request, HttpServletResponse response, int idArea, String exito) throws IOException {
         redirigirAEdicion(request, response, idArea, exito, null);
     }
 
+    /**
+     * Redirige de vuelta al formulario de edición de un área indicando un mensaje
+     * de éxito o de error, según cuál de los dos se proporcione.
+     * @param request petición HTTP en curso
+     * @param response respuesta HTTP usada para realizar la redirección
+     * @param idArea el identificador del área a la que se redirige
+     * @param exito el código del mensaje de éxito a mostrar, o {@code null} si se reporta un error
+     * @param error el código del mensaje de error a mostrar cuando {@code exito} es {@code null}
+     * @throws IOException si ocurre un error de entrada/salida al redirigir la respuesta
+     */
     private void redirigirAEdicion(HttpServletRequest request, HttpServletResponse response, int idArea, String exito, String error) throws IOException {
         String parametro = exito != null ? "exito=" + exito : "error=" + error;
         response.sendRedirect(request.getContextPath() + "/areas-apoyo?accion=prepararEdicion&idArea=" + idArea + "&" + parametro);
     }
 
+    /**
+     * Reenvía la petición al formulario de área, precargando los datos capturados
+     * sobre el área existente (en edición) o como área nueva, para que el usuario
+     * corrija los datos tras un error de validación.
+     * @param request petición HTTP que será reenviada al formulario
+     * @param response respuesta HTTP usada para reenviar la petición a la vista JSP
+     * @param areaSubmitted los datos del área capturados en el formulario que generaron el error
+     * @param esEdicion indica si la operación en curso es una edición de área existente
+     * @param idAreaParam el identificador del área en edición, como texto
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     private void reenviarAFormulario(HttpServletRequest request, HttpServletResponse response,
                                      Area areaSubmitted, boolean esEdicion, String idAreaParam)
             throws ServletException, IOException {

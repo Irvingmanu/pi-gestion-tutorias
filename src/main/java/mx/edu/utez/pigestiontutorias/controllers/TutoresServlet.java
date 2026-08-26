@@ -31,6 +31,13 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Servlet que gestiona el módulo de Tutores: alta, edición, baja lógica y
+ * reactivación de tutores, y carga masiva de tutores mediante archivos Excel.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-22
+ */
 @WebServlet(name = "TutoresServlet", value = "/gestion-tutores")
 @MultipartConfig(maxFileSize = TutoresServlet.MAX_TAMANO_ARCHIVO_EXCEL)
 public class TutoresServlet extends HttpServlet {
@@ -52,6 +59,16 @@ public class TutoresServlet extends HttpServlet {
 
     private final TutorDao tutorDAO = new TutorDao();
 
+    /**
+     * Atiende las peticiones GET del módulo de gestión de tutores: elimina o
+     * reactiva un tutor, prepara el formulario de alta/edición (calculando la
+     * siguiente nómina para uno nuevo), o carga el listado general de tutores y
+     * academias para la vista de gestión.
+     * @param request petición HTTP con el parámetro "accion" opcional y sus datos asociados
+     * @param response respuesta HTTP usada para redirigir o reenviar a la vista JSP
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String accion = request.getParameter("accion");
@@ -100,6 +117,16 @@ public class TutoresServlet extends HttpServlet {
         request.getRequestDispatcher("/coordinador/gestion-tutores.jsp").forward(request, response);
     }
 
+    /**
+     * Atiende las peticiones POST del módulo de gestión de tutores: elimina o
+     * reactiva un tutor, procesa la carga masiva por Excel, o bien valida y guarda
+     * (alta o edición) los datos de un tutor individual, verificando duplicados de
+     * nómina, correo y teléfono antes de persistir.
+     * @param request petición HTTP con el parámetro "accion" y los datos del tutor
+     * @param response respuesta HTTP usada para redirigir o reenviar a la vista JSP
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
@@ -205,6 +232,18 @@ public class TutoresServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Reenvía la petición al formulario de alta/edición de tutor, cargando los
+     * datos del tutor a editar o los datos con error capturados, junto con el
+     * catálogo de academias y el mensaje de error correspondiente.
+     * @param request petición HTTP que será reenviada al formulario
+     * @param response respuesta HTTP usada para reenviar la petición a la vista JSP
+     * @param tutorEdit el tutor a editar (o nuevo con nómina calculada) cuando aplica, o {@code null} si no aplica
+     * @param tutorConError el tutor con los datos capturados que generaron un error de validación, o {@code null} si no aplica
+     * @param codigoError el código del error a mostrar en el formulario, o {@code null} si no hay error
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     private void forwardAFormulario(HttpServletRequest request, HttpServletResponse response,
                                     Tutor tutorEdit, Tutor tutorConError, String codigoError)
             throws ServletException, IOException {
@@ -221,6 +260,12 @@ public class TutoresServlet extends HttpServlet {
         request.getRequestDispatcher("/coordinador/formulario-tutor.jsp").forward(request, response);
     }
 
+    /**
+     * Traduce un código de error interno en el mensaje descriptivo que se mostrará
+     * al usuario en el formulario de alta/edición de tutor.
+     * @param codigoError el código del error a traducir
+     * @return el mensaje de error correspondiente al código, o {@code null} si el código no coincide con ninguno conocido
+     */
     private String resolverMensajeError(String codigoError) {
         if ("nomina_duplicada".equals(codigoError)) {
             return "Esta nómina ya está registrada en el sistema.";
@@ -246,6 +291,17 @@ public class TutoresServlet extends HttpServlet {
         return null;
     }
 
+    /**
+     * Procesa la carga masiva de tutores a partir de un archivo Excel adjunto en la
+     * petición. Lee cada fila de la hoja, asigna nómina consecutiva automática,
+     * resuelve el correo institucional por defecto si falta, valida academia y
+     * horarios de disponibilidad, valida los datos de cada tutor contra duplicados
+     * dentro del lote y en el sistema, y finalmente inserta en bloque los tutores
+     * válidos, guardando en sesión el detalle de las filas inválidas.
+     * @param request petición HTTP con la parte multipart "archivoExcel"
+     * @param response respuesta HTTP usada para redirigir con el resultado de la carga (éxito o error)
+     * @throws IOException si ocurre un error de entrada/salida al leer el archivo o redirigir la respuesta
+     */
     private void procesarCargaMasivaTutores(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
 
@@ -358,6 +414,13 @@ public class TutoresServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Parsea el texto de horarios de una fila de Excel (bloques separados por comas
+     * con formato "Día:HH:mm-HH:mm") en una lista de horarios válidos, validando el
+     * patrón de cada bloque y que la hora de fin sea posterior a la de inicio.
+     * @param texto el texto crudo de horarios a parsear
+     * @return la lista de horarios válidos (vacía si el texto está vacío), o {@code null} si algún bloque es inválido
+     */
     private List<String> parsearHorarios(String texto) {
         if (esTextoVacio(texto)) return new ArrayList<>();
 
@@ -379,6 +442,15 @@ public class TutoresServlet extends HttpServlet {
         return horarios.isEmpty() ? null : horarios;
     }
 
+    /**
+     * Valida los datos de un tutor leído desde una fila del archivo Excel de carga
+     * masiva, verificando formato de nombre, apellidos, correo y teléfono, así como
+     * duplicados dentro del propio lote y contra los registros ya existentes en el sistema.
+     * @param tutor tutor construido a partir de la fila del Excel a validar
+     * @param correosEnLote conjunto de correos ya vistos en el lote actual, usado para detectar duplicados
+     * @param telefonosEnLote conjunto de teléfonos ya vistos en el lote actual, usado para detectar duplicados
+     * @return el mensaje de error correspondiente si el tutor es inválido, o {@code null} si es válido
+     */
     private String validarFilaTutor(Tutor tutor, Set<String> correosEnLote, Set<String> telefonosEnLote) {
         if (esTextoVacio(tutor.getNombres()) || !tutor.getNombres().matches(REGEX_NOMBRE) || tutor.getNombres().length() > MAX_NOMBRES) {
             return "el nombre '" + tutor.getNombres() + "' es inválido o está vacío.";
@@ -414,16 +486,34 @@ public class TutoresServlet extends HttpServlet {
         return null;
     }
 
+    /**
+     * Determina si una cadena de texto es nula o está en blanco.
+     * @param texto el texto a evaluar
+     * @return {@code true} si el texto es {@code null} o está en blanco; {@code false} en caso contrario
+     */
     private static boolean esTextoVacio(String texto) {
         return texto == null || texto.isBlank();
     }
 
+    /**
+     * Limpia un texto (quitando acentos y caracteres no alfanuméricos) para poder
+     * usarlo como parte de un correo electrónico generado automáticamente.
+     * @param texto el texto a limpiar
+     * @return el texto en minúsculas, sin acentos ni caracteres especiales, o cadena vacía si el texto es {@code null}
+     */
     private static String limpiarParaCorreo(String texto) {
         if (texto == null) return "";
         String sinAcentos = Normalizer.normalize(texto, Normalizer.Form.NFD).replaceAll("\\p{M}", "");
         return sinAcentos.replaceAll("[^a-zA-Z0-9]", "").toLowerCase(Locale.ROOT);
     }
 
+    /**
+     * Obtiene el valor de texto de una celda de Excel, sin importar si su contenido
+     * está almacenado como texto o como número (en cuyo caso se convierte a cadena,
+     * evitando notación decimal cuando el valor es entero).
+     * @param celda la celda de la hoja de Excel de la cual extraer el texto
+     * @return el texto contenido en la celda, recortado de espacios, o {@code null} si la celda es nula
+     */
     private static String obtenerTexto(Cell celda) {
         if (celda == null) return null;
 
@@ -439,6 +529,13 @@ public class TutoresServlet extends HttpServlet {
         return valor != null ? valor.trim() : null;
     }
 
+    /**
+     * Elimina (baja lógica) un tutor identificado por su nómina, verificando primero
+     * que no tenga solicitudes o sesiones pendientes, y redirige con el resultado de la operación.
+     * @param request petición HTTP con el parámetro "nomina" del tutor a eliminar
+     * @param response respuesta HTTP usada para redirigir con el resultado de la eliminación
+     * @throws IOException si ocurre un error de entrada/salida al redirigir la respuesta
+     */
     private void procesarEliminacion(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String parametro = "error=tutor_no_encontrado";
         String nominaStr = request.getParameter("nomina");
@@ -465,6 +562,12 @@ public class TutoresServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/gestion-tutores?" + parametro);
     }
 
+    /**
+     * Reactiva un tutor identificado por su nómina y redirige con el resultado de la operación.
+     * @param request petición HTTP con el parámetro "nomina" del tutor a reactivar
+     * @param response respuesta HTTP usada para redirigir con el resultado de la reactivación
+     * @throws IOException si ocurre un error de entrada/salida al redirigir la respuesta
+     */
     private void procesarReactivacion(HttpServletRequest request, HttpServletResponse response) throws IOException {
         String parametro = "error=tutor_no_encontrado";
         String nominaStr = request.getParameter("nomina");

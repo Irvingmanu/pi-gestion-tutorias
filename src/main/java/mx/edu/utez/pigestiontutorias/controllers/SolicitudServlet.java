@@ -17,6 +17,15 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 
+/**
+ * Servlet que gestiona las solicitudes de tutoría individual entre alumno y tutor:
+ * creación de solicitudes por el alumno, listado, detalle, aceptación, rechazo y
+ * reprogramación por el tutor, y cálculo de disponibilidad de horarios según los
+ * horarios registrados del tutor y las horas ya ocupadas.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-23
+ */
 @WebServlet(name = "SolicitudServlet", urlPatterns = {"/solicitudes"})
 public class SolicitudServlet extends HttpServlet {
 
@@ -31,6 +40,16 @@ public class SolicitudServlet extends HttpServlet {
     private final SesionIndividualDao sesionIndividualDao = new SesionIndividualDao();
     private final HorarioDao horarioDao = new HorarioDao();
 
+    /**
+     * Atiende las peticiones GET del módulo de solicitudes: cancela previamente las
+     * solicitudes vencidas y, según el parámetro "accion", muestra el formulario de
+     * nueva solicitud, el historial del alumno o el detalle de una solicitud, o bien
+     * lista las solicitudes del tutor autenticado.
+     * @param request petición HTTP con el parámetro "accion" opcional y sus datos asociados
+     * @param response respuesta HTTP usada para redirigir o reenviar a la vista JSP
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -112,6 +131,16 @@ public class SolicitudServlet extends HttpServlet {
         request.getRequestDispatcher("/tutor/solicitudes.jsp").forward(request, response);
     }
 
+    /**
+     * Atiende las peticiones POST del módulo de solicitudes según el parámetro
+     * "accion": crea una nueva solicitud del alumno validando límite semanal y fecha
+     * mínima, acepta una solicitud pendiente generando su sesión individual, la
+     * rechaza, o la reprograma validando la nueva fecha y disponibilidad horaria.
+     * @param request petición HTTP con el parámetro "accion" y los datos de la solicitud
+     * @param response respuesta HTTP usada para redirigir con el resultado de la operación
+     * @throws ServletException si ocurre un error al procesar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -268,11 +297,26 @@ public class SolicitudServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/solicitudes");
     }
 
+    /**
+     * Recorta y escapa las entidades HTML de un texto capturado por el usuario,
+     * para prevenir inyección de HTML/script al mostrarlo posteriormente.
+     * @param valor el texto a sanitizar
+     * @return el texto recortado y con entidades HTML escapadas, o {@code null} si el valor es {@code null}
+     */
     private String sanitizarTexto(String valor) {
         if (valor == null) return null;
         return StringEscapeUtils.escapeHtml4(valor.trim());
     }
 
+    /**
+     * Carga y reenvía el formulario de nueva solicitud del alumno, con el tutor
+     * asignado a su grupo y la disponibilidad de horarios de ese tutor en formato JSON.
+     * @param request petición HTTP que será reenviada al formulario
+     * @param response respuesta HTTP usada para reenviar la petición a la vista JSP
+     * @param matricula la matrícula del alumno autenticado en sesión
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     private void mostrarFormularioNuevaSolicitud(HttpServletRequest request, HttpServletResponse response, String matricula)
             throws ServletException, IOException {
 
@@ -298,6 +342,16 @@ public class SolicitudServlet extends HttpServlet {
         request.getRequestDispatcher("/alumno/solicitud.jsp").forward(request, response);
     }
 
+    /**
+     * Construye, para cada fecha en el rango indicado, el conjunto de horas
+     * disponibles del tutor según sus horarios registrados para ese día de la semana,
+     * excluyendo las horas ya ocupadas por otras solicitudes o sesiones.
+     * @param idTutor el id del tutor cuya disponibilidad se calcula
+     * @param listaHorarios los horarios semanales registrados del tutor
+     * @param fechaInicio la fecha inicial del rango a calcular
+     * @param limite la fecha final del rango a calcular
+     * @return un mapa de fecha a conjunto de horas disponibles, solo con las fechas que tienen al menos una hora libre
+     */
     private Map<LocalDate, Set<String>> construirDisponibilidad(int idTutor, List<Horario> listaHorarios,
                                                                 LocalDate fechaInicio, LocalDate limite) {
         Map<LocalDate, Set<String>> horasOcupadas = solicitudDao.getHorasOcupadas(idTutor, fechaInicio, limite);
@@ -323,6 +377,13 @@ public class SolicitudServlet extends HttpServlet {
         return disponibilidad;
     }
 
+    /**
+     * Construye en formato JSON la disponibilidad de horarios del tutor entre 2 y
+     * 14 días a partir de hoy, para ser consumida por el calendario del formulario de solicitud.
+     * @param idTutor el id del tutor cuya disponibilidad se calcula
+     * @param listaHorarios los horarios semanales registrados del tutor
+     * @return el JSON con el mapa de fecha a lista de horas disponibles
+     */
     private String construirDisponibilidadJson(int idTutor, List<Horario> listaHorarios) {
         LocalDate fechaInicio = LocalDate.now().plusDays(2);
         LocalDate limite = LocalDate.now().plusDays(14);
@@ -354,6 +415,14 @@ public class SolicitudServlet extends HttpServlet {
         return json.toString();
     }
 
+    /**
+     * Determina si una hora específica está disponible para agendar, considerando
+     * que si la duración es de 2 horas también debe estar libre la hora siguiente.
+     * @param horasDelDia el conjunto de horas disponibles para el día evaluado
+     * @param hora la hora a verificar, en formato "HH:mm"
+     * @param duracion la duración de la sesión en horas (1 o 2)
+     * @return {@code true} si la hora (y la siguiente, si aplica) está disponible; {@code false} en caso contrario
+     */
     private boolean horarioDisponible(Set<String> horasDelDia, String hora, int duracion) {
         if (horasDelDia == null || !horasDelDia.contains(hora)) {
             return false;
@@ -361,11 +430,24 @@ public class SolicitudServlet extends HttpServlet {
         return duracion != 2 || horasDelDia.contains(sumarUnaHora(hora));
     }
 
+    /**
+     * Calcula la hora siguiente a la hora recibida.
+     * @param hora la hora base, en formato "HH:mm"
+     * @return la hora siguiente, en formato "HH:00"
+     */
     private String sumarUnaHora(String hora) {
         int horaBase = Integer.parseInt(hora.split(":")[0]);
         return String.format("%02d:00", horaBase + 1);
     }
 
+    /**
+     * Carga y reenvía el historial de solicitudes de tutoría del alumno autenticado.
+     * @param request petición HTTP que será reenviada a la vista de historial
+     * @param response respuesta HTTP usada para reenviar la petición a la vista JSP
+     * @param matricula la matrícula del alumno autenticado en sesión
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     private void mostrarHistorialAlumno(HttpServletRequest request, HttpServletResponse response, String matricula)
             throws ServletException, IOException {
 
@@ -377,6 +459,12 @@ public class SolicitudServlet extends HttpServlet {
         request.getRequestDispatcher("/alumno/mis-solicitudes.jsp").forward(request, response);
     }
 
+    /**
+     * Fracciona un rango horario en intervalos de una hora exacta.
+     * @param horaDesde la hora inicial del rango, en formato "HH:mm"
+     * @param horaHasta la hora final del rango (exclusiva), en formato "HH:mm"
+     * @return la lista de horas del rango, cada una en formato "HH:00"
+     */
     private List<String> fraccionarEnHoras(String horaDesde, String horaHasta) {
         List<String> horas = new ArrayList<>();
 

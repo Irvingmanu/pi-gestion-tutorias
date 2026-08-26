@@ -12,6 +12,13 @@ import mx.edu.utez.pigestiontutorias.models.dao.*;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * Servlet que muestra al tutor autenticado el historial combinado de sus sesiones
+ * de tutoría grupal, individual y espontánea, con filtros por tipo y rango de fechas.
+ * @author 20253ds074-art
+ * @version 1.0
+ * @since 2026-08-09
+ */
 @WebServlet(name = "HistorialServlet", value = "/historial-tutorias")
 public class HistorialServlet extends HttpServlet {
 
@@ -21,6 +28,16 @@ public class HistorialServlet extends HttpServlet {
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();
     private final GrupoDao grupoDao = new GrupoDao();
 
+    /**
+     * Atiende la petición GET, valida la sesión del tutor, obtiene su historial de
+     * sesiones grupales, individuales y/o espontáneas según el filtro "tipo" y el
+     * rango de fechas recibidos, y lo reenvía ordenado por fecha/hora descendente
+     * a la vista de historial.
+     * @param request petición HTTP con la sesión activa del tutor y los parámetros "tipo", "fechaInicio" y "fechaFin"
+     * @param response respuesta HTTP usada para redirigir al login o reenviar a la vista
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
@@ -89,6 +106,13 @@ public class HistorialServlet extends HttpServlet {
         request.getRequestDispatcher("/tutor/historial.jsp").forward(request, response);
     }
 
+    /**
+     * Convierte una sesión individual (o espontánea) en un elemento del historial,
+     * resolviendo el nombre del alumno referenciado.
+     * @param si la sesión individual o espontánea a mapear
+     * @param tipoEtiqueta la etiqueta de tipo a asignar en el elemento del historial ("Individual" o "Espontanea")
+     * @return el elemento del historial construido a partir de la sesión
+     */
     private HistorialItemDTO mapearIndividual(SesionIndividual si, String tipoEtiqueta) {
         Alumno alumno = alumnoDAO.getById(si.getMatricula());
         String nombreAlumno = alumno != null

@@ -42,6 +42,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Servlet que expone el módulo de reportes para el tutor: avance de tutorías
+ * grupales, detalle de sesiones, atenciones individuales, canalizaciones,
+ * solicitudes pendientes, búsqueda de alumnos, recordatorios al área de apoyo,
+ * y exportación de reportes a Excel, PDF y CSV.
+ * @author 20253ds074-art
+ * @version 1.0
+ * @since 2026-07-28
+ */
 @WebServlet("/ReportesServlet")
 public class ReportesServlet extends HttpServlet {
 
@@ -60,6 +69,15 @@ public class ReportesServlet extends HttpServlet {
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final DateTimeFormatter FORMATO_FECHA_ARCHIVO = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
+    /**
+     * Punto de entrada de las peticiones GET del módulo de reportes del tutor.
+     * Delega en {@link #doGetInterno} y captura cualquier excepción inesperada
+     * para responderla como JSON de error en lugar de propagarla.
+     * @param request petición HTTP con el parámetro "accion" o "formato" y sus filtros asociados
+     * @param response respuesta HTTP usada para redirigir, reenviar o responder JSON/CSV
+     * @throws ServletException si ocurre un error al procesar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
@@ -71,6 +89,13 @@ public class ReportesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Escribe una respuesta JSON de error genérico con el mensaje de la excepción,
+     * evitando escribir si la respuesta ya fue confirmada.
+     * @param response respuesta HTTP sobre la cual escribir el error
+     * @param e la excepción capturada cuyo mensaje se incluye en la respuesta
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderErrorJson(HttpServletResponse response, Exception e) throws IOException {
         if (response.isCommitted()) return;
         response.reset();
@@ -82,6 +107,19 @@ public class ReportesServlet extends HttpServlet {
         response.getWriter().flush();
     }
 
+    /**
+     * Enruta las peticiones GET autenticadas del módulo de reportes: si no hay
+     * acción ni formato, carga la vista principal de reportes del tutor; si el rol
+     * es Tutor y la acción corresponde a un endpoint restringido (avance grupal,
+     * detalle de sesiones, canalizaciones, solicitudes pendientes, atenciones
+     * individuales, búsqueda de alumnos), lo despacha limitado a su propio id;
+     * en cualquier otro caso genera el resumen general del reporte (coordinador o
+     * tutor) en JSON, o lo exporta como CSV si se solicita.
+     * @param request petición HTTP con los parámetros "accion", "formato" y los filtros del reporte
+     * @param response respuesta HTTP usada para redirigir, reenviar o responder JSON/CSV
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     private void doGetInterno(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
         if (session == null || session.getAttribute("usuario") == null) {
@@ -223,6 +261,14 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Punto de entrada de las peticiones POST del módulo de reportes del tutor.
+     * Delega en {@link #doPostInterno} y captura cualquier excepción inesperada
+     * para responderla como JSON de error en lugar de propagarla.
+     * @param request petición HTTP con el parámetro "accion" y sus datos asociados
+     * @param response respuesta HTTP usada para responder JSON o el archivo exportado
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
@@ -234,6 +280,13 @@ public class ReportesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Enruta las peticiones POST autenticadas de tutor según el parámetro "accion"
+     * hacia el recordatorio al área de apoyo, o la exportación de reportes a Excel/PDF.
+     * @param request petición HTTP con el parámetro "accion" y sus datos asociados
+     * @param response respuesta HTTP usada para responder JSON o el archivo exportado
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     private void doPostInterno(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
         Integer idUsuario = session != null ? (Integer) session.getAttribute("idUsuario") : null;
@@ -258,6 +311,13 @@ public class ReportesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Responde en JSON el avance de tutorías grupales del tutor autenticado respecto
+     * al objetivo del periodo escolar vigente.
+     * @param response respuesta HTTP donde se escribe el JSON con el periodo, objetivo y avance
+     * @param idTutorSesion el id del tutor autenticado en sesión
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderAvanceGrupalTutor(HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -298,6 +358,14 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Responde en JSON el detalle de las sesiones grupales del tutor autenticado
+     * para un grupo específico dentro del periodo escolar vigente.
+     * @param request petición HTTP con el parámetro idGrupo
+     * @param response respuesta HTTP donde se escribe el JSON con la lista de sesiones
+     * @param idTutorSesion el id del tutor autenticado en sesión
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderDetalleSesionesTutor(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -334,6 +402,14 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Responde en JSON el listado detallado de canalizaciones del tutor autenticado,
+     * filtradas por carrera, cuatrimestre, letra, rango de fechas y matrícula.
+     * @param request petición HTTP con los parámetros de filtro (idCarrera, cuatrimestre, letra, matricula, desde, hasta)
+     * @param response respuesta HTTP donde se escribe el JSON con la lista de canalizaciones
+     * @param idTutorSesion el id del tutor autenticado en sesión
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderCanalizacionesTutor(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -375,6 +451,14 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Responde en JSON el listado de solicitudes pendientes del tutor autenticado,
+     * filtradas por carrera, cuatrimestre, letra, rango de fechas y matrícula.
+     * @param request petición HTTP con los parámetros de filtro (idCarrera, cuatrimestre, letra, matricula, desde, hasta)
+     * @param response respuesta HTTP donde se escribe el JSON con la lista de solicitudes pendientes
+     * @param idTutorSesion el id del tutor autenticado en sesión
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderSolicitudesPendientesTutor(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -415,6 +499,14 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Responde en JSON el listado de atenciones individuales del tutor autenticado,
+     * filtradas por carrera, cuatrimestre, letra, rango de fechas y matrícula.
+     * @param request petición HTTP con los parámetros de filtro (idCarrera, cuatrimestre, letra, matricula, desde, hasta)
+     * @param response respuesta HTTP donde se escribe el JSON con la lista de atenciones
+     * @param idTutorSesion el id del tutor autenticado en sesión
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderAtencionesIndividualesTutor(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -457,6 +549,14 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Responde en JSON los alumnos del tutor autenticado cuya matrícula o nombre
+     * coincidan con el texto de búsqueda recibido, para el autocompletado del buscador.
+     * @param request petición HTTP con el parámetro "texto" a buscar
+     * @param response respuesta HTTP donde se escribe el JSON con los resultados de la búsqueda
+     * @param idTutorSesion el id del tutor autenticado en sesión
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderBuscarAlumnosTutor(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -481,6 +581,14 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Envía por correo un recordatorio al área de apoyo sobre una canalización
+     * que sigue "En proceso", incluyendo un enlace de confirmación, y responde en JSON el resultado.
+     * @param request petición HTTP con el parámetro idCanalizacion
+     * @param response respuesta HTTP donde se escribe el JSON con el resultado del envío
+     * @param idTutorSesion el id del tutor autenticado en sesión, dueño de la canalización
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderRecordarAreaApoyo(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -517,6 +625,14 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Genera y envía como descarga un archivo Excel con el reporte del tutor
+     * autenticado, filtrado según los parámetros de la petición.
+     * @param request petición HTTP con los filtros del reporte y las imágenes de las gráficas en base64
+     * @param response respuesta HTTP sobre la que se escribe el archivo Excel generado
+     * @param idTutorSesion el id del tutor autenticado en sesión
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void exportarExcelTutor(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         ReporteExportDatos datos = recolectarDatosExportacionTutor(request, idTutorSesion);
 
@@ -531,6 +647,14 @@ public class ReportesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Genera y envía como descarga un archivo PDF con el reporte del tutor
+     * autenticado, filtrado según los parámetros de la petición.
+     * @param request petición HTTP con los filtros del reporte y las imágenes de las gráficas en base64
+     * @param response respuesta HTTP sobre la que se escribe el archivo PDF generado
+     * @param idTutorSesion el id del tutor autenticado en sesión
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void exportarPdfTutor(HttpServletRequest request, HttpServletResponse response, int idTutorSesion) throws IOException {
         ReporteExportDatos datos = recolectarDatosExportacionTutor(request, idTutorSesion);
 
@@ -545,6 +669,15 @@ public class ReportesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Recolecta y arma toda la información necesaria para exportar el reporte del
+     * tutor autenticado (resumen general, avance grupal propio, atenciones individuales,
+     * canalizaciones, datos académicos del alumno filtrado y gráficas), aplicando
+     * los filtros de la petición.
+     * @param request petición HTTP con los filtros del reporte y las imágenes de las gráficas en base64
+     * @param idTutorSesion el id del tutor autenticado en sesión
+     * @return el objeto {@link ReporteExportDatos} con toda la información lista para exportar
+     */
     private ReporteExportDatos recolectarDatosExportacionTutor(HttpServletRequest request, int idTutorSesion) {
         Integer idCarrera = parseIntOrNull(request.getParameter("idCarrera"));
         Integer cuatrimestre = parseIntOrNull(request.getParameter("cuatrimestre"));
@@ -593,10 +726,15 @@ public class ReportesServlet extends HttpServlet {
                 decodificarImagenBase64(request.getParameter("imagenBarras")));
     }
 
-    // Datos academicos completos del alumno filtrado (encabezado enriquecido del Excel/PDF):
-    // nombre + matricula vienen de ALUMNO, carrera/nivel/cuatrimestre-grupo/generacion del
-    // renglon vigente (FECHA_FIN IS NULL) de su trayectoria (ALUMNO_GRUPO_HISTORICO), la misma
-    // fuente que ya usa la seccion "Trayectoria academica" del coordinador.
+    /**
+     * Resuelve los datos académicos actuales del alumno filtrado (carrera, nivel,
+     * grupo y generación) a partir de su trayectoria, tomando el grupo vigente
+     * (fecha fin nula) o el más reciente. Nombre y matrícula vienen de ALUMNO;
+     * carrera/nivel/cuatrimestre-grupo/generación vienen de ALUMNO_GRUPO_HISTORICO,
+     * la misma fuente que usa la sección "Trayectoria académica" del coordinador.
+     * @param matricula la matrícula del alumno a resolver
+     * @return los datos académicos resueltos del alumno, o {@code null} si la matrícula es vacía o el alumno no existe
+     */
     private ReporteExportDatos.DatosAcademicosAlumno resolverDatosAlumno(String matricula) {
         if (matricula == null || matricula.isBlank()) return null;
 
@@ -623,10 +761,22 @@ public class ReportesServlet extends HttpServlet {
                 matricula, nombreCompleto, carrera, nivel, cuatrimestreGrupo, generacion);
     }
 
+    /**
+     * Construye el nombre de archivo para el reporte exportado, incluyendo la fecha
+     * actual y la extensión indicada.
+     * @param extension la extensión del archivo a generar (por ejemplo "xlsx" o "pdf")
+     * @return el nombre de archivo generado, por ejemplo "reporte_tutorias_25-08-2026.xlsx"
+     */
     private String nombreArchivoExportacion(String extension) {
         return "reporte_tutorias_" + LocalDate.now().format(FORMATO_FECHA_ARCHIVO) + "." + extension;
     }
 
+    /**
+     * Decodifica una imagen codificada en base64 (formato data URL) enviada desde
+     * el cliente, para insertarla en los reportes exportados.
+     * @param dataUrl la cadena en formato data URL con la imagen codificada en base64
+     * @return el arreglo de bytes de la imagen decodificada, o {@code null} si es inválida o vacía
+     */
     private byte[] decodificarImagenBase64(String dataUrl) {
         if (dataUrl == null || dataUrl.isBlank()) return null;
         int coma = dataUrl.indexOf(',');
@@ -639,6 +789,13 @@ public class ReportesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Convierte una cadena de texto en una fecha SQL, devolviendo un valor por
+     * defecto si el texto es nulo, está en blanco o no es una fecha válida.
+     * @param valor el texto de la fecha en formato ISO (yyyy-MM-dd)
+     * @param porDefecto la fecha a devolver si el valor es inválido o está vacío
+     * @return la fecha convertida, o {@code porDefecto} si no se pudo convertir
+     */
     private java.sql.Date parseFechaSqlOrDefault(String valor, java.sql.Date porDefecto) {
         if (valor == null || valor.isBlank()) return porDefecto;
         try {
@@ -648,6 +805,21 @@ public class ReportesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Genera y envía como descarga un archivo CSV con el resumen del reporte,
+     * incluyendo indicadores generales, distribución de canalizaciones por área
+     * y el detalle de cada canalización.
+     * @param response respuesta HTTP sobre la que se escribe el archivo CSV generado
+     * @param reporte el resumen del reporte a exportar
+     * @param desde la fecha de inicio del rango filtrado
+     * @param hasta la fecha de fin del rango filtrado
+     * @param tieneFiltroFechas indica si se aplicó un filtro de fechas explícito
+     * @param nombreCarrera el nombre de la carrera filtrada, para mostrar en el encabezado
+     * @param nombreCuatrimestre el nombre del cuatrimestre filtrado, para mostrar en el encabezado
+     * @param nombreGrupo el nombre del grupo filtrado, para mostrar en el encabezado
+     * @param nombreTutor el nombre del tutor filtrado, para mostrar en el encabezado
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void exportarCsv(HttpServletResponse response, ReportesDao.ReporteResumen reporte,
                              LocalDate desde, LocalDate hasta, boolean tieneFiltroFechas,
                              String nombreCarrera, String nombreCuatrimestre, String nombreGrupo,
@@ -707,16 +879,32 @@ public class ReportesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Determina si una cadena de texto es nula o está en blanco.
+     * @param valor el texto a evaluar
+     * @return {@code true} si el texto es {@code null} o está en blanco; {@code false} en caso contrario
+     */
     private boolean esVacio(String valor) {
         return valor == null || valor.isBlank();
     }
 
+    /**
+     * Escapa los caracteres especiales de una cadena para que pueda incrustarse
+     * de forma segura como valor de texto dentro de un documento JSON construido manualmente.
+     * @param valor el texto a escapar
+     * @return el texto escapado, o cadena vacía si el valor es {@code null}
+     */
     private String escaparJson(String valor) {
         if (valor == null) return "";
         return valor.replace("\\", "\\\\").replace("\"", "\\\"")
                 .replace("\n", "\\n").replace("\r", "");
     }
 
+    /**
+     * Convierte una cadena de texto a entero de forma segura.
+     * @param valor el texto a convertir
+     * @return el valor entero resultante, o {@code null} si el texto es nulo, está en blanco o no es numérico
+     */
     private Integer parseIntOrNull(String valor) {
         if (valor == null || valor.isBlank()) return null;
         try {
@@ -726,6 +914,13 @@ public class ReportesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Convierte una cadena de texto en una fecha, devolviendo un valor por
+     * defecto si el texto es nulo, está en blanco o no es una fecha válida.
+     * @param valor el texto de la fecha en formato ISO (yyyy-MM-dd)
+     * @param porDefecto la fecha a devolver si el valor es inválido o está vacío
+     * @return la fecha convertida, o {@code porDefecto} si no se pudo convertir
+     */
     private LocalDate parseFechaOrDefault(String valor, LocalDate porDefecto) {
         if (valor == null || valor.isBlank()) return porDefecto;
         try {

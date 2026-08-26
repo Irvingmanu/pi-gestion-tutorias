@@ -7,11 +7,24 @@ import jakarta.mail.internet.MimeMessage;
 import java.io.InputStream;
 import java.util.Properties;
 
+/**
+ * Utilidad para el envío de correos electrónicos del sistema (recuperación de contraseña,
+ * notificaciones y recordatorios de canalización, alertas de tutorías grupales, recordatorios
+ * de solicitudes de tutoría y confirmaciones de cambio de contraseña) usando SMTP de Gmail.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-17
+ */
 public class EmailSender {
 
     private String user;
     private String password;
 
+    /**
+     * Construye el remitente, obteniendo las credenciales SMTP primero desde las variables
+     * de entorno SMTP_USER/SMTP_PASS, y si no están disponibles, desde el archivo
+     * credentials.properties del classpath.
+     */
     public EmailSender() {
         this.user = System.getenv("SMTP_USER");
         this.password = System.getenv("SMTP_PASS");
@@ -30,6 +43,10 @@ public class EmailSender {
         }
     }
 
+    /**
+     * Construye la sesión de correo autenticada contra el servidor SMTP de Gmail.
+     * @return la sesión de JavaMail configurada con las credenciales del remitente
+     */
     private Session getSession() {
         Properties props = new Properties();
         props.put("mail.smtp.auth", "true");
@@ -48,6 +65,12 @@ public class EmailSender {
         });
     }
 
+    /**
+     * Envía al correo del usuario el código de recuperación de contraseña.
+     * @param destEmail el correo electrónico destinatario
+     * @param codigo el código de recuperación de 6 caracteres a incluir en el mensaje
+     * @return {@code true} si el correo se envió correctamente; {@code false} si ocurrió un error de envío
+     */
     public boolean enviarCodigoRecuperacion(String destEmail, String codigo) {
         try {
             Message message = new MimeMessage(getSession());
@@ -69,6 +92,18 @@ public class EmailSender {
         }
     }
 
+    /**
+     * Notifica al encargado de un área que un tutor canalizó a un alumno hacia ella,
+     * incluyendo un enlace para confirmar la atención de la canalización.
+     * @param destEmail el correo electrónico del encargado del área destino
+     * @param nombreEncargado el nombre del encargado del área destino
+     * @param nombreArea el nombre del área hacia la que se canalizó al alumno
+     * @param nombreAlumno el nombre completo del alumno canalizado
+     * @param matricula la matrícula del alumno canalizado
+     * @param motivoODetalle el motivo o detalle de la canalización
+     * @param linkConfirmacion el enlace que el encargado debe usar para confirmar la atención
+     * @return {@code true} si el correo se envió correctamente; {@code false} si ocurrió un error de envío
+     */
     public boolean enviarConfirmacionCanalizacion(String destEmail, String nombreEncargado, String nombreArea,
                                                   String nombreAlumno, String matricula, String motivoODetalle,
                                                   String linkConfirmacion) {
@@ -96,6 +131,16 @@ public class EmailSender {
         }
     }
 
+    /**
+     * Envía a un tutor un recordatorio de su avance pendiente en las tutorías grupales
+     * del periodo vigente para su grupo asignado.
+     * @param destEmail el correo electrónico del tutor
+     * @param nombreTutor el nombre del tutor
+     * @param grupoAsignado el nombre del grupo asignado al tutor
+     * @param realizadas la cantidad de tutorías grupales ya realizadas
+     * @param objetivo la cantidad objetivo de tutorías grupales para el periodo
+     * @return {@code true} si el correo se envió correctamente; {@code false} si ocurrió un error de envío
+     */
     public boolean enviarAlertaTutoriasGrupales(String destEmail, String nombreTutor, String grupoAsignado,
                                                 int realizadas, int objetivo) {
         try {
@@ -120,6 +165,14 @@ public class EmailSender {
         }
     }
 
+    /**
+     * Envía a un tutor un recordatorio de que tiene una solicitud de tutoría pendiente por atender.
+     * @param destEmail el correo electrónico del tutor
+     * @param nombreTutor el nombre del tutor
+     * @param nombreAlumno el nombre del alumno que generó la solicitud
+     * @param asunto el asunto de la solicitud de tutoría
+     * @return {@code true} si el correo se envió correctamente; {@code false} si ocurrió un error de envío
+     */
     public boolean enviarRecordatorioSolicitud(String destEmail, String nombreTutor, String nombreAlumno, String asunto) {
         try {
             Message message = new MimeMessage(getSession());
@@ -142,6 +195,18 @@ public class EmailSender {
         }
     }
 
+    /**
+     * Envía al encargado de un área un recordatorio de que un alumno canalizado sigue
+     * pendiente de atención, incluyendo un enlace para confirmar la atención.
+     * @param destEmail el correo electrónico del encargado del área destino
+     * @param nombreEncargado el nombre del encargado del área destino
+     * @param nombreArea el nombre del área hacia la que se canalizó al alumno
+     * @param nombreAlumno el nombre completo del alumno canalizado
+     * @param matricula la matrícula del alumno canalizado
+     * @param motivoODetalle el motivo o detalle de la canalización
+     * @param linkConfirmacion el enlace que el encargado debe usar para confirmar la atención
+     * @return {@code true} si el correo se envió correctamente; {@code false} si ocurrió un error de envío
+     */
     public boolean enviarRecordatorioCanalizacion(String destEmail, String nombreEncargado, String nombreArea,
                                                   String nombreAlumno, String matricula, String motivoODetalle,
                                                   String linkConfirmacion) {
@@ -169,6 +234,11 @@ public class EmailSender {
         }
     }
 
+    /**
+     * Notifica al usuario que su contraseña fue actualizada exitosamente.
+     * @param destEmail el correo electrónico del usuario cuya contraseña cambió
+     * @return {@code true} si el correo se envió correctamente; {@code false} si ocurrió un error de envío
+     */
     public boolean enviarConfirmacionCambio(String destEmail) {
         try {
             Message message = new MimeMessage(getSession());

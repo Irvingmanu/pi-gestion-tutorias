@@ -1,6 +1,9 @@
 package mx.edu.utez.pigestiontutorias.utils;
 
 import com.lowagie.text.*;
+import com.lowagie.text.Font;
+import com.lowagie.text.Image;
+import com.lowagie.text.Rectangle;
 import com.lowagie.text.pdf.PdfPCell;
 import com.lowagie.text.pdf.PdfPTable;
 import com.lowagie.text.pdf.PdfWriter;
@@ -10,11 +13,19 @@ import mx.edu.utez.pigestiontutorias.models.CanalizacionAlumnoDTO;
 import mx.edu.utez.pigestiontutorias.models.ReporteExportDatos;
 import mx.edu.utez.pigestiontutorias.models.dao.ReportesDao;
 
-import java.awt.Color;
+import java.awt.*;
 import java.io.OutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+/**
+ * Utilidad que construye el archivo PDF del reporte ejecutivo global de tutorías,
+ * generando el encabezado, resumen ejecutivo, tutorías grupales, tutorías individuales
+ * y canalizaciones a partir de los datos agregados en {@link ReporteExportDatos}.
+ * @author 20253ds074-art
+ * @version 1.0
+ * @since 2026-08-16
+ */
 public class ReportePdfBuilder {
 
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -29,6 +40,12 @@ public class ReportePdfBuilder {
     private final Font fuenteCelda = new Font(Font.HELVETICA, 9, Font.NORMAL, Color.BLACK);
     private final Font fuenteEtiquetaAlumno = new Font(Font.HELVETICA, 9, Font.BOLD, AZUL_MARINO);
 
+    /**
+     * Genera el documento PDF completo del reporte ejecutivo y lo escribe en el flujo de salida.
+     * @param salida el flujo de salida donde se escribirá el PDF generado
+     * @param datos los datos agregados del reporte a exportar
+     * @throws DocumentException si ocurre un error al construir o escribir el documento PDF
+     */
     public void generar(OutputStream salida, ReporteExportDatos datos) throws DocumentException {
         Document documento = new Document(PageSize.A4, 36, 36, 54, 36);
         PdfWriter.getInstance(documento, salida);
@@ -43,6 +60,14 @@ public class ReportePdfBuilder {
         documento.close();
     }
 
+    /**
+     * Agrega el encabezado del documento: título del sistema, subtítulo del reporte,
+     * los filtros aplicados (periodo, carrera, cuatrimestre, grupo, tutor, alumno) y,
+     * si aplica, los datos del alumno filtrado.
+     * @param documento el documento PDF al que se agrega el encabezado
+     * @param datos los datos agregados del reporte
+     * @throws DocumentException si ocurre un error al agregar los elementos al documento
+     */
     private void agregarEncabezado(Document documento, ReporteExportDatos datos) throws DocumentException {
         Paragraph titulo = new Paragraph("Sistema de Gestión de Tutorías", fuenteTitulo);
         titulo.setAlignment(Element.ALIGN_CENTER);
@@ -71,6 +96,13 @@ public class ReportePdfBuilder {
         agregarDatosAlumno(documento, datos);
     }
 
+    /**
+     * Agrega, si el reporte está filtrado por un alumno específico, la sección con sus
+     * datos académicos (nombre, matrícula, carrera, nivel, cuatrimestre/grupo y generación).
+     * @param documento el documento PDF al que se agrega la sección
+     * @param datos los datos agregados del reporte
+     * @throws DocumentException si ocurre un error al agregar los elementos al documento
+     */
     private void agregarDatosAlumno(Document documento, ReporteExportDatos datos) throws DocumentException {
         ReporteExportDatos.DatosAcademicosAlumno da = datos.getDatosAlumno();
         if (da == null) return;
@@ -94,6 +126,12 @@ public class ReportePdfBuilder {
         documento.add(tabla);
     }
 
+    /**
+     * Agrega a la tabla de datos del alumno una fila con una etiqueta resaltada y su valor.
+     * @param tabla la tabla PDF donde agregar la fila
+     * @param etiqueta el texto de la etiqueta del campo
+     * @param valor el texto del valor asociado a la etiqueta
+     */
     private void agregarFilaAlumno(PdfPTable tabla, String etiqueta, String valor) {
         PdfPCell celdaEtiqueta = new PdfPCell(new Phrase(etiqueta, fuenteEtiquetaAlumno));
         celdaEtiqueta.setBackgroundColor(new Color(232, 243, 240));
@@ -102,6 +140,14 @@ public class ReportePdfBuilder {
         tabla.addCell(celdaTexto(valor));
     }
 
+    /**
+     * Agrega la sección de resumen ejecutivo con las métricas principales (alumnos
+     * atendidos, canalizados, tutorías grupales, pendientes), la distribución de
+     * canalizados por área y las gráficas del reporte.
+     * @param documento el documento PDF al que se agrega la sección
+     * @param datos los datos agregados del reporte
+     * @throws DocumentException si ocurre un error al agregar los elementos al documento
+     */
     private void agregarResumenEjecutivo(Document documento, ReporteExportDatos datos) throws DocumentException {
         ReportesDao.ReporteResumen r = datos.getResumen();
 
@@ -134,6 +180,13 @@ public class ReportePdfBuilder {
         agregarGraficas(documento, datos);
     }
 
+    /**
+     * Agrega al documento las gráficas de pastel y/o barras del reporte, en una tabla
+     * de una o dos columnas según cuáles estén disponibles.
+     * @param documento el documento PDF al que se agregan las gráficas
+     * @param datos los datos agregados del reporte
+     * @throws DocumentException si ocurre un error al agregar las imágenes al documento
+     */
     private void agregarGraficas(Document documento, ReporteExportDatos datos) throws DocumentException {
         boolean hayPastel = datos.getImagenPastel() != null && datos.getImagenPastel().length > 0;
         boolean hayBarras = datos.getImagenBarras() != null && datos.getImagenBarras().length > 0;
@@ -154,6 +207,12 @@ public class ReportePdfBuilder {
         documento.add(tablaGraficas);
     }
 
+    /**
+     * Construye una celda de tabla sin bordes que contiene una imagen escalada a 240x240 puntos.
+     * @param png los bytes de la imagen PNG a insertar
+     * @return la celda con la imagen incrustada
+     * @throws DocumentException si ocurre un error al cargar o escalar la imagen
+     */
     private PdfPCell celdaImagen(byte[] png) throws DocumentException {
         try {
             Image imagen = Image.getInstance(png);
@@ -168,6 +227,13 @@ public class ReportePdfBuilder {
         }
     }
 
+    /**
+     * Agrega la sección y tabla de tutorías grupales por tutor, mostrando el avance de
+     * cada tutor respecto al objetivo del periodo escolar vigente.
+     * @param documento el documento PDF al que se agrega la sección
+     * @param datos los datos agregados del reporte
+     * @throws DocumentException si ocurre un error al agregar los elementos al documento
+     */
     private void agregarTutoriasGrupales(Document documento, ReporteExportDatos datos) throws DocumentException {
         documento.add(nuevoTituloSeccion("Tutorías Grupales por Tutor"));
 
@@ -200,6 +266,13 @@ public class ReportePdfBuilder {
         documento.add(tabla);
     }
 
+    /**
+     * Agrega la sección y tabla de detalle de tutorías individuales, mostrando cada
+     * atención registrada con sus temas y acuerdos.
+     * @param documento el documento PDF al que se agrega la sección
+     * @param datos los datos agregados del reporte
+     * @throws DocumentException si ocurre un error al agregar los elementos al documento
+     */
     private void agregarAtenciones(Document documento, ReporteExportDatos datos) throws DocumentException {
         documento.add(nuevoTituloSeccion("Detalle de Tutorías Individuales"));
 
@@ -228,6 +301,13 @@ public class ReportePdfBuilder {
         documento.add(tabla);
     }
 
+    /**
+     * Agrega la sección y tabla de desglose de canalizaciones, mostrando cada canalización
+     * de alumno registrada con su estatus y área destino.
+     * @param documento el documento PDF al que se agrega la sección
+     * @param datos los datos agregados del reporte
+     * @throws DocumentException si ocurre un error al agregar los elementos al documento
+     */
     private void agregarCanalizaciones(Document documento, ReporteExportDatos datos) throws DocumentException {
         documento.add(nuevoTituloSeccion("Desglose de Canalizaciones"));
 
@@ -254,6 +334,11 @@ public class ReportePdfBuilder {
         documento.add(tabla);
     }
 
+    /**
+     * Crea un párrafo con el estilo de título de sección y espaciado estándar.
+     * @param texto el texto del título de sección
+     * @return el párrafo con el estilo aplicado
+     */
     private Paragraph nuevoTituloSeccion(String texto) {
         Paragraph p = new Paragraph(texto, fuenteSeccion);
         p.setSpacingBefore(6f);
@@ -261,6 +346,11 @@ public class ReportePdfBuilder {
         return p;
     }
 
+    /**
+     * Agrega a la tabla una fila de cabecera con fondo verde institucional para cada título dado.
+     * @param tabla la tabla PDF donde agregar la cabecera
+     * @param titulos los textos de las columnas de la cabecera, en orden
+     */
     private void agregarCabecera(PdfPTable tabla, String... titulos) {
         for (String titulo : titulos) {
             PdfPCell celda = new PdfPCell(new Phrase(titulo, fuenteEncabezadoTabla));
@@ -271,28 +361,53 @@ public class ReportePdfBuilder {
         }
     }
 
+    /**
+     * Construye una celda de texto estándar con relleno, usando cadena vacía si el texto es nulo.
+     * @param texto el texto a mostrar en la celda
+     * @return la celda de texto construida
+     */
     private PdfPCell celdaTexto(String texto) {
         PdfPCell celda = new PdfPCell(new Phrase(texto != null ? texto : "", fuenteCelda));
         celda.setPadding(5f);
         return celda;
     }
 
+    /**
+     * Construye una celda de valor numérico/centrado a partir de una celda de texto estándar.
+     * @param texto el texto del valor a mostrar en la celda
+     * @return la celda con el texto centrado horizontalmente
+     */
     private PdfPCell celdaValor(String texto) {
         PdfPCell celda = celdaTexto(texto);
         celda.setHorizontalAlignment(Element.ALIGN_CENTER);
         return celda;
     }
 
+    /**
+     * Traduce el código de estatus de avance grupal a su texto legible en español.
+     * @param estatus el código de estatus ("AL_DIA", "RIESGO" u otro)
+     * @return "Al día", "En Riesgo" o "Sin objetivo" según corresponda
+     */
     private String traducirEstatusGrupal(String estatus) {
         if ("AL_DIA".equals(estatus)) return "Al día";
         if ("RIESGO".equals(estatus)) return "En Riesgo";
         return "Sin objetivo";
     }
 
+    /**
+     * Devuelve el valor recibido, o "Todas" si es nulo o está en blanco (usado para filtros femeninos, p. ej. carrera).
+     * @param valor el valor del filtro a evaluar
+     * @return el valor original, o "Todas" si estaba vacío
+     */
     private String orTodas(String valor) {
         return (valor == null || valor.isBlank()) ? "Todas" : valor;
     }
 
+    /**
+     * Devuelve el valor recibido, o "Todos" si es nulo o está en blanco (usado para filtros masculinos, p. ej. cuatrimestre, grupo, tutor).
+     * @param valor el valor del filtro a evaluar
+     * @return el valor original, o "Todos" si estaba vacío
+     */
     private String orTodos(String valor) {
         return (valor == null || valor.isBlank()) ? "Todos" : valor;
     }

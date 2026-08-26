@@ -10,8 +10,21 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO de acceso a datos para los periodos escolares (tabla PERIODO_ESCOLAR),
+ * con operaciones CRUD, baja lógica y reactivación, y consultas específicas
+ * como periodos activos, del año actual y el periodo vigente.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-08-10
+ */
 public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
 
+    /**
+     * Inserta un nuevo periodo escolar.
+     * @param p el periodo a crear, con nombre, fechas, estado (por defecto "S") y asistencias grupales
+     * @return {@code true} si la inserción afectó al menos una fila; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     @Override
     public boolean create(PeriodoEscolar p) {
         String sql = "INSERT INTO PERIODO_ESCOLAR (NOMBRE, FECHA_INICIO, FECHA_FIN, ESTADO, ASISTENCIASGRUPALES) VALUES (?, ?, ?, ?, ?)";
@@ -32,6 +45,10 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         }
     }
 
+    /**
+     * Obtiene todos los periodos escolares registrados, ordenados por fecha de inicio descendente.
+     * @return la lista completa de periodos escolares; vacía si no hay registros o si ocurre un error de base de datos
+     */
     @Override
     public List<PeriodoEscolar> getAll() {
         List<PeriodoEscolar> lista = new ArrayList<>();
@@ -51,6 +68,11 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         return lista;
     }
 
+    /**
+     * Busca un periodo escolar por su identificador.
+     * @param id el identificador del periodo escolar
+     * @return el periodo encontrado, o {@code null} si no existe o si ocurre un error de base de datos
+     */
     @Override
     public PeriodoEscolar getById(Integer id) {
         String sql = "SELECT * FROM PERIODO_ESCOLAR WHERE ID_PERIODO = ?";
@@ -70,6 +92,11 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         return null;
     }
 
+    /**
+     * Actualiza nombre, fechas y asistencias grupales de un periodo escolar existente.
+     * @param p el periodo con el identificador y los nuevos valores a aplicar
+     * @return {@code true} si la actualización afectó al menos una fila; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     @Override
     public boolean update(PeriodoEscolar p) {
         String sql = "UPDATE PERIODO_ESCOLAR SET NOMBRE = ?, FECHA_INICIO = ?, FECHA_FIN = ?, ASISTENCIASGRUPALES = ? WHERE ID_PERIODO = ?";
@@ -90,6 +117,11 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         }
     }
 
+    /**
+     * Da de baja lógica un periodo escolar, marcándolo como inactivo (ESTADO = 'N').
+     * @param id el identificador del periodo a desactivar
+     * @return {@code true} si la actualización afectó al menos una fila; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     @Override
     public boolean delete(Integer id) {
         String sql = "UPDATE PERIODO_ESCOLAR SET ESTADO = 'N' WHERE ID_PERIODO = ?";
@@ -105,6 +137,11 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         }
     }
 
+    /**
+     * Reactiva un periodo escolar previamente dado de baja, marcándolo como activo (ESTADO = 'S').
+     * @param id el identificador del periodo a reactivar
+     * @return {@code true} si la actualización afectó al menos una fila; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     public boolean reactivar(int id) {
         String sql = "UPDATE PERIODO_ESCOLAR SET ESTADO = 'S' WHERE ID_PERIODO = ?";
         try (Connection con = SQLConnector.getConnection();
@@ -119,6 +156,10 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         }
     }
 
+    /**
+     * Obtiene los periodos escolares activos cuya fecha de inicio corresponde al año actual.
+     * @return la lista de periodos del año actual; vacía si no hay registros o si ocurre un error de base de datos
+     */
     public List<PeriodoEscolar> getDelAnioActual() {
         List<PeriodoEscolar> lista = new ArrayList<>();
         String sql = "SELECT * FROM PERIODO_ESCOLAR WHERE ESTADO = 'S' " +
@@ -139,6 +180,10 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         return lista;
     }
 
+    /**
+     * Obtiene todos los periodos escolares activos, ordenados por fecha de inicio descendente.
+     * @return la lista de periodos activos; vacía si no hay registros o si ocurre un error de base de datos
+     */
     public List<PeriodoEscolar> getActivos() {
         List<PeriodoEscolar> lista = new ArrayList<>();
         String sql = "SELECT * FROM PERIODO_ESCOLAR WHERE ESTADO = 'S' ORDER BY FECHA_INICIO DESC";
@@ -157,6 +202,10 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         return lista;
     }
 
+    /**
+     * Obtiene el periodo escolar activo cuya fecha actual del sistema cae dentro de su rango de fechas.
+     * @return el periodo vigente, o {@code null} si no hay ninguno vigente o si ocurre un error de base de datos
+     */
     public PeriodoEscolar getPeriodoVigente() {
         String sql = "SELECT * FROM PERIODO_ESCOLAR WHERE ESTADO = 'S' " +
                 "AND TRUNC(SYSDATE) BETWEEN FECHA_INICIO AND FECHA_FIN " +
@@ -176,6 +225,12 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         return null;
     }
 
+    /**
+     * Verifica si ya existe otro periodo escolar (distinto al indicado) con el mismo nombre, sin distinguir mayúsculas/minúsculas.
+     * @param nombre el nombre a validar
+     * @param idPeriodoExcluir el identificador del periodo que debe excluirse de la comparación
+     * @return {@code true} si existe otro periodo con ese nombre; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     public boolean existeNombreParaOtro(String nombre, int idPeriodoExcluir) {
         String sql = "SELECT COUNT(*) FROM PERIODO_ESCOLAR WHERE UPPER(NOMBRE) = UPPER(?) AND ID_PERIODO <> ?";
         try (Connection con = SQLConnector.getConnection();
@@ -195,6 +250,11 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         return false;
     }
 
+    /**
+     * Verifica si ya existe un periodo escolar con el nombre indicado, sin distinguir mayúsculas/minúsculas.
+     * @param nombre el nombre a validar
+     * @return {@code true} si ya existe un periodo con ese nombre; {@code false} en caso contrario o si ocurre un error de base de datos
+     */
     public boolean existeNombre(String nombre) {
         String sql = "SELECT COUNT(*) FROM PERIODO_ESCOLAR WHERE UPPER(NOMBRE) = UPPER(?)";
         try (Connection con = SQLConnector.getConnection();
@@ -213,6 +273,12 @@ public class PeriodoEscolarDao implements Dao<PeriodoEscolar, Integer> {
         return false;
     }
 
+    /**
+     * Construye un objeto {@link PeriodoEscolar} a partir de la fila actual de un ResultSet.
+     * @param rs el ResultSet posicionado en la fila a mapear
+     * @return el periodo escolar mapeado con todos sus campos
+     * @throws SQLException si ocurre un error al leer las columnas del ResultSet
+     */
     private PeriodoEscolar mapear(ResultSet rs) throws SQLException {
         PeriodoEscolar p = new PeriodoEscolar();
         p.setIdPeriodo(rs.getInt("ID_PERIODO"));

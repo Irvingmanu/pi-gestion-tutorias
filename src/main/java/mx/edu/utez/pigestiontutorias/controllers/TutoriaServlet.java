@@ -17,6 +17,13 @@ import mx.edu.utez.pigestiontutorias.utils.UrlUtils;
 import java.io.IOException;
 import java.sql.Date;
 
+/**
+ * Servlet que gestiona el registro directo de tutorías individuales del tutor,
+ * incluyendo la canalización opcional del alumno a un área de apoyo.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-22
+ */
 @WebServlet("/TutoriaServlet")
 public class TutoriaServlet extends HttpServlet {
 
@@ -24,6 +31,14 @@ public class TutoriaServlet extends HttpServlet {
     private final SesionIndividualDao sesionIndividualDao = new SesionIndividualDao();
     private final CanalizacionDao canalizacionDao = new CanalizacionDao();
 
+    /**
+     * Reenvía a la vista de registro individual de tutorías, verificando que exista
+     * una sesión de usuario autenticada.
+     * @param request petición HTTP con la sesión del tutor autenticado
+     * @param response respuesta HTTP usada para redirigir o reenviar a la vista JSP
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
@@ -34,6 +49,14 @@ public class TutoriaServlet extends HttpServlet {
         request.getRequestDispatcher("/tutor/registro-individual.jsp").forward(request, response);
     }
 
+    /**
+     * Atiende las peticiones POST del registro individual, delegando en
+     * {@link #registrarIndividual} cuando la acción es "registrarIndividual".
+     * @param request petición HTTP con el parámetro "accion" y los datos de la tutoría
+     * @param response respuesta HTTP usada para redirigir o reenviar a la vista JSP
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
@@ -51,6 +74,15 @@ public class TutoriaServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Valida y registra una tutoría individual con los datos capturados, canalizando
+     * opcionalmente al alumno a un área de apoyo si se indicó una.
+     * @param request petición HTTP con los datos de la tutoría (matrícula, fecha, temas, acuerdos y canalización)
+     * @param response respuesta HTTP usada para reenviar a la vista con el resultado
+     * @param session la sesión HTTP con los datos del tutor autenticado
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     private void registrarIndividual(HttpServletRequest request, HttpServletResponse response, HttpSession session)
             throws ServletException, IOException {
 

@@ -6,23 +6,33 @@ import mx.edu.utez.pigestiontutorias.models.CanalizacionAlumnoDTO;
 import mx.edu.utez.pigestiontutorias.models.ReporteExportDatos;
 import mx.edu.utez.pigestiontutorias.models.dao.ReportesDao;
 import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.DefaultIndexedColorMap;
-import org.apache.poi.xssf.usermodel.XSSFCellStyle;
-import org.apache.poi.xssf.usermodel.XSSFClientAnchor;
-import org.apache.poi.xssf.usermodel.XSSFColor;
-import org.apache.poi.xssf.usermodel.XSSFDrawing;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.xssf.usermodel.*;
 
 import java.awt.Color;
 import java.io.OutputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
 
+/**
+ * Utilidad que construye el archivo Excel (.xlsx) del reporte global de tutorías,
+ * generando las hojas de resumen, tutorías grupales, alumnos atendidos y canalizaciones
+ * a partir de los datos agregados en {@link ReporteExportDatos}.
+ * @author 20253ds074-art
+ * @version 1.0
+ * @since 2026-08-16
+ */
 public class ReporteExcelBuilder {
 
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final Color VERDE_INSTITUCIONAL = new Color(0, 139, 116);
 
+    /**
+     * Genera el libro de Excel completo del reporte y lo escribe en el flujo de salida.
+     * @param salida el flujo de salida donde se escribirá el archivo Excel generado
+     * @param datos los datos agregados del reporte a exportar
+     * @throws java.io.IOException si ocurre un error al escribir el libro en el flujo de salida
+     */
     public void generar(OutputStream salida, ReporteExportDatos datos) throws java.io.IOException {
         try (XSSFWorkbook libro = new XSSFWorkbook()) {
             CellStyle estiloEncabezado = crearEstiloEncabezado(libro);
@@ -38,6 +48,12 @@ public class ReporteExcelBuilder {
         }
     }
 
+    /**
+     * Crea el estilo de celda usado en los encabezados de tabla: fondo verde institucional,
+     * fuente blanca en negrita y alineación centrada.
+     * @param libro el libro de Excel en el que se crea el estilo
+     * @return el estilo de celda de encabezado
+     */
     private CellStyle crearEstiloEncabezado(XSSFWorkbook libro) {
         Font fuente = libro.createFont();
         fuente.setBold(true);
@@ -51,6 +67,11 @@ public class ReporteExcelBuilder {
         return estilo;
     }
 
+    /**
+     * Crea el estilo de celda usado en los títulos de sección: fuente en negrita de 13 puntos.
+     * @param libro el libro de Excel en el que se crea el estilo
+     * @return el estilo de celda de título
+     */
     private CellStyle crearEstiloTitulo(XSSFWorkbook libro) {
         Font fuente = libro.createFont();
         fuente.setBold(true);
@@ -60,6 +81,11 @@ public class ReporteExcelBuilder {
         return estilo;
     }
 
+    /**
+     * Crea el estilo de celda usado en las etiquetas de campos clave-valor: fuente en negrita.
+     * @param libro el libro de Excel en el que se crea el estilo
+     * @return el estilo de celda de etiqueta
+     */
     private CellStyle crearEstiloEtiqueta(XSSFWorkbook libro) {
         Font fuente = libro.createFont();
         fuente.setBold(true);
@@ -68,18 +94,43 @@ public class ReporteExcelBuilder {
         return estilo;
     }
 
+    /**
+     * Crea una nueva fila en la posición indicada de la hoja.
+     * @param hoja la hoja de Excel donde crear la fila
+     * @param indice el índice (base cero) de la fila a crear
+     * @return la fila creada
+     */
     private Row nuevaFila(Sheet hoja, int indice) {
         return hoja.createRow(indice);
     }
 
+    /**
+     * Escribe un valor de texto en una celda de la fila, usando cadena vacía si el valor es nulo.
+     * @param fila la fila donde escribir la celda
+     * @param columna el índice (base cero) de la columna
+     * @param valor el texto a escribir en la celda
+     */
     private void celda(Row fila, int columna, String valor) {
         fila.createCell(columna).setCellValue(valor != null ? valor : "");
     }
 
+    /**
+     * Escribe un valor numérico en una celda de la fila.
+     * @param fila la fila donde escribir la celda
+     * @param columna el índice (base cero) de la columna
+     * @param valor el valor numérico a escribir en la celda
+     */
     private void celda(Row fila, int columna, double valor) {
         fila.createCell(columna).setCellValue(valor);
     }
 
+    /**
+     * Escribe una fila de encabezados de tabla aplicando el estilo indicado a cada celda.
+     * @param hoja la hoja de Excel donde escribir los encabezados
+     * @param indiceFila el índice (base cero) de la fila donde se escriben los encabezados
+     * @param estilo el estilo de celda a aplicar a cada encabezado
+     * @param titulos los textos de los encabezados, en orden de columna
+     */
     private void encabezados(Sheet hoja, int indiceFila, CellStyle estilo, String... titulos) {
         Row fila = nuevaFila(hoja, indiceFila);
         for (int i = 0; i < titulos.length; i++) {
@@ -89,12 +140,27 @@ public class ReporteExcelBuilder {
         }
     }
 
+    /**
+     * Ajusta automáticamente el ancho de las primeras columnas de la hoja a su contenido.
+     * @param hoja la hoja de Excel a ajustar
+     * @param cantidadColumnas la cantidad de columnas (desde la 0) a ajustar
+     */
     private void autoajustarColumnas(Sheet hoja, int cantidadColumnas) {
         for (int i = 0; i < cantidadColumnas; i++) {
             hoja.autoSizeColumn(i);
         }
     }
 
+    /**
+     * Construye la hoja "Resumen Global" con el título, periodo, filtros aplicados,
+     * datos del alumno (si aplica), indicadores generales, distribución de canalizados,
+     * estado de solicitudes y las gráficas de pastel y barras del reporte.
+     * @param libro el libro de Excel donde se crea la hoja
+     * @param datos los datos agregados del reporte
+     * @param estiloEncabezado el estilo a aplicar a los encabezados de tabla
+     * @param estiloTitulo el estilo a aplicar al título de la hoja
+     * @param estiloEtiqueta el estilo a aplicar a las etiquetas de campos clave-valor
+     */
     private void construirResumenGlobal(XSSFWorkbook libro, ReporteExportDatos datos, CellStyle estiloEncabezado,
                                         CellStyle estiloTitulo, CellStyle estiloEtiqueta) {
         Sheet hoja = libro.createSheet("Resumen Global");
@@ -165,6 +231,16 @@ public class ReporteExcelBuilder {
         autoajustarColumnas(hoja, 2);
     }
 
+    /**
+     * Agrega, si el reporte está filtrado por un alumno específico, la sección con sus
+     * datos académicos (nombre, matrícula, carrera, nivel, cuatrimestre/grupo y generación).
+     * @param hoja la hoja de Excel donde se agrega la sección
+     * @param datos los datos agregados del reporte
+     * @param indiceFila el índice (base cero) de la fila donde comenzar a escribir
+     * @param estiloEncabezado el estilo a aplicar al encabezado de la sección
+     * @param estiloEtiqueta el estilo a aplicar a las etiquetas de campos clave-valor
+     * @return el índice de la siguiente fila disponible tras escribir la sección
+     */
     private int agregarDatosAlumno(Sheet hoja, ReporteExportDatos datos, int indiceFila,
                                    CellStyle estiloEncabezado, CellStyle estiloEtiqueta) {
         ReporteExportDatos.DatosAcademicosAlumno da = datos.getDatosAlumno();
@@ -185,6 +261,15 @@ public class ReporteExcelBuilder {
         return i + 1;
     }
 
+    /**
+     * Escribe una fila de dos columnas con una etiqueta y su valor correspondiente.
+     * @param hoja la hoja de Excel donde escribir la fila
+     * @param indiceFila el índice (base cero) de la fila a escribir
+     * @param estiloEtiqueta el estilo a aplicar a la celda de la etiqueta
+     * @param etiqueta el texto de la etiqueta
+     * @param valor el texto del valor asociado a la etiqueta
+     * @return el índice de la siguiente fila disponible
+     */
     private int filaEtiquetaValor(Sheet hoja, int indiceFila, CellStyle estiloEtiqueta, String etiqueta, String valor) {
         Row fila = nuevaFila(hoja, indiceFila);
         celda(fila, 0, etiqueta);
@@ -193,6 +278,19 @@ public class ReporteExcelBuilder {
         return indiceFila + 1;
     }
 
+    /**
+     * Inserta una imagen PNG (gráfica) en la hoja con una etiqueta descriptiva encima,
+     * si la imagen proporcionada no es nula ni vacía.
+     * @param libro el libro de Excel donde se inserta la imagen
+     * @param hoja la hoja de Excel donde se inserta la imagen
+     * @param imagenPng los bytes de la imagen PNG a insertar, o {@code null}/vacío para omitir la inserción
+     * @param filaInicio el índice (base cero) de la fila donde comenzar a insertar
+     * @param colInicio el índice (base cero) de la columna inicial del área de la imagen
+     * @param colFin el índice (base cero) de la columna final del área de la imagen
+     * @param estiloEtiqueta el estilo a aplicar a la celda de la etiqueta
+     * @param etiqueta el texto descriptivo de la gráfica
+     * @return el índice de la siguiente fila disponible tras insertar la imagen (o {@code filaInicio} si se omitió)
+     */
     private int insertarGrafica(XSSFWorkbook libro, Sheet hoja, byte[] imagenPng, int filaInicio,
                                 int colInicio, int colFin, CellStyle estiloEtiqueta, String etiqueta) {
         if (imagenPng == null || imagenPng.length == 0) {
@@ -214,6 +312,14 @@ public class ReporteExcelBuilder {
         return filaImagenFin + 1;
     }
 
+    /**
+     * Construye la hoja "Tutorías Grupales" con el avance de cada tutor respecto al
+     * objetivo de tutorías grupales del periodo escolar vigente.
+     * @param libro el libro de Excel donde se crea la hoja
+     * @param datos los datos agregados del reporte
+     * @param estiloEncabezado el estilo a aplicar a los encabezados de tabla
+     * @param estiloTitulo el estilo a aplicar al título de la hoja
+     */
     private void construirTutoriasGrupales(XSSFWorkbook libro, ReporteExportDatos datos, CellStyle estiloEncabezado,
                                            CellStyle estiloTitulo) {
         Sheet hoja = libro.createSheet("Tutorías Grupales");
@@ -240,6 +346,14 @@ public class ReporteExcelBuilder {
         autoajustarColumnas(hoja, 4);
     }
 
+    /**
+     * Construye la hoja "Alumnos Atendidos" con el detalle de cada atención (tutoría
+     * individual o grupal) registrada en el reporte.
+     * @param libro el libro de Excel donde se crea la hoja
+     * @param datos los datos agregados del reporte
+     * @param estiloEncabezado el estilo a aplicar a los encabezados de tabla
+     * @param estiloTitulo el estilo a aplicar al título de la hoja (no usado actualmente en esta hoja)
+     */
     private void construirAlumnosAtendidos(XSSFWorkbook libro, ReporteExportDatos datos, CellStyle estiloEncabezado,
                                            CellStyle estiloTitulo) {
         Sheet hoja = libro.createSheet("Alumnos Atendidos");
@@ -264,6 +378,14 @@ public class ReporteExcelBuilder {
         autoajustarColumnas(hoja, 10);
     }
 
+    /**
+     * Construye la hoja "Canalizaciones" con el detalle de cada canalización de alumno
+     * registrada en el reporte.
+     * @param libro el libro de Excel donde se crea la hoja
+     * @param datos los datos agregados del reporte
+     * @param estiloEncabezado el estilo a aplicar a los encabezados de tabla
+     * @param estiloTitulo el estilo a aplicar al título de la hoja (no usado actualmente en esta hoja)
+     */
     private void construirCanalizaciones(XSSFWorkbook libro, ReporteExportDatos datos, CellStyle estiloEncabezado,
                                          CellStyle estiloTitulo) {
         Sheet hoja = libro.createSheet("Canalizaciones");
@@ -287,16 +409,31 @@ public class ReporteExcelBuilder {
         autoajustarColumnas(hoja, 9);
     }
 
+    /**
+     * Traduce el código de estatus de avance grupal a su texto legible en español.
+     * @param estatus el código de estatus ("AL_DIA", "RIESGO" u otro)
+     * @return "Al día", "En Riesgo" o "Sin objetivo" según corresponda
+     */
     private String traducirEstatusGrupal(String estatus) {
         if ("AL_DIA".equals(estatus)) return "Al día";
         if ("RIESGO".equals(estatus)) return "En Riesgo";
         return "Sin objetivo";
     }
 
+    /**
+     * Devuelve el valor recibido, o "Todas" si es nulo o está en blanco (usado para filtros femeninos, p. ej. carrera).
+     * @param valor el valor del filtro a evaluar
+     * @return el valor original, o "Todas" si estaba vacío
+     */
     private String orTodas(String valor) {
         return (valor == null || valor.isBlank()) ? "Todas" : valor;
     }
 
+    /**
+     * Devuelve el valor recibido, o "Todos" si es nulo o está en blanco (usado para filtros masculinos, p. ej. cuatrimestre, grupo, tutor).
+     * @param valor el valor del filtro a evaluar
+     * @return el valor original, o "Todos" si estaba vacío
+     */
     private String orTodos(String valor) {
         return (valor == null || valor.isBlank()) ? "Todos" : valor;
     }

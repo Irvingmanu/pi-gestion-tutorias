@@ -10,6 +10,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO responsable del acceso a datos de los grupos (GRUPO), incluyendo su búsqueda o creación
+ * automática, la consulta de grupos disponibles para asignación de tutor y los grupos asignados
+ * a un tutor específico.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-08-14
+ */
 public class GrupoDao implements Dao<Grupo, Integer> {
 
     private static final String SELECT_BASE =
@@ -17,6 +25,11 @@ public class GrupoDao implements Dao<Grupo, Integer> {
                     "car.NOMBRE AS NOMBRE_CARRERA, car.ID_ACADEMIA " +
                     "FROM GRUPO g JOIN CARRERA car ON car.ID_CARRERA = g.ID_CARRERA ";
 
+    /**
+     * Crea un nuevo grupo con estado activo y asigna a la entidad el identificador generado.
+     * @param entidad el grupo a crear
+     * @return {@code true} si la inserción generó un identificador válido; {@code false} en caso contrario
+     */
     @Override
     public boolean create(Grupo entidad) {
         String sql = "INSERT INTO GRUPO (ID_CARRERA, CUATRIMESTRE, LETRA, ID_PERIODO, GENERACION, ESTADO) VALUES (?, ?, ?, ?, ?, 'S')";
@@ -45,6 +58,10 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         }
     }
 
+    /**
+     * Obtiene todos los grupos activos, ordenados por carrera, cuatrimestre y letra.
+     * @return la lista de todos los grupos activos
+     */
     @Override
     public List<Grupo> getAll() {
         List<Grupo> lista = new ArrayList<>();
@@ -66,6 +83,11 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         return lista;
     }
 
+    /**
+     * Obtiene un grupo por su identificador.
+     * @param id el identificador (ID_GRUPO) del grupo buscado
+     * @return el grupo encontrado, o {@code null} si no existe
+     */
     @Override
     public Grupo getById(Integer id) {
         String sql = SELECT_BASE + "WHERE g.ID_GRUPO = ?";
@@ -89,16 +111,35 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         return null;
     }
 
+    /**
+     * Operación no soportada; los grupos no se actualizan directamente mediante este DAO.
+     * @param entidad el grupo a actualizar (no utilizado)
+     * @return siempre {@code false}
+     */
     @Override
     public boolean update(Grupo entidad) {
         return false;
     }
 
+    /**
+     * Operación no soportada; los grupos no se eliminan mediante este DAO.
+     * @param id el identificador del grupo (no utilizado)
+     * @return siempre {@code false}
+     */
     @Override
     public boolean delete(Integer id) {
         return false;
     }
 
+    /**
+     * Busca un grupo existente por carrera, cuatrimestre, letra y periodo; si no existe, lo crea.
+     * @param idCarrera el identificador de la carrera
+     * @param cuatrimestre el número de cuatrimestre
+     * @param letra la letra del grupo
+     * @param idPeriodo el identificador del periodo escolar
+     * @param generacion la generación a asignar si el grupo debe crearse
+     * @return el identificador del grupo encontrado o creado, o {@code null} si ocurre un error o la creación falla
+     */
     public Integer findOrCreate(int idCarrera, int cuatrimestre, String letra, int idPeriodo, String generacion) {
         String sqlBuscar = "SELECT ID_GRUPO FROM GRUPO WHERE ID_CARRERA = ? AND CUATRIMESTRE = ? AND LETRA = ? AND ID_PERIODO = ?";
 
@@ -132,6 +173,14 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         return create(nuevo) ? nuevo.getIdGrupo() : null;
     }
 
+    /**
+     * Verifica si ya existe un grupo activo con la combinación de carrera, cuatrimestre, letra y periodo indicados.
+     * @param idCarrera el identificador de la carrera
+     * @param cuatrimestre el número de cuatrimestre
+     * @param letra la letra del grupo
+     * @param idPeriodo el identificador del periodo escolar
+     * @return {@code true} si el grupo ya existe o si ocurre un error de base de datos; {@code false} en caso contrario
+     */
     public boolean existeGrupo(int idCarrera, int cuatrimestre, String letra, int idPeriodo) {
         String sql = "SELECT 1 FROM GRUPO WHERE ID_CARRERA = ? AND CUATRIMESTRE = ? AND LETRA = ? AND ID_PERIODO = ? AND ESTADO = 'S'";
 
@@ -154,6 +203,11 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         }
     }
 
+    /**
+     * Obtiene los grupos activos que tienen al menos un alumno activo y aún no tienen
+     * un tutor asignado activamente, es decir, los disponibles para asignación de tutor.
+     * @return la lista de grupos disponibles para asignación
+     */
     public List<Grupo> getDisponiblesParaAsignacion() {
         List<Grupo> lista = new ArrayList<>();
         String sql = SELECT_BASE +
@@ -177,6 +231,11 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         return lista;
     }
 
+    /**
+     * Verifica si un grupo tiene al menos un alumno activo.
+     * @param idGrupo el identificador del grupo
+     * @return {@code true} si el grupo tiene al menos un alumno activo; {@code false} en caso contrario o si ocurre un error
+     */
     public boolean tieneAlumnosActivos(int idGrupo) {
         String sql = "SELECT 1 FROM ALUMNO WHERE ID_GRUPO = ? AND ESTADO = 'S' AND ROWNUM = 1";
 
@@ -196,6 +255,11 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         }
     }
 
+    /**
+     * Obtiene los grupos activos asignados actualmente a un tutor, ordenados por cuatrimestre, letra y carrera.
+     * @param idTutor el identificador del tutor
+     * @return la lista de grupos activos asignados al tutor
+     */
     public List<Grupo> getGruposByTutor(int idTutor) {
         List<Grupo> lista = new ArrayList<>();
         String sql = "SELECT g.ID_GRUPO, g.ID_CARRERA, g.CUATRIMESTRE, g.LETRA, g.ID_PERIODO, g.GENERACION, g.ESTADO, " +
@@ -225,6 +289,13 @@ public class GrupoDao implements Dao<Grupo, Integer> {
         return lista;
     }
 
+    /**
+     * Construye una entidad {@link Grupo} a partir de la fila actual de un {@link ResultSet},
+     * incluyendo un nombre de grupo legible compuesto por carrera, cuatrimestre y letra.
+     * @param rs el conjunto de resultados posicionado en la fila a mapear
+     * @return el grupo construido con los datos de la fila
+     * @throws SQLException si ocurre un error al leer las columnas del resultado
+     */
     private Grupo mapear(ResultSet rs) throws SQLException {
         Grupo g = new Grupo();
         g.setIdGrupo(rs.getInt("ID_GRUPO"));

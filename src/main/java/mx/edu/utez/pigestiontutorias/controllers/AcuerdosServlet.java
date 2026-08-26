@@ -20,6 +20,13 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+/**
+ * Servlet que muestra al alumno autenticado el historial combinado de acuerdos
+ * generados en sus sesiones de tutoría individuales y grupales, ordenados por fecha.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-28
+ */
 @WebServlet("/alumno/acuerdos")
 public class AcuerdosServlet extends HttpServlet {
 
@@ -27,6 +34,15 @@ public class AcuerdosServlet extends HttpServlet {
     private final SesionIndividualDao sesionIndividualDao = new SesionIndividualDao();
     private final SesionGrupalDao sesionGrupalDao = new SesionGrupalDao();
 
+    /**
+     * Atiende la petición GET, valida que el alumno tenga sesión activa, obtiene sus
+     * acuerdos de sesiones individuales y grupales, los combina en una sola lista
+     * ordenada por fecha descendente y reenvía la vista de acuerdos del alumno.
+     * @param request petición HTTP con la sesión activa del alumno
+     * @param response respuesta HTTP usada para redirigir al login o reenviar a la vista
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);

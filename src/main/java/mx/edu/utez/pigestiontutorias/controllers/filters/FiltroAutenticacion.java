@@ -13,9 +13,31 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Filtro global de autenticación y autorización por rol: desactiva el caché de
+ * las respuestas, invalida la sesión si fue reemplazada por un inicio de sesión
+ * concurrente, evita que un usuario autenticado vuelva a la pantalla de login,
+ * y restringe el acceso a cada ruta según el rol (Alumno, Tutor o Coordinador)
+ * del usuario en sesión.
+ * @author Irvingmanu, JAIROXD, 20253DS-ART
+ * @version 1.0
+ * @since 2026-07-17
+ */
 @WebFilter("/*")
 public class FiltroAutenticacion extends HttpFilter {
 
+    /**
+     * Intercepta todas las peticiones de la aplicación para aplicar cabeceras
+     * anti-caché, verificar la validez de la sesión activa, redirigir a los
+     * usuarios autenticados que intenten acceder al login, y validar que el rol
+     * del usuario en sesión tenga permiso sobre la ruta solicitada antes de
+     * continuar la cadena de filtros.
+     * @param request petición HTTP entrante
+     * @param response respuesta HTTP sobre la que se establecen cabeceras o se redirige
+     * @param chain la cadena de filtros a continuar si la petición está autorizada
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     * @throws ServletException si ocurre un error al continuar la cadena de filtros
+     */
     @Override
     protected void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws IOException, ServletException {
@@ -78,6 +100,12 @@ public class FiltroAutenticacion extends HttpFilter {
         }
     }
 
+    /**
+     * Determina la ruta de destino por defecto según el rol del usuario, usada
+     * para redirigir cuando intenta acceder a una ruta no autorizada o al login estando ya autenticado.
+     * @param rol el rol del usuario en sesión ("Coordinador", "Tutor" o "Alumno")
+     * @return la ruta de destino correspondiente al rol, o "/login.jsp" si el rol no coincide con ninguno conocido
+     */
     private String destinoSegunRol(String rol) {
         if ("Coordinador".equalsIgnoreCase(rol)) {
             return "/gestion-tutores";
@@ -89,6 +117,13 @@ public class FiltroAutenticacion extends HttpFilter {
         return "/login.jsp";
     }
 
+    /**
+     * Determina qué roles tienen permitido el acceso a una ruta relativa dada,
+     * ya sea por prefijo de carpeta (/alumno/, /tutor/, /coordinador/) o por
+     * coincidencia exacta de servlet.
+     * @param ruta la ruta relativa (sin el context path) a evaluar
+     * @return la lista de roles permitidos para esa ruta, o {@code null} si la ruta no tiene restricción conocida (acceso libre a cualquier usuario autenticado)
+     */
     private List<String> rolesPermitidosPara(String ruta) {
 
         if (ruta.startsWith("/alumno/")) return List.of("Alumno");

@@ -14,11 +14,24 @@ import mx.edu.utez.pigestiontutorias.utils.EmailSender;
 
 import java.io.IOException;
 
+/**
+ * Servlet que gestiona el perfil del alumno autenticado: muestra su información
+ * completa y atiende, vía JSON, la verificación y el cambio de su contraseña.
+ * @author J4IROXD
+ * @version 1.0
+ * @since 2026-08-20
+ */
 @WebServlet(name = "PerfilAlumnoServlet", value = "/perfilAlumno")
 public class PerfilAlumnoServlet extends HttpServlet {
 
     private final AlumnoDAO alumnoDAO = new AlumnoDAO();
 
+    /**
+     * Resuelve la matrícula del alumno en sesión, buscando en orden el atributo
+     * "idUsuario", luego "matricula" y finalmente el objeto "alumno" almacenado en sesión.
+     * @param session la sesión HTTP de la cual obtener la matrícula
+     * @return la matrícula del alumno en sesión, o {@code null} si no hay sesión o no se pudo determinar
+     */
     private String obtenerMatricula(HttpSession session) {
 
         if (session == null) {
@@ -51,6 +64,14 @@ public class PerfilAlumnoServlet extends HttpServlet {
         return null;
     }
 
+    /**
+     * Atiende la petición GET, resuelve la matrícula del alumno en sesión y carga
+     * su perfil completo para reenviarlo a la vista de perfil.
+     * @param request petición HTTP con la sesión activa del alumno
+     * @param response respuesta HTTP usada para redirigir al login, responder 404, o reenviar a la vista
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doGet(HttpServletRequest request,
                          HttpServletResponse response)
@@ -84,6 +105,15 @@ public class PerfilAlumnoServlet extends HttpServlet {
         ).forward(request, response);
     }
 
+    /**
+     * Atiende la petición POST del perfil del alumno en formato JSON: según el
+     * parámetro "accion" verifica la contraseña actual o realiza el cambio de
+     * contraseña (enviando un correo de confirmación si el cambio fue exitoso).
+     * @param request petición HTTP con la sesión activa del alumno y el parámetro "accion"
+     * @param response respuesta HTTP en formato JSON con el resultado de la operación
+     * @throws ServletException si ocurre un error al procesar la petición
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     @Override
     protected void doPost(HttpServletRequest request,
                           HttpServletResponse response)

@@ -1,11 +1,6 @@
 package mx.edu.utez.pigestiontutorias.models.dao;
 
-import mx.edu.utez.pigestiontutorias.models.Alumno;
-import mx.edu.utez.pigestiontutorias.models.AlumnoBusquedaDTO;
-import mx.edu.utez.pigestiontutorias.models.Carrera;
-import mx.edu.utez.pigestiontutorias.models.EventoAgenda;
-import mx.edu.utez.pigestiontutorias.models.Genero;
-import mx.edu.utez.pigestiontutorias.models.TrayectoriaGrupoDTO;
+import mx.edu.utez.pigestiontutorias.models.*;
 import mx.edu.utez.pigestiontutorias.utils.PasswordUtil;
 import mx.edu.utez.pigestiontutorias.utils.SQLConnector;
 
@@ -13,10 +8,25 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO responsable del acceso a datos de los alumnos (ALUMNO), incluyendo su alta individual
+ * y masiva, la gestión de su historial de cambios de grupo (ALUMNO_GRUPO_HISTORICO), la
+ * generación de matrículas, la búsqueda para tutores/coordinadores y la consulta de su agenda
+ * de sesiones.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-21
+ */
 public class AlumnoDAO implements Dao<Alumno, String> {
 
     private final GrupoDao grupoDao = new GrupoDao();
 
+    /**
+     * Crea un nuevo alumno y registra su alta inicial en el histórico de grupos, dentro de una transacción.
+     * Si no se proporciona contraseña, genera una por defecto a partir de la matrícula.
+     * @param entidad el alumno a crear
+     * @return {@code true} si la inserción del alumno se realizó con éxito; {@code false} en caso contrario
+     */
     @Override
     public boolean create(Alumno entidad) {
         String sqlAlumno = "INSERT INTO ALUMNO(MATRICULA, NOMBRES, APELLIDO_PATERNO, APELLIDO_MATERNO, CORREO_INSTITUCIONAL, TELEFONO, ID_GENERO, ID_GRUPO, PASS) " +
@@ -69,6 +79,13 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         }
     }
 
+    /**
+     * Crea en bloque una lista de alumnos y registra su alta por carga masiva en el histórico de grupos,
+     * usando inserciones por lote (batch) dentro de una única transacción.
+     * @param alumnos la lista de alumnos a crear
+     * @param idGrupo el identificador del grupo al que se asignarán todos los alumnos
+     * @return la cantidad de alumnos insertados con éxito, o 0 si la lista está vacía/nula o si ocurre un error
+     */
     public int crearMasivo(List<Alumno> alumnos, int idGrupo) {
         if (alumnos == null || alumnos.isEmpty()) return 0;
 
@@ -131,6 +148,11 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         }
     }
 
+    /**
+     * Verifica si ya existe un alumno registrado con la matrícula indicada.
+     * @param matricula la matrícula a verificar
+     * @return {@code true} si la matrícula ya existe; {@code false} en caso contrario
+     */
     public boolean existeMatricula(String matricula) {
         String sql = "SELECT COUNT(*) FROM ALUMNO WHERE MATRICULA = ?";
         try (Connection con = SQLConnector.getConnection();
@@ -147,6 +169,11 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return false;
     }
 
+    /**
+     * Verifica si ya existe un alumno registrado con el correo institucional indicado.
+     * @param correo el correo institucional a verificar
+     * @return {@code true} si el correo ya existe; {@code false} en caso contrario
+     */
     public boolean existeCorreo(String correo) {
         String sql = "SELECT COUNT(*) FROM ALUMNO WHERE CORREO_INSTITUCIONAL = ?";
         try (Connection con = SQLConnector.getConnection();
@@ -163,6 +190,11 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return false;
     }
 
+    /**
+     * Verifica si ya existe un alumno registrado con el teléfono indicado.
+     * @param telefono el teléfono a verificar
+     * @return {@code true} si el teléfono ya existe; {@code false} en caso contrario
+     */
     public boolean existeTelefono(String telefono) {
         String sql = "SELECT COUNT(*) FROM ALUMNO WHERE TELEFONO = ?";
         try (Connection con = SQLConnector.getConnection();
@@ -179,6 +211,13 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return false;
     }
 
+    /**
+     * Verifica si ya existe otro alumno (distinto al de la matrícula excluida) registrado con el correo indicado,
+     * útil para validar duplicados al editar un alumno existente.
+     * @param correo el correo institucional a verificar
+     * @param matriculaExcluida la matrícula del alumno que se está editando, excluida de la comparación
+     * @return {@code true} si el correo ya existe en otro alumno; {@code false} en caso contrario
+     */
     public boolean existeCorreo(String correo, String matriculaExcluida) {
         String sql = "SELECT COUNT(*) FROM ALUMNO WHERE CORREO_INSTITUCIONAL = ? AND MATRICULA <> ?";
         try (Connection con = SQLConnector.getConnection();
@@ -196,6 +235,13 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return false;
     }
 
+    /**
+     * Verifica si ya existe otro alumno (distinto al de la matrícula excluida) registrado con el teléfono indicado,
+     * útil para validar duplicados al editar un alumno existente.
+     * @param telefono el teléfono a verificar
+     * @param matriculaExcluida la matrícula del alumno que se está editando, excluida de la comparación
+     * @return {@code true} si el teléfono ya existe en otro alumno; {@code false} en caso contrario
+     */
     public boolean existeTelefono(String telefono, String matriculaExcluida) {
         String sql = "SELECT COUNT(*) FROM ALUMNO WHERE TELEFONO = ? AND MATRICULA <> ?";
         try (Connection con = SQLConnector.getConnection();
@@ -213,6 +259,10 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return false;
     }
 
+    /**
+     * Obtiene todos los alumnos registrados, sin importar su estado.
+     * @return la lista de todos los alumnos
+     */
     @Override
     public List<Alumno> getAll() {
 
@@ -228,6 +278,11 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return listaAlumnos;
     }
 
+    /**
+     * Obtiene un alumno por su matrícula.
+     * @param matricula la matrícula del alumno buscado
+     * @return el alumno encontrado, o {@code null} si no existe
+     */
     @Override
     public Alumno getById(String matricula) {
         String sql = "SELECT * FROM ALUMNO WHERE MATRICULA = ?";
@@ -241,6 +296,11 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return null;
     }
 
+    /**
+     * Busca un alumno por su correo institucional, sin distinguir mayúsculas/minúsculas.
+     * @param correo el correo institucional a buscar
+     * @return el alumno encontrado, o {@code null} si no existe
+     */
     public Alumno findByCorreo(String correo) {
         String sql = "SELECT * FROM ALUMNO WHERE UPPER(CORREO_INSTITUCIONAL) = UPPER(?)";
         try (Connection con = SQLConnector.getConnection();
@@ -253,6 +313,11 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return null;
     }
 
+    /**
+     * Obtiene un alumno por su matrícula junto con los datos completos de su grupo asignado.
+     * @param matricula la matrícula del alumno buscado
+     * @return el alumno con su grupo cargado, o {@code null} si el alumno no existe
+     */
     public Alumno getPerfilCompleto(String matricula) {
         Alumno alumno = getById(matricula);
         if (alumno == null) return null;
@@ -263,6 +328,13 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return alumno;
     }
 
+    /**
+     * Actualiza los datos de un alumno existente. Si el grupo cambia respecto al actual,
+     * cierra el registro histórico vigente y abre uno nuevo con motivo "Cambio de grupo",
+     * todo dentro de una transacción.
+     * @param entidad el alumno con los datos actualizados (debe incluir su matrícula)
+     * @return {@code true} si se actualizó al menos una fila del alumno; {@code false} en caso contrario
+     */
     @Override
     public boolean update(Alumno entidad) {
         String sqlGrupoAnterior = "SELECT ID_GRUPO FROM ALUMNO WHERE MATRICULA = ?";
@@ -328,6 +400,12 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         }
     }
 
+    /**
+     * Obtiene la trayectoria histórica de grupos de un alumno (carrera, cuatrimestre, letra,
+     * generación y fechas de inicio/fin), ordenada cronológicamente.
+     * @param matricula la matrícula del alumno
+     * @return la lista de registros de trayectoria del alumno
+     */
     public List<TrayectoriaGrupoDTO> getTrayectoriaPorAlumno(String matricula) {
         List<TrayectoriaGrupoDTO> lista = new ArrayList<>();
         String sql = "SELECT c.NOMBRE AS NOMBRE_CARRERA, c.NIVEL, g.CUATRIMESTRE, g.LETRA, g.GENERACION, " +
@@ -360,6 +438,11 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return lista;
     }
 
+    /**
+     * Da de baja lógica a un alumno, marcando su ESTADO como 'N'.
+     * @param matricula la matrícula del alumno a dar de baja
+     * @return {@code true} si se actualizó al menos una fila; {@code false} en caso contrario
+     */
     @Override
     public boolean delete(String matricula) {
 
@@ -374,6 +457,11 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         }
     }
 
+    /**
+     * Reactiva a un alumno dado de baja, marcando su ESTADO como 'S'.
+     * @param matricula la matrícula del alumno a reactivar
+     * @return {@code true} si se actualizó al menos una fila; {@code false} en caso contrario
+     */
     public boolean reactivar(String matricula) {
         String sql = "UPDATE ALUMNO SET ESTADO = 'S' WHERE MATRICULA = ?";
         try (Connection con = SQLConnector.getConnection();
@@ -386,6 +474,12 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         }
     }
 
+    /**
+     * Actualiza la contraseña de un alumno, almacenándola con hash.
+     * @param matricula la matrícula del alumno
+     * @param nuevaPassword la nueva contraseña en texto plano, que será hasheada antes de guardarse
+     * @return {@code true} si se actualizó al menos una fila; {@code false} en caso contrario
+     */
     public boolean actualizarPassword(String matricula, String nuevaPassword) {
         String sql = "UPDATE ALUMNO SET PASS = ? WHERE MATRICULA = ?";
         try (Connection con = SQLConnector.getConnection();
@@ -399,6 +493,10 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         }
     }
 
+    /**
+     * Obtiene todos los géneros del catálogo.
+     * @return la lista de todos los géneros
+     */
     public List<Genero> getAllGeneros() {
         List<Genero> lista = new ArrayList<>();
         String sql = "SELECT ID_GENERO, NOMBRE FROM GENERO";
@@ -410,10 +508,20 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return lista;
     }
 
+    /**
+     * Obtiene todas las carreras del catálogo, delegando en {@link CarreraDao}.
+     * @return la lista de todas las carreras
+     */
     public List<Carrera> getAllCarreras() {
         return new CarreraDao().getAll();
     }
 
+    /**
+     * Calcula el siguiente número consecutivo disponible para generar matrículas con un prefijo dado,
+     * revisando las matrículas existentes que comienzan con ese prefijo y tomando el mayor consecutivo + 1.
+     * @param prefijo el prefijo de matrícula a buscar
+     * @return el siguiente número consecutivo disponible (1 si no hay matrículas previas con ese prefijo)
+     */
     public int obtenerSiguienteContador(String prefijo) {
         String sql = "SELECT MATRICULA FROM ALUMNO WHERE MATRICULA LIKE ?";
         int mayor = 0;
@@ -444,6 +552,14 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return mayor + 1;
     }
 
+    /**
+     * Busca alumnos activos por coincidencia de matrícula o nombre completo, opcionalmente
+     * restringido a los alumnos de los grupos asignados a un tutor específico. Limita el
+     * resultado a 20 registros.
+     * @param texto el texto a buscar en la matrícula o el nombre completo del alumno
+     * @param idTutor el identificador del tutor para restringir la búsqueda a sus grupos, o {@code null} para no restringir
+     * @return la lista de alumnos encontrados (vacía si el texto es nulo o está en blanco)
+     */
     public List<AlumnoBusquedaDTO> buscarAlumnos(String texto, Integer idTutor) {
         List<AlumnoBusquedaDTO> lista = new ArrayList<>();
         if (texto == null || texto.isBlank()) return lista;
@@ -489,6 +605,12 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return lista;
     }
 
+    /**
+     * Construye una entidad {@link Alumno} a partir de la fila actual de un {@link ResultSet}.
+     * @param rs el conjunto de resultados posicionado en la fila a mapear
+     * @return el alumno construido con los datos de la fila
+     * @throws SQLException si ocurre un error al leer las columnas del resultado
+     */
     private Alumno mapearAlumno(ResultSet rs) throws SQLException {
         Alumno alumno = new Alumno();
         alumno.setMatricula(rs.getString("MATRICULA"));
@@ -504,6 +626,13 @@ public class AlumnoDAO implements Dao<Alumno, String> {
         return alumno;
     }
 
+    /**
+     * Obtiene la agenda de eventos de un alumno, combinando sus sesiones individuales con las
+     * sesiones grupales de su grupo, incluyendo el estatus de asistencia de cada una (por defecto "Falta").
+     * @param matricula la matrícula del alumno
+     * @param idGrupo el identificador del grupo del alumno
+     * @return la lista de eventos de agenda del alumno, ordenados por fecha ascendente
+     */
     public List<EventoAgenda> getAgendaAlumno(String matricula, int idGrupo) {
         List<EventoAgenda> listaEventos = new ArrayList<>();
 
@@ -538,7 +667,7 @@ public class AlumnoDAO implements Dao<Alumno, String> {
 
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    java.sql.Timestamp fecha = rs.getTimestamp("FECHA");
+                    Timestamp fecha = rs.getTimestamp("FECHA");
                     listaEventos.add(new EventoAgenda(
                             rs.getString("TIPO"),
                             rs.getString("DESCRIPCION"),

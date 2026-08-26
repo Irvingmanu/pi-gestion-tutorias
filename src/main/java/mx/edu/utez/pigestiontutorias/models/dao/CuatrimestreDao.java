@@ -9,13 +9,30 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO responsable del acceso de solo lectura al catálogo de cuatrimestres (ADMIN.CUATRIMESTRE).
+ * Las operaciones de escritura del contrato {@link Dao} no están implementadas ya que este
+ * catálogo se considera fijo.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-22
+ */
 public class CuatrimestreDao implements Dao<Cuatrimestre, Integer> {
 
+    /**
+     * Operación no soportada para este catálogo de solo lectura.
+     * @param entidad el cuatrimestre a crear (no utilizado)
+     * @return siempre {@code false}
+     */
     @Override
     public boolean create(Cuatrimestre entidad) {
         return false;
     }
 
+    /**
+     * Obtiene todos los cuatrimestres del catálogo.
+     * @return la lista de todos los cuatrimestres registrados
+     */
     @Override
     public List<Cuatrimestre> getAll() {
         List<Cuatrimestre> lista = new ArrayList<>();
@@ -40,16 +57,31 @@ public class CuatrimestreDao implements Dao<Cuatrimestre, Integer> {
         return lista;
     }
 
+    /**
+     * Operación no soportada para este catálogo de solo lectura.
+     * @param id el identificador del cuatrimestre (no utilizado)
+     * @return siempre {@code null}
+     */
     @Override
     public Cuatrimestre getById(Integer id) {
         return null;
     }
 
+    /**
+     * Operación no soportada para este catálogo de solo lectura.
+     * @param entidad el cuatrimestre a actualizar (no utilizado)
+     * @return siempre {@code false}
+     */
     @Override
     public boolean update(Cuatrimestre entidad) {
         return false;
     }
 
+    /**
+     * Operación no soportada para este catálogo de solo lectura.
+     * @param id el identificador del cuatrimestre (no utilizado)
+     * @return siempre {@code false}
+     */
     @Override
     public boolean delete(Integer id) {
         return false;

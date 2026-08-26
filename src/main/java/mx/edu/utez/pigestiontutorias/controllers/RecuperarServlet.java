@@ -18,6 +18,14 @@ import mx.edu.utez.pigestiontutorias.utils.EmailSender;
 import java.io.IOException;
 import java.security.SecureRandom;
 
+/**
+ * Servlet que gestiona el flujo de recuperación de contraseña para alumnos,
+ * tutores y coordinadores: solicitud de código por correo, verificación del
+ * código y cambio final de contraseña con notificación por correo.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-21
+ */
 @WebServlet(name = "RecuperarServlet", urlPatterns = {"/recuperar"})
 public class RecuperarServlet extends HttpServlet {
 
@@ -29,6 +37,15 @@ public class RecuperarServlet extends HttpServlet {
 
     private static final int MAX_PASS_TEXTO_PLANO = 50;
 
+    /**
+     * Atiende las peticiones POST del flujo de recuperación de contraseña,
+     * enrutando según el parámetro "action" hacia la solicitud de código,
+     * la verificación del código o el cambio final de contraseña.
+     * @param request petición HTTP con el parámetro "action" y los datos del paso correspondiente
+     * @param response respuesta HTTP usada para redirigir o reenviar a la vista JSP
+     * @throws ServletException si ocurre un error al procesar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -44,6 +61,15 @@ public class RecuperarServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Genera un código de recuperación y lo asocia al alumno, tutor o coordinador
+     * cuyo correo coincida con el dato recibido, enviándolo por correo si se pudo crear.
+     * Por seguridad, siempre muestra el mismo mensaje genérico sin revelar si el correo existe.
+     * @param request petición HTTP con el parámetro "dato" (correo a buscar)
+     * @param response respuesta HTTP usada para reenviar a la vista de recuperación
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     private void solicitarCodigo(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -76,6 +102,14 @@ public class RecuperarServlet extends HttpServlet {
         request.getRequestDispatcher("recuperar-contra.jsp").forward(request, response);
     }
 
+    /**
+     * Verifica que el código de recuperación ingresado sea válido y esté vigente;
+     * si lo es, guarda en sesión los datos del token para permitir el cambio de contraseña.
+     * @param request petición HTTP con el parámetro "codigo" ingresado por el usuario
+     * @param response respuesta HTTP usada para reenviar a la vista de recuperación
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     private void verificarCodigo(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -98,6 +132,15 @@ public class RecuperarServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Aplica el cambio de contraseña para el usuario (alumno, tutor o coordinador)
+     * asociado al token de recuperación vigente en sesión, validando longitud máxima
+     * y coincidencia de las dos contraseñas capturadas, y notificando por correo el cambio.
+     * @param request petición HTTP con los parámetros pass1 y pass2 y la sesión con el token de recuperación
+     * @param response respuesta HTTP usada para redirigir o reenviar a la vista correspondiente
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     private void cambiarPassword(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -176,6 +219,12 @@ public class RecuperarServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Genera un código alfanumérico aleatorio y criptográficamente seguro
+     * de la longitud indicada, usado como código de recuperación.
+     * @param longitud la cantidad de caracteres del código a generar
+     * @return el código alfanumérico generado en mayúsculas
+     */
     private String generarCodigo(int longitud) {
         String caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         SecureRandom rnd = new SecureRandom();

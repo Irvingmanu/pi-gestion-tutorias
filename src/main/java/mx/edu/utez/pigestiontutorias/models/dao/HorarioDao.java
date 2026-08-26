@@ -10,33 +10,70 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO de acceso a datos para los horarios de atención de los tutores.
+ * Las operaciones genéricas del contrato {@link Dao} no están implementadas;
+ * únicamente expone la consulta de horarios disponibles por tutor.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-23
+ */
 public class HorarioDao implements Dao<Horario, Integer> {
 
+    /**
+     * Operación no implementada del contrato {@link Dao}.
+     * @param entidad el horario a crear
+     * @return siempre {@code false}
+     */
     @Override
     public boolean create(Horario entidad) {
         return false;
     }
 
+    /**
+     * Operación no implementada del contrato {@link Dao}.
+     * @return siempre {@code null}
+     */
     @Override
     public List<Horario> getAll() {
         return null;
     }
 
+    /**
+     * Operación no implementada del contrato {@link Dao}.
+     * @param id el identificador del horario
+     * @return siempre {@code null}
+     */
     @Override
     public Horario getById(Integer id) {
         return null;
     }
 
+    /**
+     * Operación no implementada del contrato {@link Dao}.
+     * @param entidad el horario a actualizar
+     * @return siempre {@code false}
+     */
     @Override
     public boolean update(Horario entidad) {
         return false;
     }
 
+    /**
+     * Operación no implementada del contrato {@link Dao}.
+     * @param id el identificador del horario
+     * @return siempre {@code false}
+     */
     @Override
     public boolean delete(Integer id) {
         return false;
     }
 
+    /**
+     * Obtiene los horarios de atención activos de un tutor, ordenados por identificador.
+     * @param idTutor el identificador del tutor
+     * @return la lista de horarios disponibles del tutor; vacía si no tiene o si ocurre un error de base de datos
+     */
     public List<Horario> findDisponiblesByTutor(int idTutor) {
         List<Horario> lista = new ArrayList<>();
 
@@ -73,6 +110,12 @@ public class HorarioDao implements Dao<Horario, Integer> {
         return lista;
     }
 
+    /**
+     * Da formato "HH:mm" a una hora y minuto dados, rellenando con ceros a la izquierda.
+     * @param hora la hora (0-23)
+     * @param minuto el minuto (0-59)
+     * @return la hora formateada como cadena "HH:mm"
+     */
     private String formatear(int hora, int minuto) {
         return String.format("%02d:%02d", hora, minuto);
     }

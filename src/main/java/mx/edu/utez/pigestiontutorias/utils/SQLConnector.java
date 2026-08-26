@@ -11,6 +11,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
 
+/**
+ * Utilidad encargada de inicializar y exponer el pool de conexiones HikariCP hacia la
+ * base de datos Oracle (usando Oracle Wallet), obteniendo las credenciales de las
+ * variables de entorno o, en su defecto, del archivo credentials.properties.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-17
+ */
 public class SQLConnector {
 
     private static HikariDataSource dataSource;
@@ -91,16 +99,30 @@ public class SQLConnector {
         }
     }
 
+    /**
+     * Obtiene una conexión activa del pool de conexiones hacia la base de datos.
+     * @return una conexión JDBC lista para usarse
+     * @throws SQLException si ocurre un error al obtener la conexión del pool
+     */
     public static Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
 
+    /**
+     * Cierra el pool de conexiones si está abierto, liberando los recursos asociados.
+     */
     public static void closeConnection() {
         if(dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
         }
     }
 
+    /**
+     * Detecta la codificación de caracteres (UTF-8 o ISO-8859-1) de un arreglo de bytes,
+     * usado para leer correctamente el archivo credentials.properties sin importar su codificación.
+     * @param bytes el contenido del archivo a analizar
+     * @return el conjunto de caracteres detectado
+     */
     private static java.nio.charset.Charset detectCharset(byte[] bytes) {
         if (bytes.length >= 3 && (bytes[0] & 0xFF) == 0xEF && (bytes[1] & 0xFF) == 0xBB && (bytes[2] & 0xFF) == 0xBF) {
             return StandardCharsets.UTF_8;

@@ -17,6 +17,15 @@ import mx.edu.utez.pigestiontutorias.utils.SesionActivaManager;
 
 import java.io.IOException;
 
+/**
+ * Servlet que autentica a alumnos, tutores y coordinadores mediante correo y
+ * contraseña, verificando las credenciales contra cada catálogo de usuarios,
+ * abriendo una sesión segura de un único inicio activo por cuenta y redirigiendo
+ * a la vista de inicio correspondiente al rol.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-17
+ */
 @WebServlet(name = "LoginServlet", urlPatterns = {"/login"})
 public class LoginServlet extends HttpServlet {
 
@@ -24,6 +33,16 @@ public class LoginServlet extends HttpServlet {
     private final TutorDao tutorDao = new TutorDao();
     private final CoordinadorDAO coordinadorDAO = new CoordinadorDAO();
 
+    /**
+     * Atiende la petición POST del formulario de inicio de sesión, buscando el correo
+     * ingresado entre alumnos, tutores y coordinadores (en ese orden), validando la
+     * contraseña y el estado de la cuenta, e iniciando sesión con los atributos
+     * correspondientes al rol detectado.
+     * @param request petición HTTP con los parámetros "correo" y "password"
+     * @param response respuesta HTTP usada para redirigir a la vista principal del rol o reenviar al login con error
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -88,6 +107,14 @@ public class LoginServlet extends HttpServlet {
         credencialesInvalidas(request, response);
     }
 
+    /**
+     * Invalida cualquier sesión previa del navegador, crea una nueva sesión HTTP y
+     * la registra como la sesión activa del usuario, cerrando cualquier sesión
+     * anterior que ese mismo correo tuviera abierta en otro dispositivo.
+     * @param request petición HTTP sobre la que se crea la nueva sesión
+     * @param correoInstitucional el correo institucional del usuario que inicia sesión
+     * @return la nueva sesión HTTP creada y registrada
+     */
     private HttpSession iniciarSesionSegura(HttpServletRequest request, String correoInstitucional) {
         HttpSession sesionPrevia = request.getSession(false);
         if (sesionPrevia != null) {
@@ -98,11 +125,27 @@ public class LoginServlet extends HttpServlet {
         return session;
     }
 
+    /**
+     * Verifica que la cuenta esté activa y que la contraseña ingresada, una vez
+     * aplicado el hash, coincida con la contraseña almacenada.
+     * @param estado el estado de la cuenta ("S" para activa)
+     * @param passAlmacenada el hash de la contraseña almacenado para el usuario
+     * @param passIngresada la contraseña en texto plano ingresada en el formulario
+     * @return {@code true} si la cuenta está activa y la contraseña coincide; {@code false} en caso contrario
+     */
     private boolean credencialesValidas(String estado, String passAlmacenada, String passIngresada) {
         return "S".equals(estado) && passAlmacenada != null
                 && passAlmacenada.equalsIgnoreCase(PasswordUtil.hash(passIngresada));
     }
 
+    /**
+     * Reenvía la petición al formulario de login con un mensaje de error de
+     * credenciales incorrectas.
+     * @param request petición HTTP que será reenviada al formulario de login
+     * @param response respuesta HTTP usada para reenviar la petición a la vista JSP
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     private void credencialesInvalidas(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.setAttribute("error", "Correo o contraseña incorrectos.");

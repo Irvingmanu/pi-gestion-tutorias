@@ -32,6 +32,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Servlet que gestiona el módulo de Grupos y Alumnos del sistema de tutorías:
+ * alta, edición, baja lógica y reactivación de alumnos, creación de grupos
+ * independientes y carga masiva de alumnos mediante archivos Excel.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-21
+ */
 @WebServlet(name = "AlumnoServlet", value = "/gestion-grupos")
 @MultipartConfig(maxFileSize = AlumnoServlet.MAX_TAMANO_ARCHIVO_EXCEL)
 public class AlumnoServlet extends HttpServlet {
@@ -54,6 +62,17 @@ public class AlumnoServlet extends HttpServlet {
     private final AcademiaDao academiaDao = new AcademiaDao();
     private final CarreraDao carreraDao = new CarreraDao();
 
+    /**
+     * Atiende las peticiones GET del módulo de gestión de grupos y alumnos.
+     * Según el parámetro "accion" enruta hacia la agenda del alumno, elimina
+     * o reactiva un alumno, prepara el formulario de alta/edición, o bien
+     * carga el listado general de alumnos, grupos, géneros, academias,
+     * carreras y periodos para la vista de gestión de grupos.
+     * @param request petición HTTP con el parámetro "accion" y sus datos asociados
+     * @param response respuesta HTTP usada para redirigir o reenviar a la vista JSP
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String accion = request.getParameter("accion");
@@ -126,6 +145,17 @@ public class AlumnoServlet extends HttpServlet {
         request.getRequestDispatcher("/coordinador/gestion-grupos.jsp").forward(request, response);
     }
 
+    /**
+     * Atiende las peticiones POST del módulo de gestión de grupos y alumnos.
+     * Según el parámetro "accion" elimina o reactiva un alumno, crea un grupo
+     * independiente, procesa la carga masiva de alumnos por Excel, o bien
+     * valida y guarda (alta o edición) los datos de un alumno individual,
+     * verificando duplicados de matrícula, correo y teléfono antes de persistir.
+     * @param request petición HTTP con el parámetro "accion" y los datos del alumno o grupo
+     * @param response respuesta HTTP usada para redirigir o reenviar a la vista JSP
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String accion = request.getParameter("accion");
@@ -227,6 +257,14 @@ public class AlumnoServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/gestion-grupos?exito=" + parametroExito);
     }
 
+    /**
+     * Crea un grupo de forma independiente (sin pasar por la carga masiva de alumnos),
+     * validando carrera, cuatrimestre acorde al nivel de la carrera, letra de grupo,
+     * año de inicio y periodo escolar activo, y evitando grupos duplicados.
+     * @param request petición HTTP con los parámetros idCarrera, cuatrimestre, letra, anioInicio e idPeriodo
+     * @param response respuesta HTTP usada para redirigir con el resultado de la operación (éxito o error)
+     * @throws IOException si ocurre un error de entrada/salida al redirigir la respuesta
+     */
     private void crearGrupoIndependiente(HttpServletRequest request, HttpServletResponse response) throws IOException {
         Integer idCarrera = parseIntOrNull(request.getParameter("idCarrera"));
         Integer cuatrimestre = parseIntOrNull(request.getParameter("cuatrimestre"));
@@ -276,6 +314,16 @@ public class AlumnoServlet extends HttpServlet {
         response.sendRedirect(request.getContextPath() + "/gestion-grupos?" + parametro);
     }
 
+    /**
+     * Procesa la carga masiva de alumnos a partir de un archivo Excel adjunto en la petición.
+     * Valida el grupo destino y su periodo, lee cada fila de la hoja, genera matrícula
+     * automática cuando corresponde (primer cuatrimestre), valida los datos de cada alumno
+     * contra duplicados dentro del lote y en el sistema, y finalmente inserta en bloque
+     * los alumnos válidos, guardando en sesión el detalle de las filas inválidas.
+     * @param request petición HTTP con el parámetro idGrupo y la parte multipart "archivoExcel"
+     * @param response respuesta HTTP usada para redirigir con el resultado de la carga (éxito o error)
+     * @throws IOException si ocurre un error de entrada/salida al leer el archivo o redirigir la respuesta
+     */
     private void procesarCargaMasivaAlumnos(HttpServletRequest request, HttpServletResponse response) throws IOException {
         request.setCharacterEncoding("UTF-8");
 
@@ -394,6 +442,16 @@ public class AlumnoServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Valida los datos de un alumno leído desde una fila del archivo Excel de carga masiva,
+     * verificando formato de nombre, apellidos, matrícula, correo, teléfono y género, así como
+     * duplicados dentro del propio lote y contra los registros ya existentes en el sistema.
+     * @param alumno alumno construido a partir de la fila del Excel a validar
+     * @param matriculasEnLote conjunto de matrículas ya vistas en el lote actual, usado para detectar duplicados
+     * @param correosEnLote conjunto de correos ya vistos en el lote actual, usado para detectar duplicados
+     * @param telefonosEnLote conjunto de teléfonos ya vistos en el lote actual, usado para detectar duplicados
+     * @return el mensaje de error correspondiente si el alumno es inválido, o {@code null} si es válido
+     */
     private String validarFilaAlumno(Alumno alumno, Set<String> matriculasEnLote, Set<String> correosEnLote, Set<String> telefonosEnLote) {
         if (esTextoVacio(alumno.getNombres()) || !alumno.getNombres().matches(REGEX_NOMBRE) || alumno.getNombres().length() > MAX_NOMBRES) {
             return "el nombre '" + alumno.getNombres() + "' es inválido o está vacío.";
@@ -443,10 +501,22 @@ public class AlumnoServlet extends HttpServlet {
         return null;
     }
 
+    /**
+     * Determina si una cadena de texto es nula o está en blanco.
+     * @param texto el texto a evaluar
+     * @return {@code true} si el texto es {@code null} o está en blanco; {@code false} en caso contrario
+     */
     private static boolean esTextoVacio(String texto) {
         return texto == null || texto.isBlank();
     }
 
+    /**
+     * Obtiene el valor de texto de una celda de Excel, sin importar si su contenido
+     * está almacenado como texto o como número (en cuyo caso se convierte a cadena,
+     * evitando notación decimal cuando el valor es entero).
+     * @param celda la celda de la hoja de Excel de la cual extraer el texto
+     * @return el texto contenido en la celda, recortado de espacios, o {@code null} si la celda es nula
+     */
     private static String obtenerTexto(Cell celda) {
         if (celda == null) return null;
 
@@ -462,6 +532,13 @@ public class AlumnoServlet extends HttpServlet {
         return valor != null ? valor.trim() : null;
     }
 
+    /**
+     * Verifica que un cuatrimestre sea válido de acuerdo con el nivel académico de la carrera:
+     * TSU admite cuatrimestres del 1 al 6, e Ingeniería del 7 al 10.
+     * @param cuatrimestre el número de cuatrimestre a validar
+     * @param nivel el nivel académico de la carrera ("TSU" o "ING")
+     * @return {@code true} si el cuatrimestre es válido para el nivel indicado; {@code false} en caso contrario
+     */
     private boolean esCuatrimestreValidoParaNivel(int cuatrimestre, String nivel) {
         if ("TSU".equals(nivel)) {
             return cuatrimestre >= 1 && cuatrimestre <= 6;
@@ -472,10 +549,20 @@ public class AlumnoServlet extends HttpServlet {
         return false;
     }
 
+    /**
+     * Recorta los espacios en blanco de una cadena, preservando {@code null}.
+     * @param valor el valor a recortar
+     * @return el valor recortado, o {@code null} si el valor original era {@code null}
+     */
     private String trimOrNull(String valor) {
         return valor != null ? valor.trim() : null;
     }
 
+    /**
+     * Convierte una cadena de texto a entero de forma segura.
+     * @param valor el texto a convertir
+     * @return el valor entero resultante, o {@code null} si el texto es nulo, está en blanco o no es numérico
+     */
     private Integer parseIntOrNull(String valor) {
         if (valor == null || valor.isBlank()) return null;
         try {
@@ -485,8 +572,20 @@ public class AlumnoServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Reenvía la petición al formulario de alta/edición de alumno, cargando los datos
+     * del alumno a editar o los datos con error capturados, junto con el catálogo de
+     * géneros, la lista de grupos y el mensaje de error correspondiente.
+     * @param request petición HTTP que será reenviada al formulario
+     * @param response respuesta HTTP usada para reenviar la petición a la vista JSP
+     * @param alumnoEdit el alumno a editar cuando se prepara una edición, o {@code null} si no aplica
+     * @param alumnoConError el alumno con los datos capturados que generaron un error de validación, o {@code null} si no aplica
+     * @param codigoError el código del error a mostrar en el formulario, o {@code null} si no hay error
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     private void forwardAFormulario(HttpServletRequest request, HttpServletResponse response,
-                                     Alumno alumnoEdit, Alumno alumnoConError, String codigoError)
+                                    Alumno alumnoEdit, Alumno alumnoConError, String codigoError)
             throws ServletException, IOException {
         Alumno alumnoFormulario = alumnoEdit != null ? alumnoEdit : alumnoConError;
         boolean esEdicion = alumnoEdit != null || "editar".equals(request.getParameter("accion"));
@@ -502,6 +601,12 @@ public class AlumnoServlet extends HttpServlet {
         request.getRequestDispatcher("/coordinador/formulario-alumno.jsp").forward(request, response);
     }
 
+    /**
+     * Traduce un código de error interno en el mensaje descriptivo que se mostrará al usuario
+     * en el formulario de alta/edición de alumno.
+     * @param codigoError el código del error a traducir
+     * @return el mensaje de error correspondiente al código, o {@code null} si el código no coincide con ninguno conocido
+     */
     private String resolverMensajeError(String codigoError) {
         if ("matricula_duplicada".equals(codigoError)) {
             return "Esta matrícula ya está registrada en el sistema.";

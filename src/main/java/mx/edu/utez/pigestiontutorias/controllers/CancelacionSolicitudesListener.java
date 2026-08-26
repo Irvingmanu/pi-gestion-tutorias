@@ -1,4 +1,4 @@
-package mx.edu.utez.pigestiontutorias.listeners;
+package mx.edu.utez.pigestiontutorias.controllers;
 
 import jakarta.servlet.ServletContextEvent;
 import jakarta.servlet.ServletContextListener;
@@ -9,6 +9,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Listener del contexto de la aplicación que programa una tarea periódica en segundo
+ * plano para cancelar automáticamente las solicitudes de tutoría vencidas.
+ * @author J4IROXD
+ * @version 1.0
+ * @since 2026-08-21
+ */
 @WebListener
 public class CancelacionSolicitudesListener implements ServletContextListener {
 
@@ -17,6 +24,11 @@ public class CancelacionSolicitudesListener implements ServletContextListener {
     private ScheduledExecutorService scheduler;
     private final SolicitudDao solicitudDao = new SolicitudDao();
 
+    /**
+     * Se ejecuta al arrancar la aplicación: crea un scheduler de un solo hilo daemon
+     * y programa en él, a intervalos fijos, la cancelación de solicitudes vencidas.
+     * @param sce el evento de inicialización del contexto de la aplicación
+     */
     @Override
     public void contextInitialized(ServletContextEvent sce) {
 
@@ -41,6 +53,11 @@ public class CancelacionSolicitudesListener implements ServletContextListener {
                 + INTERVALO_MINUTOS + " minutos).");
     }
 
+    /**
+     * Se ejecuta al detener la aplicación: apaga ordenadamente el scheduler de la
+     * tarea de cancelación de solicitudes, forzando su cierre si no termina a tiempo.
+     * @param sce el evento de destrucción del contexto de la aplicación
+     */
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
 

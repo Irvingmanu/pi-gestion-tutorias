@@ -39,6 +39,15 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Servlet que expone el módulo de reportes globales para el coordinador: avance
+ * de tutorías grupales, detalle de sesiones, atenciones individuales, canalizaciones,
+ * solicitudes pendientes, búsqueda y trayectoria de alumnos, envío de alertas y
+ * recordatorios por correo, y exportación de reportes a Excel y PDF.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-08-02
+ */
 @WebServlet("/reportes-globales")
 public class ReportesGlobalesServlet extends HttpServlet {
 
@@ -55,6 +64,15 @@ public class ReportesGlobalesServlet extends HttpServlet {
     private static final DateTimeFormatter FORMATO_FECHA = DateTimeFormatter.ofPattern("dd/MM/yyyy");
     private static final java.sql.Date FECHA_DEFAULT_DESDE = java.sql.Date.valueOf(LocalDate.of(2000, 1, 1));
 
+    /**
+     * Punto de entrada de las peticiones GET del módulo de reportes globales.
+     * Delega en {@link #doGetInterno} y captura cualquier excepción inesperada
+     * para responderla como JSON de error en lugar de propagarla.
+     * @param request petición HTTP con el parámetro "accion" y sus filtros asociados
+     * @param response respuesta HTTP usada para redirigir, reenviar o responder JSON
+     * @throws ServletException si ocurre un error al procesar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
@@ -67,6 +85,13 @@ public class ReportesGlobalesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Escribe una respuesta JSON de error genérico con el mensaje de la excepción,
+     * evitando escribir si la respuesta ya fue confirmada.
+     * @param response respuesta HTTP sobre la cual escribir el error
+     * @param e la excepción capturada cuyo mensaje se incluye en la respuesta
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderErrorJson(HttpServletResponse response, Exception e) throws IOException {
         if (response.isCommitted()) return;
         response.reset();
@@ -78,6 +103,17 @@ public class ReportesGlobalesServlet extends HttpServlet {
         response.getWriter().flush();
     }
 
+    /**
+     * Enruta las peticiones GET autenticadas del módulo de reportes globales según
+     * el parámetro "accion" hacia los distintos endpoints JSON (avance grupal, detalle
+     * de sesiones, atenciones individuales, canalizaciones, solicitudes pendientes,
+     * búsqueda y trayectoria de alumnos, exportación a Excel/PDF), o bien carga la
+     * vista principal de reportes con los catálogos y prefiltros correspondientes.
+     * @param request petición HTTP con el parámetro "accion" y sus filtros asociados
+     * @param response respuesta HTTP usada para redirigir, reenviar o responder JSON
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     private void doGetInterno(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
@@ -152,6 +188,14 @@ public class ReportesGlobalesServlet extends HttpServlet {
         rd.forward(request, response);
     }
 
+    /**
+     * Atiende las peticiones POST autenticadas del módulo de reportes globales,
+     * enrutando según el parámetro "accion" hacia el envío de alertas al tutor,
+     * el recordatorio de solicitudes, o la exportación de reportes a Excel/PDF.
+     * @param request petición HTTP con el parámetro "accion" y sus datos asociados
+     * @param response respuesta HTTP usada para responder JSON o el archivo exportado
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
         HttpSession session = request.getSession(false);
@@ -178,6 +222,12 @@ public class ReportesGlobalesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Responde en JSON el avance de tutorías grupales de cada tutor respecto al
+     * objetivo del periodo escolar vigente.
+     * @param response respuesta HTTP donde se escribe el JSON con el periodo, objetivo y avance
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderAvanceGrupal(HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -220,6 +270,13 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Responde en JSON el detalle de las sesiones grupales de un tutor y grupo
+     * específicos dentro del periodo escolar vigente.
+     * @param request petición HTTP con los parámetros idTutor e idGrupo
+     * @param response respuesta HTTP donde se escribe el JSON con la lista de sesiones
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderDetalleSesiones(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -257,6 +314,13 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Envía por correo una alerta al tutor sobre su avance de tutorías grupales
+     * en un grupo específico, y responde en JSON el resultado del envío.
+     * @param request petición HTTP con los parámetros idTutor e idGrupo
+     * @param response respuesta HTTP donde se escribe el JSON con el resultado del envío
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderAlertarTutor(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -303,6 +367,13 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Responde en JSON el listado de atenciones individuales (sesiones individuales)
+     * filtradas por tutor, carrera, cuatrimestre, letra, rango de fechas y matrícula.
+     * @param request petición HTTP con los parámetros de filtro (idTutor, idCarrera, cuatrimestre, letra, matricula, desde, hasta)
+     * @param response respuesta HTTP donde se escribe el JSON con la lista de atenciones
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderAtencionesIndividuales(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -346,6 +417,13 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Responde en JSON el listado detallado de canalizaciones filtradas por tutor,
+     * carrera, cuatrimestre, letra, rango de fechas y matrícula.
+     * @param request petición HTTP con los parámetros de filtro (idTutor, idCarrera, cuatrimestre, letra, matricula, desde, hasta)
+     * @param response respuesta HTTP donde se escribe el JSON con la lista de canalizaciones
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderCanalizacionesDetalle(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -390,6 +468,13 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Responde en JSON el listado global de solicitudes pendientes filtradas por
+     * tutor, carrera, cuatrimestre, letra, rango de fechas y matrícula.
+     * @param request petición HTTP con los parámetros de filtro (idTutor, idCarrera, cuatrimestre, letra, matricula, desde, hasta)
+     * @param response respuesta HTTP donde se escribe el JSON con la lista de solicitudes pendientes
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderSolicitudesPendientes(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -433,6 +518,13 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Responde en JSON los alumnos cuya matrícula o nombre coincidan con el texto
+     * de búsqueda recibido, para el autocompletado del buscador de alumnos.
+     * @param request petición HTTP con el parámetro "texto" a buscar
+     * @param response respuesta HTTP donde se escribe el JSON con los resultados de la búsqueda
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderBuscarAlumnos(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -457,6 +549,13 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Responde en JSON la trayectoria académica (historial de grupos) del alumno
+     * identificado por su matrícula.
+     * @param request petición HTTP con el parámetro "matricula" del alumno
+     * @param response respuesta HTTP donde se escribe el JSON con la trayectoria del alumno
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderTrayectoriaAlumno(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -494,6 +593,13 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Envía por correo un recordatorio al tutor sobre una solicitud pendiente
+     * específica, y responde en JSON el resultado del envío.
+     * @param request petición HTTP con el parámetro idSolicitud
+     * @param response respuesta HTTP donde se escribe el JSON con el resultado del envío
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void responderRecordarTutorSolicitud(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
         PrintWriter out = response.getWriter();
@@ -523,6 +629,13 @@ public class ReportesGlobalesServlet extends HttpServlet {
         out.flush();
     }
 
+    /**
+     * Genera y envía como descarga un archivo Excel con el reporte filtrado según
+     * los parámetros de la petición.
+     * @param request petición HTTP con los filtros del reporte y las imágenes de las gráficas en base64
+     * @param response respuesta HTTP sobre la que se escribe el archivo Excel generado
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void exportarExcel(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ReporteExportDatos datos = recolectarDatosExportacion(request);
 
@@ -537,6 +650,13 @@ public class ReportesGlobalesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Genera y envía como descarga un archivo PDF con el reporte filtrado según
+     * los parámetros de la petición.
+     * @param request petición HTTP con los filtros del reporte y las imágenes de las gráficas en base64
+     * @param response respuesta HTTP sobre la que se escribe el archivo PDF generado
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void exportarPdf(HttpServletRequest request, HttpServletResponse response) throws IOException {
         ReporteExportDatos datos = recolectarDatosExportacion(request);
 
@@ -551,6 +671,13 @@ public class ReportesGlobalesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Recolecta y arma toda la información necesaria para exportar un reporte
+     * (resumen general, avance grupal, atenciones individuales, canalizaciones,
+     * datos académicos del alumno filtrado y gráficas), aplicando los filtros de la petición.
+     * @param request petición HTTP con los filtros del reporte y las imágenes de las gráficas en base64
+     * @return el objeto {@link ReporteExportDatos} con toda la información lista para exportar
+     */
     private ReporteExportDatos recolectarDatosExportacion(HttpServletRequest request) {
         Integer idTutor = parseIntOrNull(request.getParameter("idTutor"));
         Integer idCarrera = parseIntOrNull(request.getParameter("idCarrera"));
@@ -605,6 +732,13 @@ public class ReportesGlobalesServlet extends HttpServlet {
                 decodificarImagenBase64(request.getParameter("imagenBarras")));
     }
 
+    /**
+     * Resuelve los datos académicos actuales del alumno (carrera, nivel, grupo y
+     * generación) a partir de su trayectoria, tomando el grupo vigente o el más reciente.
+     * @param matricula la matrícula del alumno
+     * @param alumno el alumno del cual resolver los datos académicos, o {@code null} si no existe
+     * @return los datos académicos resueltos del alumno, o {@code null} si el alumno es {@code null}
+     */
     private ReporteExportDatos.DatosAcademicosAlumno resolverDatosAlumno(String matricula, Alumno alumno) {
         if (alumno == null) return null;
 
@@ -626,6 +760,12 @@ public class ReportesGlobalesServlet extends HttpServlet {
                 matricula, nombreCompleto, carrera, nivel, cuatrimestreGrupo, generacion);
     }
 
+    /**
+     * Decodifica una imagen codificada en base64 (formato data URL) enviada desde
+     * el cliente, para insertarla en los reportes exportados.
+     * @param dataUrl la cadena en formato data URL con la imagen codificada en base64
+     * @return el arreglo de bytes de la imagen decodificada, o {@code null} si es inválida o vacía
+     */
     private byte[] decodificarImagenBase64(String dataUrl) {
         if (dataUrl == null || dataUrl.isBlank()) return null;
         int coma = dataUrl.indexOf(',');
@@ -638,10 +778,23 @@ public class ReportesGlobalesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Construye el nombre de archivo para el reporte exportado, incluyendo la fecha
+     * actual y la extensión indicada.
+     * @param extension la extensión del archivo a generar (por ejemplo "xlsx" o "pdf")
+     * @return el nombre de archivo generado, por ejemplo "reporte_tutorias_25-08-2026.xlsx"
+     */
     private String nombreArchivoExportacion(String extension) {
         return "reporte_tutorias_" + LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) + "." + extension;
     }
 
+    /**
+     * Convierte una cadena de texto en una fecha SQL, devolviendo un valor por
+     * defecto si el texto es nulo, está en blanco o no es una fecha válida.
+     * @param valor el texto de la fecha en formato ISO (yyyy-MM-dd)
+     * @param porDefecto la fecha a devolver si el valor es inválido o está vacío
+     * @return la fecha convertida, o {@code porDefecto} si no se pudo convertir
+     */
     private java.sql.Date parseFechaOrDefault(String valor, java.sql.Date porDefecto) {
         if (valor == null || valor.isBlank()) return porDefecto;
         try {
@@ -651,6 +804,11 @@ public class ReportesGlobalesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Convierte una cadena de texto a entero de forma segura.
+     * @param valor el texto a convertir
+     * @return el valor entero resultante, o {@code null} si el texto es nulo, está en blanco o no es numérico
+     */
     private Integer parseIntOrNull(String valor) {
         if (valor == null || valor.isBlank()) return null;
         try {
@@ -660,6 +818,12 @@ public class ReportesGlobalesServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Escapa los caracteres especiales de una cadena para que pueda incrustarse
+     * de forma segura como valor de texto dentro de un documento JSON construido manualmente.
+     * @param valor el texto a escapar
+     * @return el texto escapado, o cadena vacía si el valor es {@code null}
+     */
     private String escaparJson(String valor) {
         if (valor == null) return "";
         return valor.replace("\\", "\\\\").replace("\"", "\\\"")

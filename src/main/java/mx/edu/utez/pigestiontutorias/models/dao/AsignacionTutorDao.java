@@ -11,8 +11,21 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO responsable del acceso a datos de las asignaciones de tutor a grupo (ASIGNACION_TUTOR),
+ * incluyendo consultas de pertenencia de alumnos, validaciones de asignaciones activas y
+ * la verificación de pendientes (sesiones y solicitudes) antes de reasignar un grupo.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-22
+ */
 public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
 
+    /**
+     * Crea una nueva asignación activa de un tutor a un grupo.
+     * @param entidad la asignación a crear (con idTutor e idGrupo)
+     * @return {@code true} si la inserción afectó al menos una fila; {@code false} en caso contrario
+     */
     @Override
     public boolean create(AsignacionTutor entidad) {
         String sql = "INSERT INTO ASIGNACION_TUTOR (ID_TUTOR, ID_GRUPO, ESTADO) VALUES (?, ?, 'S')";
@@ -32,6 +45,11 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         }
     }
 
+    /**
+     * Obtiene todas las asignaciones activas de tutor a grupo, junto con los datos del tutor
+     * y una descripción legible del grupo (carrera, cuatrimestre, letra y generación).
+     * @return la lista de asignaciones activas
+     */
     @Override
     public List<AsignacionTutor> getAll() {
         List<AsignacionTutor> lista = new ArrayList<>();
@@ -77,6 +95,11 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return lista;
     }
 
+    /**
+     * Obtiene una asignación de tutor por su identificador.
+     * @param id el identificador (ID_ASIGNACION) de la asignación buscada
+     * @return la asignación encontrada, o {@code null} si no existe
+     */
     @Override
     public AsignacionTutor getById(Integer id) {
         String sql = "SELECT ID_ASIGNACION, ID_TUTOR, ID_GRUPO, ESTADO FROM ASIGNACION_TUTOR WHERE ID_ASIGNACION = ?";
@@ -105,11 +128,21 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return null;
     }
 
+    /**
+     * Operación no soportada; las asignaciones no se actualizan, solo se crean o se dan de baja.
+     * @param entidad la asignación a actualizar (no utilizado)
+     * @return siempre {@code false}
+     */
     @Override
     public boolean update(AsignacionTutor entidad) {
         return false;
     }
 
+    /**
+     * Da de baja lógica una asignación de tutor, marcando su ESTADO como 'N'.
+     * @param id el identificador (ID_ASIGNACION) de la asignación a dar de baja
+     * @return {@code true} si se actualizó al menos una fila; {@code false} en caso contrario
+     */
     @Override
     public boolean delete(Integer id) {
         String sql = "UPDATE ASIGNACION_TUTOR SET ESTADO = 'N' WHERE ID_ASIGNACION = ?";
@@ -127,6 +160,11 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         }
     }
 
+    /**
+     * Verifica si un grupo ya tiene una asignación de tutor activa.
+     * @param idGrupo el identificador del grupo
+     * @return {@code true} si el grupo tiene una asignación activa; {@code false} en caso contrario
+     */
     public boolean existeAsignacionActiva(int idGrupo) {
         String sql = "SELECT COUNT(*) FROM ASIGNACION_TUTOR WHERE ID_GRUPO = ? AND ESTADO = 'S'";
 
@@ -149,6 +187,11 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return false;
     }
 
+    /**
+     * Busca el identificador del tutor asignado actualmente a un grupo.
+     * @param idGrupo el identificador del grupo
+     * @return el ID_TUTOR asignado, o {@code null} si el grupo no tiene tutor asignado
+     */
     public Integer findIdTutorByGrupo(int idGrupo) {
         String sql = "SELECT ID_TUTOR FROM ASIGNACION_TUTOR WHERE ID_GRUPO = ? AND ESTADO = 'S'";
 
@@ -171,6 +214,13 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return null;
     }
 
+    /**
+     * Obtiene los grupos asignados activamente a un tutor dentro de un periodo escolar específico,
+     * ordenados por carrera, cuatrimestre y letra.
+     * @param idTutor el identificador del tutor
+     * @param idPeriodoVigente el identificador del periodo escolar a consultar
+     * @return la lista de grupos asignados al tutor en ese periodo
+     */
     public List<Grupo> obtenerGruposPorTutor(int idTutor, int idPeriodoVigente) {
         List<Grupo> lista = new ArrayList<>();
         String sql = "SELECT g.ID_GRUPO, g.ID_CARRERA, g.CUATRIMESTRE, g.LETRA, g.ID_PERIODO, g.ESTADO, " +
@@ -210,6 +260,12 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return lista;
     }
 
+    /**
+     * Verifica si existe una asignación activa entre un tutor y un grupo específicos.
+     * @param idTutor el identificador del tutor
+     * @param idGrupo el identificador del grupo
+     * @return {@code true} si la asignación activa existe; {@code false} en caso contrario
+     */
     public boolean existeAsignacionParaTutor(int idTutor, int idGrupo) {
         String sql = "SELECT COUNT(*) FROM ASIGNACION_TUTOR WHERE ID_TUTOR = ? AND ID_GRUPO = ? AND ESTADO = 'S'";
 
@@ -233,6 +289,12 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return false;
     }
 
+    /**
+     * Verifica si un alumno pertenece al grupo asignado activamente a un tutor específico.
+     * @param idTutor el identificador del tutor
+     * @param matricula la matrícula del alumno
+     * @return {@code true} si el alumno pertenece a un grupo del tutor; {@code false} en caso contrario
+     */
     public boolean alumnoPerteneceATutor(int idTutor, String matricula) {
         String sql = "SELECT COUNT(*) FROM ALUMNO al " +
                 "JOIN ASIGNACION_TUTOR a ON a.ID_GRUPO = al.ID_GRUPO " +
@@ -258,6 +320,11 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return false;
     }
 
+    /**
+     * Verifica si un tutor tiene alguna asignación activa dentro del periodo escolar activo.
+     * @param idTutor el identificador del tutor
+     * @return {@code true} si el tutor tiene una asignación activa en el periodo activo; {@code false} en caso contrario
+     */
     public boolean existeAsignacionEnPeriodoActivo(int idTutor) {
         String sql = "SELECT COUNT(*) FROM ASIGNACION_TUTOR a " +
                 "JOIN GRUPO g ON g.ID_GRUPO = a.ID_GRUPO " +
@@ -283,6 +350,13 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
         return false;
     }
 
+    /**
+     * Verifica si un tutor tiene pendientes en un grupo (sesiones grupales, sesiones individuales
+     * o solicitudes de tutoría en estado "Pendiente"), usado para evitar reasignar un grupo con trabajo sin cerrar.
+     * @param idTutor el identificador del tutor
+     * @param idGrupo el identificador del grupo
+     * @return {@code true} si existe al menos un pendiente asociado al tutor en el grupo; {@code false} en caso contrario
+     */
     public boolean tienePendientesEnGrupo(int idTutor, int idGrupo) {
         return existeRegistro(
                 "SELECT COUNT(1) FROM SESION_GRUPAL " +
@@ -300,6 +374,14 @@ public class AsignacionTutorDao implements Dao<AsignacionTutor, Integer> {
                 idTutor, idGrupo);
     }
 
+    /**
+     * Ejecuta una consulta de conteo parametrizada por tutor y grupo, y determina si arrojó al menos un resultado.
+     * En caso de error de base de datos, devuelve {@code true} como medida conservadora para no permitir la reasignación.
+     * @param sql la sentencia SQL de conteo a ejecutar, con dos parámetros posicionales (idTutor, idGrupo)
+     * @param idTutor el identificador del tutor
+     * @param idGrupo el identificador del grupo
+     * @return {@code true} si el conteo es mayor a cero o si ocurrió un error; {@code false} en caso contrario
+     */
     private boolean existeRegistro(String sql, int idTutor, int idGrupo) {
         try (Connection con = SQLConnector.getConnection();
              PreparedStatement ps = con.prepareStatement(sql)) {

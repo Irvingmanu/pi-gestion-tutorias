@@ -18,6 +18,14 @@ import java.text.Normalizer;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Servlet que gestiona la asignación de tutores a grupos: listado de asignaciones
+ * vigentes, alta de una nueva asignación validando academia, cuatrimestre permitido
+ * y disponibilidad del grupo, y eliminación de asignaciones sin pendientes.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-22
+ */
 @WebServlet(name = "AsignacionServlet", value = "/asignacion")
 public class AsignacionServlet extends HttpServlet {
 
@@ -26,6 +34,15 @@ public class AsignacionServlet extends HttpServlet {
     private final GrupoDao grupoDao = new GrupoDao();
     private final AcademiaDao academiaDao = new AcademiaDao();
 
+    /**
+     * Atiende la petición GET, cargando el listado de tutores, asignaciones vigentes,
+     * grupos disponibles para asignar (excluyendo cuatrimestres bloqueados) y academias,
+     * para la vista de gestión de asignaciones.
+     * @param request petición HTTP en curso
+     * @param response respuesta HTTP usada para reenviar a la vista JSP
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         List<Tutor> listaTutores = tutorDao.findAll();
@@ -44,6 +61,17 @@ public class AsignacionServlet extends HttpServlet {
         request.getRequestDispatcher("/coordinador/asignacion.jsp").forward(request, response);
     }
 
+    /**
+     * Atiende la petición POST del módulo de asignaciones: elimina una asignación
+     * existente si no tiene pendientes en el grupo, o bien crea una nueva asignación
+     * de tutor a grupo validando que coincidan de academia, que el cuatrimestre no
+     * esté bloqueado, que el grupo no tenga ya una asignación activa y que cuente
+     * con alumnos activos.
+     * @param request petición HTTP con el parámetro "accion" y los datos de la asignación
+     * @param response respuesta HTTP usada para redirigir con el resultado de la operación
+     * @throws ServletException si ocurre un error al procesar la petición
+     * @throws IOException si ocurre un error de entrada/salida al redirigir la respuesta
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         request.setCharacterEncoding("UTF-8");
@@ -112,6 +140,12 @@ public class AsignacionServlet extends HttpServlet {
 
     private static final String CARRERA_EXCEPCION_CUATRIMESTRE = "terapia fisica";
 
+    /**
+     * Determina si el nombre de una carrera corresponde a la carrera exceptuada de
+     * la restricción de cuatrimestre (comparación normalizada, sin acentos y en minúsculas).
+     * @param nombreCarrera el nombre de la carrera a evaluar
+     * @return {@code true} si la carrera es la exceptuada; {@code false} en caso contrario
+     */
     private boolean esCarreraExceptuada(String nombreCarrera) {
         if (nombreCarrera == null) return false;
         String normalizado = Normalizer.normalize(nombreCarrera.trim().toLowerCase(), Normalizer.Form.NFD)
@@ -119,6 +153,12 @@ public class AsignacionServlet extends HttpServlet {
         return normalizado.equals(CARRERA_EXCEPCION_CUATRIMESTRE);
     }
 
+    /**
+     * Determina si un grupo tiene un cuatrimestre restringido (6 o 10) para la
+     * asignación de tutores, salvo que su carrera esté exceptuada.
+     * @param grupo el grupo a evaluar
+     * @return {@code true} si el cuatrimestre del grupo está bloqueado para asignación; {@code false} en caso contrario
+     */
     private boolean esCuatrimestreBloqueado(Grupo grupo) {
         int cuatrimestre = grupo.getCuatrimestre();
         boolean esCuatrimestreRestringido = cuatrimestre == 6 || cuatrimestre == 10;

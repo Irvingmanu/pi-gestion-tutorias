@@ -21,6 +21,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Servlet que gestiona el registro de tutorías individuales del tutor: valida
+ * matrículas y grupos, completa sesiones individuales previamente programadas o
+ * registra tutorías espontáneas, y canaliza al alumno a las áreas de apoyo
+ * correspondientes según los motivos seleccionados.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-07-29
+ */
 @WebServlet(name = "SesionIndividualServlet", value = "/tutoria-individual")
 public class SesionIndividualServlet extends HttpServlet {
 
@@ -38,6 +47,16 @@ public class SesionIndividualServlet extends HttpServlet {
 
     private final AsistenciaGrupalDao asistenciaGrupalDao = new AsistenciaGrupalDao();
 
+    /**
+     * Atiende las peticiones GET del registro de tutorías individuales: responde en
+     * JSON la validación de una matrícula o el listado de alumnos de un grupo según
+     * el parámetro "accion", o carga la vista de registro individual con las listas
+     * necesarias (sesiones programadas, áreas con motivos, grupos asignados).
+     * @param request petición HTTP con el parámetro "accion" opcional y sus datos asociados
+     * @param response respuesta HTTP usada para redirigir, reenviar o responder JSON
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         if ("validarMatricula".equals(request.getParameter("accion"))) {
@@ -66,6 +85,13 @@ public class SesionIndividualServlet extends HttpServlet {
         request.getRequestDispatcher("/tutor/tutoria-individual.jsp").forward(request, response);
     }
 
+    /**
+     * Responde en JSON si la matrícula capturada corresponde a un alumno existente,
+     * activo y asignado a alguno de los grupos del tutor autenticado.
+     * @param request petición HTTP con el parámetro "matricula" a validar
+     * @param response respuesta HTTP en formato JSON con el resultado {"valido": true|false, "mensaje": "..."}
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void validarMatricula(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
 
@@ -106,6 +132,13 @@ public class SesionIndividualServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Responde en JSON el listado de alumnos de un grupo, verificando que dicho
+     * grupo esté asignado al tutor autenticado.
+     * @param request petición HTTP con el parámetro idGrupo
+     * @param response respuesta HTTP en formato JSON con la lista de alumnos del grupo
+     * @throws IOException si ocurre un error de entrada/salida al escribir la respuesta
+     */
     private void obtenerAlumnosPorGrupo(HttpServletRequest request, HttpServletResponse response) throws IOException {
         response.setContentType("application/json;charset=UTF-8");
 
@@ -156,6 +189,12 @@ public class SesionIndividualServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Escapa los caracteres especiales de una cadena para que pueda incrustarse
+     * de forma segura como valor de texto dentro de un documento JSON construido manualmente.
+     * @param valor el texto a escapar
+     * @return el texto escapado, o cadena vacía si el valor es {@code null}
+     */
     private String escaparJson(String valor) {
         if (valor == null) {
             return "";
@@ -163,6 +202,17 @@ public class SesionIndividualServlet extends HttpServlet {
         return valor.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 
+    /**
+     * Atiende las peticiones POST del registro de tutorías individuales: si se
+     * recibe un idSesion completa una sesión previamente programada (validando
+     * asistencia y que ya haya llegado la fecha), o de lo contrario valida y
+     * registra una tutoría espontánea con un nuevo alumno, fecha, hora y
+     * canalizaciones a las áreas de apoyo según los motivos seleccionados.
+     * @param request petición HTTP con los datos de la sesión individual a completar o registrar
+     * @param response respuesta HTTP usada para redirigir o reenviar con el resultado de la operación
+     * @throws ServletException si ocurre un error al reenviar la petición
+     * @throws IOException si ocurre un error de entrada/salida al procesar la petición
+     */
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         HttpSession session = request.getSession(false);
@@ -342,6 +392,17 @@ public class SesionIndividualServlet extends HttpServlet {
         }
     }
 
+    /**
+     * Guarda en atributos de la petición los datos capturados en el formulario de
+     * tutoría espontánea y marca esa pestaña como activa, para repoblar el formulario
+     * cuando la vista se recarga tras un error de validación.
+     * @param request petición HTTP donde se guardan los atributos
+     * @param matricula la matrícula capturada
+     * @param fecha la fecha capturada
+     * @param hora la hora capturada
+     * @param temas los temas tratados capturados
+     * @param acuerdos los acuerdos capturados
+     */
     private void marcarTabEspontanea(HttpServletRequest request, String matricula, String fecha, String hora,
                                      String temas, String acuerdos) {
         request.setAttribute("tabActiva", "espontanea");
@@ -352,6 +413,14 @@ public class SesionIndividualServlet extends HttpServlet {
         request.setAttribute("acuerdosEnviados", acuerdos);
     }
 
+    /**
+     * Crea una canalización por cada motivo seleccionado, asociándola al alumno,
+     * y devuelve el id de la primera canalización generada para vincularla a la sesión individual.
+     * @param idMotivos los ids de los motivos de canalización seleccionados
+     * @param matricula la matrícula del alumno canalizado
+     * @param baseUrl la URL base de la aplicación, usada para construir enlaces en las notificaciones
+     * @return el id de la primera canalización generada, o {@code null} si no se generó ninguna
+     */
     private Integer registrarCanalizaciones(String[] idMotivos, String matricula, String baseUrl) {
         if (idMotivos == null) {
             return null;
@@ -384,6 +453,13 @@ public class SesionIndividualServlet extends HttpServlet {
         return idPrincipal;
     }
 
+    /**
+     * Carga en la petición las listas necesarias para renderizar la vista de
+     * registro individual: sesiones programadas del tutor con el nombre de cada
+     * alumno resuelto, áreas con sus motivos, periodo vigente y grupos asignados.
+     * @param request petición HTTP donde se establecen los atributos con las listas
+     * @param tutor el tutor autenticado para el cual se cargan las listas
+     */
     private void cargarListas(HttpServletRequest request, Tutor tutor) {
         List<SesionIndividual> sesionesProgramadas = sesionIndividualDao.getSesionesProgramadasByTutor(tutor.getNumeroEmpleado());
         List<Area> areasConMotivos = areaDAO.getAllConMotivos();

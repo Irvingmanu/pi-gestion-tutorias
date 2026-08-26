@@ -10,8 +10,18 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * DAO responsable del acceso a datos del catálogo de academias (ACADEMIA).
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-08-14
+ */
 public class AcademiaDao {
 
+    /**
+     * Obtiene todas las academias registradas, ordenadas alfabéticamente por nombre.
+     * @return la lista de todas las academias
+     */
     public List<Academia> getAll() {
         List<Academia> lista = new ArrayList<>();
         String sql = "SELECT ID_ACADEMIA, NOMBRE FROM ACADEMIA ORDER BY NOMBRE";

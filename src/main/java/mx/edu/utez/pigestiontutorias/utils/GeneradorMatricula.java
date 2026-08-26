@@ -5,16 +5,37 @@ import java.time.Year;
 import java.util.Locale;
 import java.util.Set;
 
+/**
+ * Utilidad para generar el prefijo de matrícula automática de un alumno de primer
+ * cuatrimestre, combinando el año actual, un dígito que identifica el periodo escolar
+ * según el mes de inicio, y una sigla derivada del nombre de la carrera.
+ * @author Irvingmanu
+ * @version 1.0
+ * @since 2026-08-20
+ */
 public final class GeneradorMatricula {
 
     private GeneradorMatricula() {
     }
 
+    /**
+     * Construye el prefijo completo de matrícula combinando el año actual, el dígito
+     * del periodo escolar y la sigla de la carrera.
+     * @param nombreCarrera el nombre de la carrera del alumno
+     * @param fechaInicioPeriodo la fecha de inicio del periodo escolar del grupo
+     * @return el prefijo de matrícula resultante (año + dígito de periodo + sigla de carrera)
+     */
     public static String construirPrefijo(String nombreCarrera, java.sql.Date fechaInicioPeriodo) {
         String anioActual = String.valueOf(Year.now().getValue());
         return anioActual + resolverDigitoPeriodo(fechaInicioPeriodo) + resolverSiglaCarrera(nombreCarrera);
     }
 
+    /**
+     * Determina el dígito que identifica el periodo escolar según el mes de la fecha
+     * de inicio: "1" para enero-abril, "2" para mayo-agosto y "3" para septiembre-diciembre.
+     * @param fechaInicio la fecha de inicio del periodo escolar
+     * @return el dígito ("1", "2" o "3") correspondiente al periodo
+     */
     public static String resolverDigitoPeriodo(java.sql.Date fechaInicio) {
         LocalDate fecha = fechaInicio.toLocalDate();
         int mes = fecha.getMonthValue();
@@ -23,6 +44,12 @@ public final class GeneradorMatricula {
         return "3";
     }
 
+    /**
+     * Genera una sigla de dos letras a partir de las iniciales de las palabras
+     * significativas del nombre de la carrera, ignorando conectores comunes.
+     * @param nombreCarrera el nombre de la carrera a partir del cual generar la sigla
+     * @return la sigla de dos letras en minúsculas; "xx" si el nombre es nulo o vacío
+     */
     public static String resolverSiglaCarrera(String nombreCarrera) {
         if (nombreCarrera == null || nombreCarrera.isBlank()) {
             return "xx";
