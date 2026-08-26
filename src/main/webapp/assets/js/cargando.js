@@ -31,7 +31,11 @@
         var fetchOriginal = window.fetch;
         window.fetch = function () {
             var url = arguments[0];
-            if (typeof url === 'string' && url.indexOf('/verificar-sesion') !== -1) {
+            var opciones = arguments[1] || {};
+            var esVerificarSesion = typeof url === 'string' && url.indexOf('/verificar-sesion') !== -1;
+            var esEdicionMotivo = typeof url === 'string' && url.indexOf('/areas-apoyo') !== -1
+                && (opciones.method === 'POST' || opciones.method === 'PUT' || opciones.method === 'DELETE');
+            if (esVerificarSesion || esEdicionMotivo) {
                 return fetchOriginal.apply(this, arguments);
             }
             mostrarCargando();

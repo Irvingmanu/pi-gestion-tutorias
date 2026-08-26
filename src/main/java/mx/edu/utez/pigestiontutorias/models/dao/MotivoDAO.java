@@ -48,6 +48,29 @@ public class MotivoDAO implements Dao<Motivo, Integer> {
         }
     }
 
+    public int createAndGetId(Motivo entidad) {
+        String sql = "INSERT INTO MOTIVO_AREA(ID_AREA, NOMBRE) VALUES(?, ?)";
+        try (Connection con = SQLConnector.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql, new String[]{"ID_MOTIVO"})) {
+
+            ps.setInt(1, entidad.getIdArea());
+            ps.setString(2, entidad.getNombreMotivo());
+
+            int filasAfectadas = ps.executeUpdate();
+            if (filasAfectadas > 0) {
+                try (ResultSet keys = ps.getGeneratedKeys()) {
+                    if (keys.next()) {
+                        return keys.getInt(1);
+                    }
+                }
+            }
+            return -1;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return -1;
+        }
+    }
+
     @Override
     public List<Motivo> getAll() {
         List<Motivo> listaMotivos = new ArrayList<>();

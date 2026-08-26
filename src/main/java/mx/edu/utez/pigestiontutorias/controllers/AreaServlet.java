@@ -10,8 +10,11 @@ import mx.edu.utez.pigestiontutorias.models.Motivo;
 import mx.edu.utez.pigestiontutorias.models.dao.AreaDAO;
 import mx.edu.utez.pigestiontutorias.models.dao.MotivoDAO;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @WebServlet(name = "AreaServlet", value = "/areas-apoyo")
 public class AreaServlet extends HttpServlet {
@@ -24,84 +27,18 @@ public class AreaServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String contentType = request.getContentType();
+        if (contentType != null && contentType.startsWith("application/json")) {
+            crearMotivoJson(request, response);
+            return;
+        }
+
         String accion = request.getParameter("accion");
 
         if ("eliminar".equals(accion)) {
             boolean eliminado = areaDAO.delete(Integer.parseInt(request.getParameter("idArea")));
             String parametro = eliminado ? "exito=eliminado" : "error=area_en_uso";
             response.sendRedirect(request.getContextPath() + "/areas-apoyo?" + parametro);
-            return;
-        }
-
-        if ("agregarMotivo".equals(accion)) {
-            int idArea = Integer.parseInt(request.getParameter("idArea"));
-
-            if (areaDAO.contarCanalizados(idArea) > 0) {
-                redirigirAEdicion(request, response, idArea, null, "area_bloqueada");
-                return;
-            }
-
-            String nuevoMotivo = request.getParameter("nuevoMotivo");
-
-            boolean motivoValido = nuevoMotivo != null && nuevoMotivo.trim().matches(REGEX_NOMBRE);
-
-            if (!motivoValido) {
-                request.setAttribute("error", "formato_invalido");
-                request.setAttribute("areaEdit", areaDAO.getById(idArea));
-                request.getRequestDispatcher("/coordinador/formulario-area.jsp").forward(request, response);
-                return;
-            }
-
-            Motivo motivo = new Motivo();
-            motivo.setIdArea(idArea);
-            motivo.setNombreMotivo(nuevoMotivo.trim());
-            motivoDAO.create(motivo);
-
-            redirigirAEdicion(request, response, idArea, "guardado");
-            return;
-        }
-
-        if ("editarMotivo".equals(accion)) {
-            int idArea = Integer.parseInt(request.getParameter("idArea"));
-
-            if (areaDAO.contarCanalizados(idArea) > 0) {
-                redirigirAEdicion(request, response, idArea, null, "area_bloqueada");
-                return;
-            }
-
-            int idMotivo = Integer.parseInt(request.getParameter("idMotivo"));
-            String nombreMotivo = request.getParameter("nombreMotivo");
-
-            boolean motivoValido = nombreMotivo != null && nombreMotivo.trim().matches(REGEX_NOMBRE);
-
-            if (!motivoValido) {
-                request.setAttribute("error", "formato_invalido");
-                request.setAttribute("areaEdit", areaDAO.getById(idArea));
-                request.getRequestDispatcher("/coordinador/formulario-area.jsp").forward(request, response);
-                return;
-            }
-
-            Motivo motivo = new Motivo();
-            motivo.setIdMotivo(idMotivo);
-            motivo.setIdArea(idArea);
-            motivo.setNombreMotivo(nombreMotivo.trim());
-            motivoDAO.update(motivo);
-
-            redirigirAEdicion(request, response, idArea, "editado");
-            return;
-        }
-
-        if ("eliminarMotivo".equals(accion)) {
-            int idArea = Integer.parseInt(request.getParameter("idArea"));
-
-            if (areaDAO.contarCanalizados(idArea) > 0) {
-                redirigirAEdicion(request, response, idArea, null, "area_bloqueada");
-                return;
-            }
-
-            boolean eliminado = motivoDAO.delete(Integer.parseInt(request.getParameter("idMotivo")));
-
-            redirigirAEdicion(request, response, idArea, eliminado ? "eliminado" : null, eliminado ? null : "motivo_en_uso");
             return;
         }
 
@@ -206,6 +143,117 @@ public class AreaServlet extends HttpServlet {
         List<Area> listaAreas = areaDAO.getAll();
         request.setAttribute("listaAreas", listaAreas);
         request.getRequestDispatcher("/coordinador/areas-apoyo.jsp").forward(request, response);
+    }
+
+    private void crearMotivoJson(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+        String cuerpo = leerCuerpo(request);
+
+        String idAreaStr = extraerJson(cuerpo, "idArea");
+        String nombreMotivo = extraerJson(cuerpo, "nombreMotivo");
+
+        if (idAreaStr == null || nombreMotivo == null || !nombreMotivo.trim().matches(REGEX_NOMBRE)) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.getWriter().write("{\"exito\":false,\"mensaje\":\"formato_invalido\"}");
+            return;
+        }
+
+        int idArea = Integer.parseInt(idAreaStr);
+        if (areaDAO.contarCanalizados(idArea) > 0) {
+            response.setStatus(HttpServletResponse.SC_CONFLICT);
+            response.getWriter().write("{\"exito\":false,\"mensaje\":\"area_bloqueada\"}");
+            return;
+        }
+
+        Motivo motivo = new Motivo();
+        motivo.setIdArea(idArea);
+        motivo.setNombreMotivo(nombreMotivo.trim());
+
+        int idMotivo = motivoDAO.createAndGetId(motivo);
+        if (idMotivo <= 0) {
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            response.getWriter().write("{\"exito\":false}");
+            return;
+        }
+
+        response.getWriter().write("{\"exito\":true,\"idMotivo\":" + idMotivo + ",\"nombreMotivo\":\"" + motivo.getNombreMotivo() + "\"}");
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+        String cuerpo = leerCuerpo(request);
+
+        String idAreaStr = extraerJson(cuerpo, "idArea");
+        String idMotivoStr = extraerJson(cuerpo, "idMotivo");
+        String nombreMotivo = extraerJson(cuerpo, "nombreMotivo");
+
+        if (idAreaStr == null || idMotivoStr == null || nombreMotivo == null
+                || !nombreMotivo.trim().matches(REGEX_NOMBRE)) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.getWriter().write("{\"exito\":false,\"mensaje\":\"formato_invalido\"}");
+            return;
+        }
+
+        int idArea = Integer.parseInt(idAreaStr);
+        if (areaDAO.contarCanalizados(idArea) > 0) {
+            response.setStatus(HttpServletResponse.SC_CONFLICT);
+            response.getWriter().write("{\"exito\":false,\"mensaje\":\"area_bloqueada\"}");
+            return;
+        }
+
+        Motivo motivo = new Motivo();
+        motivo.setIdMotivo(Integer.parseInt(idMotivoStr));
+        motivo.setIdArea(idArea);
+        motivo.setNombreMotivo(nombreMotivo.trim());
+
+        response.getWriter().write("{\"exito\":" + motivoDAO.update(motivo) + "}");
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        response.setContentType("application/json;charset=UTF-8");
+        String cuerpo = leerCuerpo(request);
+
+        String idAreaStr = extraerJson(cuerpo, "idArea");
+        String idMotivoStr = extraerJson(cuerpo, "idMotivo");
+
+        if (idAreaStr == null || idMotivoStr == null) {
+            response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+            response.getWriter().write("{\"exito\":false,\"mensaje\":\"formato_invalido\"}");
+            return;
+        }
+
+        int idArea = Integer.parseInt(idAreaStr);
+        if (areaDAO.contarCanalizados(idArea) > 0) {
+            response.setStatus(HttpServletResponse.SC_CONFLICT);
+            response.getWriter().write("{\"exito\":false,\"mensaje\":\"area_bloqueada\"}");
+            return;
+        }
+
+        boolean eliminado = motivoDAO.delete(Integer.parseInt(idMotivoStr));
+        response.getWriter().write(eliminado
+                ? "{\"exito\":true}"
+                : "{\"exito\":false,\"mensaje\":\"motivo_en_uso\"}");
+    }
+
+    private String leerCuerpo(HttpServletRequest request) throws IOException {
+        StringBuilder cuerpo = new StringBuilder();
+        try (BufferedReader reader = request.getReader()) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+                cuerpo.append(linea);
+            }
+        }
+        return cuerpo.toString();
+    }
+
+    private String extraerJson(String json, String clave) {
+        Matcher matcher = Pattern.compile("\"" + clave + "\"\\s*:\\s*(?:\"([^\"]*)\"|(-?\\d+))").matcher(json);
+        if (!matcher.find()) {
+            return null;
+        }
+        return matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
     }
 
     private void redirigirAEdicion(HttpServletRequest request, HttpServletResponse response, int idArea, String exito) throws IOException {

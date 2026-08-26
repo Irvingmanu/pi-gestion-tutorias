@@ -65,7 +65,7 @@
         }
     </style>
 </head>
-<body data-mensaje-error="${mensajeError}">
+<body data-mensaje-error="${mensajeError}" data-context-path="${pageContext.request.contextPath}">
 
 <div class="container-fluid min-vh-100 d-flex p-4 gap-4">
 
@@ -248,15 +248,14 @@
                         </form>
                     </div>
 
-                    <!-- Columna derecha: detalle de MOTIVOS, alta y baja individual (sin JS/AJAX) -->
+                    <!-- Columna derecha: detalle de MOTIVOS. Alta por submit clásico; editar/eliminar por fetch (JSON) -->
                     <div class="col-md-6">
 
                         <label class="form-label fs-6 fw-bold">Motivos de Canalización</label>
 
                         <!-- Alta: form independiente que agrega un solo motivo a esta area.
                              Siempre visible arriba, fuera del contenedor con scroll de abajo. -->
-                        <form id="formAgregarMotivo" class="d-flex gap-2 mb-2 needs-validation" action="${pageContext.request.contextPath}/areas-apoyo" method="post" novalidate onsubmit="return validarAgregarMotivo(event)">
-                            <input type="hidden" name="accion" value="agregarMotivo">
+                        <form id="formAgregarMotivo" class="d-flex gap-2 mb-2 needs-validation" novalidate>
                             <input type="hidden" name="idArea" value="${areaEdit.idArea}">
                             <div class="w-100 position-relative">
                                 <input type="text" name="nuevoMotivo"
@@ -276,9 +275,7 @@
                                 <div class="d-flex align-items-center gap-2 motivo-item">
                                     <span id="lbl-motivo-${motivo.idMotivo}" class="flex-grow-1"><c:out value="${motivo.nombreMotivo}"/></span>
 
-                                    <form id="form-edit-${motivo.idMotivo}" class="d-none d-flex gap-2 flex-grow-1 needs-validation"
-                                          action="${pageContext.request.contextPath}/areas-apoyo" method="post" novalidate>
-                                        <input type="hidden" name="accion" value="editarMotivo">
+                                    <form id="form-edit-${motivo.idMotivo}" class="d-none d-flex gap-2 flex-grow-1 needs-validation" novalidate>
                                         <input type="hidden" name="idArea" value="${areaEdit.idArea}">
                                         <input type="hidden" name="idMotivo" value="${motivo.idMotivo}">
                                         <div class="w-100 position-relative">
@@ -321,12 +318,6 @@
                     <button type="submit" form="formEditarArea" id="btnGuardarEdicion" class="btn-figma fw-medium fs-5 px-4 py-2" disabled>Guardar</button>
                 </div>
 
-                <!-- Form oculto compartido: elimina un motivo tras confirmar en prepararEliminacionMotivo() -->
-                <form id="formEliminarMotivo" action="${pageContext.request.contextPath}/areas-apoyo" method="post" style="display:none;">
-                    <input type="hidden" name="accion" value="eliminarMotivo">
-                    <input type="hidden" name="idArea" id="inputEliminarMotivoIdArea">
-                    <input type="hidden" name="idMotivo" id="inputEliminarMotivoId">
-                </form>
             </c:otherwise>
         </c:choose>
 

@@ -20,6 +20,24 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    var listaMotivos = document.getElementById('listaMotivosArea');
+    if (listaMotivos) {
+        listaMotivos.querySelectorAll('form[id^="form-edit-"]').forEach(function (form) {
+            form.addEventListener('submit', function (evento) {
+                evento.preventDefault();
+                guardarEdicionMotivo(form);
+            });
+        });
+
+        var formAgregarMotivoEdicion = document.getElementById('formAgregarMotivo');
+        if (formAgregarMotivoEdicion) {
+            formAgregarMotivoEdicion.addEventListener('submit', function (evento) {
+                evento.preventDefault();
+                crearMotivoAsync(formAgregarMotivoEdicion);
+            });
+        }
+    }
+
     var container = document.getElementById('motivosContainer');
     if (!container) {
         return;
@@ -105,36 +123,96 @@ function agregarMotivo() {
     }
 }
 
-function validarAgregarMotivo(evento) {
-    var input = evento.target.querySelector('input[name="nuevoMotivo"]');
-    if (!input) {
-        return true;
-    }
+function crearMotivoAsync(form) {
+    var idArea = form.querySelector('input[name="idArea"]').value;
+    var input = form.querySelector('input[name="nuevoMotivo"]');
+    var nombreMotivo = input.value.trim();
 
-    var feedback = document.getElementById('feedbackAgregarMotivo');
-    var valor = input.value.trim();
-
-    if (!valor) {
-        evento.preventDefault();
-        input.classList.remove('is-invalid');
-        if (feedback) feedback.style.display = 'none';
+    if (!nombreMotivo) {
         mostrarAlerta('advertencia', 'Campo vacío', 'Escribe un motivo antes de agregarlo.');
         input.focus();
-        return false;
+        return;
     }
 
-    if (!input.checkValidity()) {
-        evento.preventDefault();
-        input.classList.add('is-invalid');
-        if (feedback) feedback.style.display = 'block';
+    if (!new RegExp(REGEX_MOTIVO).test(nombreMotivo)) {
+        mostrarAlerta('error', 'Motivo inválido', 'Solo se permiten letras, números, espacios y . , ( ) / -');
         input.focus();
-        return false;
+        return;
     }
 
-    input.classList.remove('is-invalid');
-    if (feedback) feedback.style.display = 'none';
+    var contextPath = document.body.dataset.contextPath || '';
 
-    return true;
+    fetch(contextPath + '/areas-apoyo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idArea: idArea, nombreMotivo: nombreMotivo })
+    })
+        .then(function (resp) { return resp.json(); })
+        .then(function (data) {
+            if (data.exito) {
+                agregarFilaMotivo(data.idMotivo, idArea, data.nombreMotivo);
+                input.value = '';
+                input.focus();
+            } else {
+                mostrarAlerta('error', 'No se pudo agregar', data.mensaje === 'area_bloqueada'
+                    ? 'El área ya cuenta con alumnos canalizados.' : 'Verifica el motivo e intenta de nuevo.');
+            }
+        })
+        .catch(function () {
+            mostrarAlerta('error', 'Error de conexión', 'No se pudo contactar al servidor.');
+        });
+}
+
+function agregarFilaMotivo(idMotivo, idArea, nombreMotivo) {
+    var lista = document.getElementById('listaMotivosArea');
+    if (!lista) {
+        return;
+    }
+
+    var vacio = lista.querySelector('.text-muted');
+    if (vacio) {
+        vacio.remove();
+    }
+
+    var contextPath = document.body.dataset.contextPath || '';
+
+    var fila = document.createElement('div');
+    fila.className = 'd-flex align-items-center gap-2 motivo-item';
+    fila.innerHTML =
+        '<span id="lbl-motivo-' + idMotivo + '" class="flex-grow-1"></span>' +
+        '<form id="form-edit-' + idMotivo + '" class="d-none d-flex gap-2 flex-grow-1 needs-validation" novalidate>' +
+            '<input type="hidden" name="idArea" value="' + idArea + '">' +
+            '<input type="hidden" name="idMotivo" value="' + idMotivo + '">' +
+            '<div class="w-100 position-relative">' +
+                '<input type="text" name="nombreMotivo" class="form-control form-control-figma w-100 fs-6" ' +
+                'pattern="' + REGEX_MOTIVO + '" title="Solo se permiten letras, números, espacios y . , ( ) / -" required>' +
+            '</div>' +
+            '<button type="submit" class="btn-figma btn-figma-sm flex-shrink-0" title="Guardar motivo" disabled>' +
+                '<img src="' + contextPath + '/assets/img/coordinador/check.png" width="16" alt="Guardar">' +
+            '</button>' +
+        '</form>' +
+        '<div class="d-flex gap-2 flex-shrink-0">' +
+            '<button type="button" class="btn-figma btn-figma-sm" title="Editar motivo" onclick="toggleEditarMotivo(' + idMotivo + ')">' +
+                '<img src="' + contextPath + '/assets/img/coordinador/editar.png" width="16" alt="Editar">' +
+            '</button>' +
+            '<button type="button" class="btn-cancelar-figma btn-cancelar-figma-sm" title="Eliminar motivo" onclick="prepararEliminacionMotivo(' + idMotivo + ', ' + idArea + ')">' +
+                '<img src="' + contextPath + '/assets/img/coordinador/eliminar.png" width="16" alt="Eliminar">' +
+            '</button>' +
+        '</div>';
+
+    fila.querySelector('#lbl-motivo-' + idMotivo).textContent = nombreMotivo;
+
+    lista.appendChild(fila);
+
+    var nuevoForm = fila.querySelector('#form-edit-' + idMotivo);
+    nuevoForm.addEventListener('submit', function (evento) {
+        evento.preventDefault();
+        guardarEdicionMotivo(nuevoForm);
+    });
+
+    if (typeof window.configurarValidacionFormulario === 'function') {
+        window.configurarValidacionFormulario(nuevoForm);
+    }
 }
 
 function toggleEditarMotivo(idMotivo) {
@@ -154,6 +232,39 @@ function toggleEditarMotivo(idMotivo) {
     }
 }
 
+function guardarEdicionMotivo(form) {
+    var idMotivo = form.querySelector('input[name="idMotivo"]').value;
+    var idArea = form.querySelector('input[name="idArea"]').value;
+    var input = form.querySelector('input[name="nombreMotivo"]');
+    var nombreMotivo = input.value.trim();
+
+    if (!new RegExp(REGEX_MOTIVO).test(nombreMotivo)) {
+        mostrarAlerta('error', 'Motivo inválido', 'Solo se permiten letras, números, espacios y . , ( ) / -');
+        return;
+    }
+
+    var contextPath = document.body.dataset.contextPath || '';
+
+    fetch(contextPath + '/areas-apoyo', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idArea: idArea, idMotivo: idMotivo, nombreMotivo: nombreMotivo })
+    })
+        .then(function (resp) { return resp.json(); })
+        .then(function (data) {
+            if (data.exito) {
+                document.getElementById('lbl-motivo-' + idMotivo).textContent = nombreMotivo;
+                toggleEditarMotivo(idMotivo);
+            } else {
+                mostrarAlerta('error', 'No se pudo actualizar', data.mensaje === 'area_bloqueada'
+                    ? 'El área ya cuenta con alumnos canalizados.' : 'Verifica el motivo e intenta de nuevo.');
+            }
+        })
+        .catch(function () {
+            mostrarAlerta('error', 'Error de conexión', 'No se pudo contactar al servidor.');
+        });
+}
+
 function prepararEliminacionMotivo(idMotivo, idArea) {
     mostrarConfirmacion(
         'critica',
@@ -161,9 +272,27 @@ function prepararEliminacionMotivo(idMotivo, idArea) {
         'Este motivo de canalización se eliminará permanentemente.',
         'Eliminar',
         function () {
-            document.getElementById('inputEliminarMotivoIdArea').value = idArea;
-            document.getElementById('inputEliminarMotivoId').value = idMotivo;
-            document.getElementById('formEliminarMotivo').submit();
+            var contextPath = document.body.dataset.contextPath || '';
+
+            fetch(contextPath + '/areas-apoyo', {
+                method: 'DELETE',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ idArea: idArea, idMotivo: idMotivo })
+            })
+                .then(function (resp) { return resp.json(); })
+                .then(function (data) {
+                    if (data.exito) {
+                        var etiqueta = document.getElementById('lbl-motivo-' + idMotivo);
+                        var fila = etiqueta ? etiqueta.closest('.motivo-item') : null;
+                        if (fila) fila.remove();
+                    } else {
+                        mostrarAlerta('error', 'No se pudo eliminar', data.mensaje === 'area_bloqueada'
+                            ? 'El área ya cuenta con alumnos canalizados.' : 'Este motivo está en uso.');
+                    }
+                })
+                .catch(function () {
+                    mostrarAlerta('error', 'Error de conexión', 'No se pudo contactar al servidor.');
+                });
         }
     );
 }
