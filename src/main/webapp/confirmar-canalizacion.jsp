@@ -1,5 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-08-07
+  Descripción: Página pública a la que llega el encargado de un área de apoyo
+  desde el enlace del correo de canalización, para confirmar por token que
+  atendió al alumno. Muestra el resultado de la confirmación.
+--%>
 <!DOCTYPE html>
 <html lang="es">
 <head>

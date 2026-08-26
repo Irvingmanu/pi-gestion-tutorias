@@ -1,5 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-07-01
+  Descripción: Formulario de alumno para crear una nueva solicitud de tutoría
+  individual, seleccionando tutor asignado y horario disponible.
+--%>
 <c:set var="paginaActiva" value="solicitud" scope="request" />
 <%-- Los datos de disponibilidad ya vienen calculados por SolicitudServlet (accion=nueva),
      que es el unico punto de entrada a esta vista. "empty" cubre tanto listaHorarios == null

@@ -1,5 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-08-07
+  Descripción: Vista de alumno "Mis Canalizaciones" que lista las
+  canalizaciones a áreas de apoyo registradas para él, con su estado y fecha.
+--%>
 <c:set var="paginaActiva" value="canalizaciones" scope="request" />
 <%
     java.text.SimpleDateFormat formatoFecha = new java.text.SimpleDateFormat("dd MMMM yyyy", new java.util.Locale("es", "MX"));

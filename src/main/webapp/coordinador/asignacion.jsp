@@ -1,5 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-07-17
+  Descripción: Vista de coordinador para asignar tutores a grupos, con
+  validaciones de formulario sobre el tutor y el grupo seleccionados.
+--%>
 <%
     request.setAttribute("paginaActiva", "asignacion");
 %>

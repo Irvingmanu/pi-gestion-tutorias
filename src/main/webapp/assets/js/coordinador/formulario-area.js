@@ -1,10 +1,24 @@
-
+/**
+ * Configura la validación en vivo (HTML5 + reglas propias) de un formulario
+ * con la clase "needs-validation", habilitando/deshabilitando su botón de
+ * guardar y revalidándolo periódicamente para cubrir el autocompletado del navegador.
+ * @author J4IROXD
+ * @date 2026-08-10
+ * @param {HTMLFormElement} form - el formulario a validar en vivo
+ * @returns {void}
+ */
 function configurarValidacionFormulario(form) {
     let btnGuardar = form.querySelector('button[type="submit"]');
     if (!btnGuardar && form.id) {
         btnGuardar = document.querySelector('button[type="submit"][form="' + form.id + '"]');
     }
 
+    /**
+     * Verifica la validez completa del formulario (incluyendo, para el
+     * formulario de nueva área, que exista al menos un motivo capturado) y
+     * habilita/deshabilita el botón de guardar en consecuencia.
+     * @returns {void}
+     */
     function verificarFormulario() {
         if (!btnGuardar) {
             return;
@@ -30,6 +44,12 @@ function configurarValidacionFormulario(form) {
 
     const MENSAJE_CAMPO_OBLIGATORIO = 'Este campo es obligatorio.';
 
+    /**
+     * Obtiene el elemento de retroalimentación de validación asociado a un
+     * campo, buscándolo como hermano siguiente o dentro de su fila de motivo.
+     * @param {HTMLElement} input - el campo del formulario
+     * @returns {HTMLElement|null} el elemento de retroalimentación encontrado, o null si no existe
+     */
     function obtenerFeedback(input) {
         if (input.nextElementSibling && input.nextElementSibling.classList.contains('invalid-feedback')) {
             return input.nextElementSibling;
@@ -42,6 +62,13 @@ function configurarValidacionFormulario(form) {
         return input.parentElement?.querySelector('.invalid-feedback') || null;
     }
 
+    /**
+     * Marca visualmente un campo como válido o inválido según su estado de
+     * validación HTML5, mostrando el mensaje de error correspondiente solo
+     * si el campo ya fue tocado.
+     * @param {HTMLElement} input - el campo del formulario a validar visualmente
+     * @returns {void}
+     */
     function marcarValidez(input) {
         const feedback = obtenerFeedback(input);
 
@@ -104,6 +131,12 @@ function configurarValidacionFormulario(form) {
         window.verificarFormularioArea = verificarFormulario;
     }
 
+    /**
+     * Marca un campo como tocado si ya tiene un valor (útil para detectar
+     * campos autocompletados por el navegador) y aplica su validación visual.
+     * @param {HTMLElement} input - el campo a evaluar
+     * @returns {void}
+     */
     function marcarSiTieneValor(input) {
         if (input.value) {
             camposTocados.add(input);
@@ -111,6 +144,11 @@ function configurarValidacionFormulario(form) {
         marcarValidez(input);
     }
 
+    /**
+     * Revalida visualmente todos los campos del formulario y actualiza el
+     * estado del botón de guardar; se ejecuta al cargar y periódicamente.
+     * @returns {void}
+     */
     function marcarValidezFormularioCompleto() {
         form.querySelectorAll('input, select').forEach(marcarSiTieneValor);
         verificarFormulario();

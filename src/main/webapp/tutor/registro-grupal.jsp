@@ -1,6 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%--
+  Autor: 20253ds074-art
+  Fecha de creación: 2026-07-22
+  Descripción: Vista de Registro de Tutoría Grupal. Permite al tutor capturar la
+  asistencia de un grupo mediante una grilla de alumnos y registrar la sesión
+  grupal correspondiente.
+--%>
 <!DOCTYPE html>
 <html lang="es">
 <head>

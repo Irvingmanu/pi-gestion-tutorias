@@ -1,8 +1,20 @@
 
+/**
+ * Controla el modal de canalizaciones del reporte del tutor: carga el listado
+ * vía fetch, lo pinta en la tabla, muestra el detalle de una canalización y
+ * permite enviar un recordatorio al área de apoyo cuando sigue "En proceso".
+ * @author 20253ds074-art
+ * @date 2026-08-16
+ */
+
 let modalCanalizadosInstancia = null;
 let modalDetalleCanalizacionInstancia = null;
 let ultimasCanalizacionesTutor = [];
 
+/**
+ * Obtiene (creando si aún no existe) la instancia del modal Bootstrap de la lista de canalizaciones.
+ * @returns {bootstrap.Modal} la instancia del modal
+ */
 function obtenerModalCanalizados() {
     if (!modalCanalizadosInstancia) {
         modalCanalizadosInstancia = new bootstrap.Modal(document.getElementById('modalCanalizados'));
@@ -10,6 +22,10 @@ function obtenerModalCanalizados() {
     return modalCanalizadosInstancia;
 }
 
+/**
+ * Obtiene (creando si aún no existe) la instancia del modal Bootstrap del detalle de una canalización.
+ * @returns {bootstrap.Modal} la instancia del modal
+ */
 function obtenerModalDetalleCanalizacion() {
     if (!modalDetalleCanalizacionInstancia) {
         modalDetalleCanalizacionInstancia = new bootstrap.Modal(document.getElementById('modalDetalleCanalizacion'));
@@ -17,17 +33,33 @@ function obtenerModalDetalleCanalizacion() {
     return modalDetalleCanalizacionInstancia;
 }
 
+/**
+ * Escapa un valor para insertarlo como texto seguro dentro de HTML, evitando inyección de marcado.
+ * @param {*} texto el valor a escapar (se convierte a texto; null/undefined se trata como cadena vacía)
+ * @returns {string} el texto escapado listo para insertarse en HTML
+ */
 function escaparHtmlCanalizacion(texto) {
     const div = document.createElement('div');
     div.textContent = texto === undefined || texto === null ? '' : String(texto);
     return div.innerHTML;
 }
 
+/**
+ * Genera el HTML del badge visual correspondiente al estatus de una canalización.
+ * @param {string} estatus el estatus de la canalización ('Atendido' u otro)
+ * @returns {string} el HTML del badge correspondiente
+ */
 function badgeEstatusCanalizacion(estatus) {
     const clase = estatus === 'Atendido' ? 'text-bg-success' : 'text-bg-warning';
     return '<span class="badge ' + clase + '">' + escaparHtmlCanalizacion(estatus) + '</span>';
 }
 
+/**
+ * Abre el modal de canalizaciones y carga vía fetch su detalle, aplicando los
+ * filtros recibidos como parámetros de consulta.
+ * @param {Object} filtros mapa clave-valor de filtros a aplicar (solo se envían las claves con valor truthy)
+ * @returns {void}
+ */
 function abrirModalCanalizados(filtros) {
     const tbody = document.getElementById('tablaCanalizadosBody');
     tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Cargando...</td></tr>';
@@ -58,6 +90,12 @@ function abrirModalCanalizados(filtros) {
         });
 }
 
+/**
+ * Renderiza en la tabla del modal las filas de canalizaciones, o el aviso de
+ * "sin canalizaciones" cuando la lista está vacía.
+ * @param {Array<Object>} lista lista de canalizaciones a pintar
+ * @returns {void}
+ */
 function pintarTablaCanalizados(lista) {
     const tbody = document.getElementById('tablaCanalizadosBody');
     const aviso = document.getElementById('avisoSinCanalizaciones');
@@ -85,6 +123,12 @@ function pintarTablaCanalizados(lista) {
     }).join('');
 }
 
+/**
+ * Muestra el modal de detalle de la canalización ubicada en el índice dado de
+ * la última lista cargada, mostrando el botón de recordatorio solo si sigue "En proceso".
+ * @param {number} indice posición de la canalización dentro de `ultimasCanalizacionesTutor`
+ * @returns {void}
+ */
 function verDetalleCanalizacion(indice) {
     const c = ultimasCanalizacionesTutor[indice];
     if (!c) return;
@@ -113,6 +157,11 @@ function verDetalleCanalizacion(indice) {
     obtenerModalDetalleCanalizacion().show();
 }
 
+/**
+ * Muestra un diálogo de confirmación antes de enviar el recordatorio al área de apoyo.
+ * @param {Object} canalizacion la canalización sobre la cual se enviará el recordatorio
+ * @returns {void}
+ */
 function confirmarRecordatorioArea(canalizacion) {
     mostrarConfirmacion(
         'advertencia',
@@ -125,6 +174,12 @@ function confirmarRecordatorioArea(canalizacion) {
     );
 }
 
+/**
+ * Envía por POST al endpoint de reportes la solicitud de recordatorio al área de
+ * apoyo y muestra un toast con el resultado de la operación.
+ * @param {Object} canalizacion la canalización (debe incluir idCanalizacion) sobre la cual enviar el recordatorio
+ * @returns {void}
+ */
 function enviarRecordatorioArea(canalizacion) {
     const params = new URLSearchParams();
     params.append('accion', 'recordarAreaApoyo');

@@ -1,3 +1,17 @@
+/**
+ * Gestiona la vista de "Gestión de Grupos y Alumnos" del coordinador: confirma
+ * cancelación/eliminación/reactivación de alumnos, agrupa y filtra los alumnos
+ * por academia/carrera/cuatrimestre/grupo en acordeones, controla los modales
+ * de nuevo grupo y carga masiva por Excel, y muestra los mensajes de
+ * éxito/error de todas estas operaciones.
+ * @author Irvingmanu
+ * @date 2026-07-21
+ */
+/**
+ * Pide confirmación antes de descartar los cambios del formulario de alumno
+ * y, si se confirma, redirige a la URL de cancelación.
+ * @returns {void}
+ */
 function confirmarCancelacion() {
     let boton = document.getElementById('btnCancelarFormulario');
     let urlDestino = boton ? boton.dataset.urlCancelar : '/';
@@ -13,6 +27,12 @@ function confirmarCancelacion() {
     );
 }
 
+/**
+ * Pide confirmación crítica antes de dar de baja a un alumno y, si se
+ * confirma, envía el formulario oculto de eliminación con la matrícula indicada.
+ * @param {string} matricula - la matrícula del alumno a eliminar
+ * @returns {void}
+ */
 function prepararEliminacion(matricula) {
     mostrarConfirmacion(
         'critica',
@@ -26,6 +46,12 @@ function prepararEliminacion(matricula) {
     );
 }
 
+/**
+ * Pide confirmación antes de reactivar a un alumno dado de baja y, si se
+ * confirma, envía el formulario oculto de reactivación con la matrícula indicada.
+ * @param {string} matricula - la matrícula del alumno a reactivar
+ * @returns {void}
+ */
 function prepararReactivacion(matricula) {
     mostrarConfirmacion(
         'advertencia',
@@ -41,11 +67,21 @@ function prepararReactivacion(matricula) {
 
 let filasAlumnosOriginales = [];
 
+/**
+ * Carga en memoria (`filasAlumnosOriginales`) las filas originales de la
+ * tabla oculta de alumnos, para usarlas como fuente al filtrar y agrupar.
+ * @returns {void}
+ */
 function cargarFilasAlumnosOriginales() {
     let tbodyOriginal = document.getElementById('tablaAlumnosOriginal');
     filasAlumnosOriginales = tbodyOriginal ? Array.from(tbodyOriginal.querySelectorAll('tr')) : [];
 }
 
+/**
+ * Inicializa la vista agrupada de alumnos: muestra un aviso si no hay
+ * alumnos registrados, o dispara el filtrado/renderizado inicial.
+ * @returns {void}
+ */
 function inicializarAgrupacionAlumnos() {
     let contenedorGrupos = document.getElementById('contenedorGruposAlumnos');
     if (!contenedorGrupos) return;
@@ -59,6 +95,12 @@ function inicializarAgrupacionAlumnos() {
     filtrarAlumnos();
 }
 
+/**
+ * Filtra las filas originales de alumnos según los selects de academia,
+ * carrera, grupo, cuatrimestre y el checkbox de mostrar inactivos, y
+ * dispara el renderizado de los grupos filtrados y la búsqueda por nombre.
+ * @returns {void}
+ */
 function filtrarAlumnos() {
     let selectAcademiaFiltro = document.getElementById('academiaFiltroPrincipal');
     let academiaSeleccionada = selectAcademiaFiltro ? selectAcademiaFiltro.value : '';
@@ -89,6 +131,13 @@ function filtrarAlumnos() {
     aplicarBusquedaAlumno();
 }
 
+/**
+ * Agrupa las filas de alumnos filtradas por carrera/cuatrimestre/grupo,
+ * las ordena, y construye un acordeón por cada grupo dentro del contenedor
+ * principal (o muestra la tarjeta de "sin resultados" si la lista está vacía).
+ * @param {Array<HTMLElement>} filas - las filas de alumnos ya filtradas a agrupar
+ * @returns {void}
+ */
 function renderizarGruposAlumnos(filas) {
     let contenedor = document.getElementById('contenedorGruposAlumnos');
     if (!contenedor) return;
@@ -131,6 +180,13 @@ function renderizarGruposAlumnos(filas) {
     });
 }
 
+/**
+ * Construye el elemento DOM del acordeón de Bootstrap para un grupo de
+ * alumnos: encabezado con carrera/cuatrimestre/letra/generación/tutor, un
+ * enlace al historial de tutorías del grupo, y la tabla con sus alumnos.
+ * @param {Object} grupoInfo - la información del grupo (carrera, idCarrera, cuatri, grupo, idGrupo, generacion, filas)
+ * @returns {HTMLElement} el elemento `.accordion-item` construido
+ */
 function construirAcordeonGrupo(grupoInfo) {
     let idHeader = 'acordeonHeaderGrupo' + grupoInfo.idGrupo;
     let idCollapse = 'acordeonCollapseGrupo' + grupoInfo.idGrupo;
@@ -213,18 +269,34 @@ function construirAcordeonGrupo(grupoInfo) {
     return item;
 }
 
+/**
+ * Abre (expande) el collapse de Bootstrap de un ítem de acordeón de grupo.
+ * @param {HTMLElement} item - el elemento `.accordion-item` a abrir
+ * @returns {void}
+ */
 function abrirAcordeonItem(item) {
     let colapso = item.querySelector('.accordion-collapse');
     if (!colapso || typeof bootstrap === 'undefined') return;
     bootstrap.Collapse.getOrCreateInstance(colapso, { toggle: false }).show();
 }
 
+/**
+ * Colapsa (oculta) el collapse de Bootstrap de un ítem de acordeón de grupo.
+ * @param {HTMLElement} item - el elemento `.accordion-item` a colapsar
+ * @returns {void}
+ */
 function colapsarAcordeonItem(item) {
     let colapso = item.querySelector('.accordion-collapse');
     if (!colapso || typeof bootstrap === 'undefined') return;
     bootstrap.Collapse.getOrCreateInstance(colapso, { toggle: false }).hide();
 }
 
+/**
+ * Filtra por nombre (texto libre) las filas de alumnos dentro de cada
+ * acordeón ya renderizado, mostrando/ocultando filas y grupos completos, y
+ * expandiendo automáticamente los grupos con coincidencias.
+ * @returns {void}
+ */
 function aplicarBusquedaAlumno() {
     let inputBuscar = document.getElementById('buscarAlumno');
     let contenedor = document.getElementById('contenedorGruposAlumnos');
@@ -271,6 +343,14 @@ function aplicarBusquedaAlumno() {
     }
 }
 
+/**
+ * Obtiene los valores únicos de un campo del dataset de las filas originales
+ * de alumnos, opcionalmente restringidos a una carrera y/o cuatrimestre.
+ * @param {string} campo - el nombre del campo del dataset a extraer ("cuatri", "letra", etc.)
+ * @param {string} filtroCarrera - la carrera a la que restringir la búsqueda (cadena vacía para no filtrar)
+ * @param {string} filtroCuatri - el cuatrimestre al que restringir la búsqueda (cadena vacía para no filtrar)
+ * @returns {Array<string>} la lista de valores únicos encontrados
+ */
 function valoresUnicos(campo, filtroCarrera, filtroCuatri) {
     let datasetKey = campo === 'letra' ? 'grupo' : campo;
     let vistos = new Set();
@@ -284,6 +364,12 @@ function valoresUnicos(campo, filtroCarrera, filtroCuatri) {
     return Array.from(vistos);
 }
 
+/**
+ * Filtra las opciones del select de carrera del filtro principal según la
+ * academia elegida, limpiando la carrera si dejó de ser visible, y
+ * refiltra la lista de alumnos.
+ * @returns {void}
+ */
 function aplicarFiltroAcademiaPrincipal() {
     let selectAcademia = document.getElementById('academiaFiltroPrincipal');
     let selectCarrera = document.getElementById('carreraFiltroPrincipal');
@@ -312,6 +398,13 @@ function aplicarFiltroAcademiaPrincipal() {
     }
 }
 
+/**
+ * Repuebla el select de cuatrimestre del filtro principal con los
+ * cuatrimestres existentes para la carrera indicada, preservando el valor
+ * actual si sigue siendo una opción válida.
+ * @param {string} carreraSeleccionada - la carrera para la que se listan los cuatrimestres disponibles
+ * @returns {void}
+ */
 function poblarSelectCuatrimestre(carreraSeleccionada) {
     let select = document.getElementById('cuatrimestre');
     if (!select) return;
@@ -331,6 +424,14 @@ function poblarSelectCuatrimestre(carreraSeleccionada) {
     select.value = opciones.indexOf(valorActual) !== -1 ? valorActual : '';
 }
 
+/**
+ * Repuebla el select de grupo (letra) del filtro principal con los grupos
+ * existentes para la carrera y cuatrimestre indicados, preservando el valor
+ * actual si sigue siendo una opción válida.
+ * @param {string} carreraSeleccionada - la carrera para la que se listan los grupos disponibles
+ * @param {string} cuatrimestreSeleccionado - el cuatrimestre para el que se listan los grupos disponibles
+ * @returns {void}
+ */
 function poblarSelectGrupo(carreraSeleccionada, cuatrimestreSeleccionado) {
     let select = document.getElementById('grupo');
     if (!select) return;
@@ -396,6 +497,11 @@ document.addEventListener('DOMContentLoaded', function () {
     let modalNuevoGrupoEl = document.getElementById('modalNuevoGrupo');
     if (!formNuevoGrupo || !selectModalCarrera) return;
 
+    /**
+     * Filtra las opciones del select de carrera del modal "Nuevo grupo"
+     * según la academia elegida, limpiando la carrera si dejó de ser visible.
+     * @returns {void}
+     */
     function aplicarFiltroAcademiaModal() {
         let idAcademia = selectModalAcademia.value;
         let opcionSeleccionadaSigueVisible = false;
@@ -414,6 +520,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    /**
+     * Repuebla el select de cuatrimestre del modal "Nuevo grupo" según el
+     * nivel académico de la carrera elegida (TSU: 1-6, Ingeniería: 7-10).
+     * @param {string|null} nivel - el nivel académico de la carrera ("TSU", "ING") o null si no hay carrera elegida
+     * @returns {void}
+     */
     function poblarCuatrimestresModal(nivel) {
         selectModalCuatrimestre.innerHTML = '';
 
@@ -446,6 +558,12 @@ document.addEventListener('DOMContentLoaded', function () {
         selectModalCuatrimestre.disabled = false;
     }
 
+    /**
+     * Reinicia el select de letra de grupo del modal "Nuevo grupo" a una
+     * única opción deshabilitada con el mensaje indicado.
+     * @param {string} mensaje - el texto de la opción de placeholder a mostrar
+     * @returns {void}
+     */
     function resetearSelectLetraModal(mensaje) {
         selectModalLetra.innerHTML = '';
         let opcionVacia = document.createElement('option');
@@ -456,6 +574,14 @@ document.addEventListener('DOMContentLoaded', function () {
         selectModalLetra.disabled = true;
     }
 
+    /**
+     * Repuebla el select de letra de grupo del modal "Nuevo grupo",
+     * deshabilitando las letras (A-F) ya usadas por grupos existentes para
+     * esa carrera y cuatrimestre, y preseleccionando la primera letra libre.
+     * @param {string} carreraNombre - el nombre de la carrera elegida
+     * @param {string} cuatrimestre - el cuatrimestre elegido
+     * @returns {void}
+     */
     function poblarSelectLetraModal(carreraNombre, cuatrimestre) {
         if (!carreraNombre || !cuatrimestre) {
             resetearSelectLetraModal('Seleccione primero el cuatrimestre');
@@ -494,6 +620,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    /**
+     * Verifica si el formulario del modal "Nuevo grupo" tiene algún campo
+     * modificado respecto a su estado inicial.
+     * @returns {boolean} true si hay cambios sin guardar; false en caso contrario
+     */
     function modalNuevoGrupoTieneCambios() {
         return selectModalAcademia.value !== ''
             || selectModalCarrera.value !== ''
@@ -503,11 +634,20 @@ document.addEventListener('DOMContentLoaded', function () {
             || (selectModalPeriodo && selectModalPeriodo.value !== '');
     }
 
+    /**
+     * Cierra el modal "Nuevo grupo" sin pedir confirmación.
+     * @returns {void}
+     */
     function cerrarModalNuevoGrupo() {
         let instancia = bootstrap.Modal.getInstance(modalNuevoGrupoEl);
         if (instancia) instancia.hide();
     }
 
+    /**
+     * Cierra el modal "Nuevo grupo" directamente si no hay cambios, o pide
+     * confirmación de descarte antes de cerrarlo si los hay.
+     * @returns {void}
+     */
     function intentarCerrarModalNuevoGrupo() {
         if (!modalNuevoGrupoTieneCambios()) {
             cerrarModalNuevoGrupo();
@@ -586,15 +726,29 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    /**
+     * Verifica si el formulario del modal "Carga masiva" tiene un grupo
+     * elegido o un archivo seleccionado.
+     * @returns {boolean} true si hay cambios sin guardar; false en caso contrario
+     */
     function cargaMasivaTieneCambios() {
         return selectCargaGrupo.value !== '' || (inputCargaArchivo.files && inputCargaArchivo.files.length > 0);
     }
 
+    /**
+     * Cierra el modal "Carga masiva" sin pedir confirmación.
+     * @returns {void}
+     */
     function cerrarModalCargaMasiva() {
         let instancia = bootstrap.Modal.getInstance(modalCargaMasivaEl);
         if (instancia) instancia.hide();
     }
 
+    /**
+     * Cierra el modal "Carga masiva" directamente si no hay cambios, o pide
+     * confirmación de descarte antes de cerrarlo si los hay.
+     * @returns {void}
+     */
     function intentarCerrarModalCargaMasiva() {
         if (!cargaMasivaTieneCambios()) {
             cerrarModalCargaMasiva();

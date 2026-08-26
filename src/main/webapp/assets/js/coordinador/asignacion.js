@@ -1,4 +1,11 @@
-
+/**
+ * Gestiona la vista de "Asignación de tutores" del coordinador: muestra los
+ * mensajes de éxito/error de la operación, filtra los selects de tutor y
+ * grupo según la academia elegida en el formulario, filtra la tabla de
+ * asignaciones por academia, y confirma la eliminación de una asignación.
+ * @author 20253ds074-art
+ * @date 2026-08-06
+ */
 document.addEventListener('DOMContentLoaded', function () {
     const urlParams = new URLSearchParams(window.location.search);
     const exito = urlParams.get('exito');
@@ -37,6 +44,17 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
     }
 
+    /**
+     * Muestra/oculta y habilita/deshabilita las opciones de un select según
+     * si pertenecen a la academia indicada, actualizando el texto del
+     * placeholder según haya o no opciones disponibles.
+     * @param {HTMLSelectElement} select - el select a filtrar (tutor o grupo)
+     * @param {string} idAcademia - el id de la academia seleccionada (cadena vacía si ninguna)
+     * @param {string} textoSinAcademia - el texto del placeholder cuando no hay academia elegida
+     * @param {string} textoConOpciones - el texto del placeholder cuando hay opciones disponibles
+     * @param {string} textoSinOpciones - el texto del placeholder cuando no hay opciones disponibles
+     * @returns {void}
+     */
     function filtrarPorAcademia(select, idAcademia, textoSinAcademia, textoConOpciones, textoSinOpciones) {
         let huboOpcionesVisibles = false;
 
@@ -103,6 +121,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+/**
+ * Pide confirmación crítica antes de eliminar una asignación de tutor y, si
+ * se confirma, envía el formulario oculto de eliminación con el id indicado.
+ * @param {number|string} idAsignacion - el id de la asignación a eliminar
+ * @returns {void}
+ */
 function prepararEliminacionAsignacion(idAsignacion) {
     mostrarConfirmacion(
         'critica',

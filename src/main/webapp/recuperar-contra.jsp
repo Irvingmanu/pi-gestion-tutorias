@@ -1,5 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-07-21
+  Descripción: Vista de recuperación de contraseña. Contiene el formulario para
+  solicitar el restablecimiento de contraseña vía correo electrónico, gestionado
+  por RecuperarServlet.
+--%>
 <!DOCTYPE html>
 <html lang="es">
 <head>

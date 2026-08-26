@@ -1,4 +1,11 @@
-
+/**
+ * Controla el formulario de alta/edición de alumno del coordinador: inicializa
+ * el select2 de grupo, genera matrícula y correo automáticamente cuando el
+ * grupo elegido es de primer cuatrimestre (vía /generarCredenciales), y valida
+ * en vivo todos los campos habilitando/deshabilitando el botón de guardar.
+ * @author Irvingmanu
+ * @date 2026-08-10
+ */
 document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById('formGuardar');
     if (!form) {
@@ -20,6 +27,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    /**
+     * Marca visualmente el select2 de grupo como inválido (borde rojo).
+     * @returns {void}
+     */
     function marcarGrupoInvalido() {
         if (!$asignarGrupo) return;
         selectAsignarGrupo.classList.add('is-invalid');
@@ -27,6 +38,10 @@ document.addEventListener('DOMContentLoaded', function () {
             .css('border-color', 'var(--bs-form-invalid-border-color, #dc3545)');
     }
 
+    /**
+     * Quita la marca visual de inválido del select2 de grupo.
+     * @returns {void}
+     */
     function limpiarGrupoInvalido() {
         if (!$asignarGrupo) return;
         selectAsignarGrupo.classList.remove('is-invalid');
@@ -48,11 +63,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const PLACEHOLDER_MATRICULA_MANUAL = 'Captura la matrícula ya existente del alumno';
     const PLACEHOLDER_CORREO_MANUAL = 'Captura el correo ya existente del alumno';
 
+    /**
+     * Solicita al servidor la matrícula y correo generados automáticamente
+     * para un grupo de primer cuatrimestre.
+     * @param {string} idGrupo - el id del grupo seleccionado
+     * @returns {Promise<Response>} la promesa de la respuesta fetch con las credenciales generadas
+     */
     function obtenerCredenciales(idGrupo) {
         const contextPath = document.body.dataset.contextPath || '';
         return fetch(contextPath + '/generarCredenciales?idGrupo=' + encodeURIComponent(idGrupo));
     }
 
+    /**
+     * Reacciona al cambio de grupo seleccionado: si es de primer cuatrimestre,
+     * bloquea y autogenera matrícula/correo consultando al servidor; en caso
+     * contrario, habilita ambos campos para captura manual y los limpia.
+     * @returns {void}
+     */
     function alCambiarGrupo() {
         const idGrupo = selectAsignarGrupo.value;
         if (!idGrupo) return;
@@ -119,6 +146,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const MENSAJE_CAMPO_OBLIGATORIO = 'Este campo es obligatorio.';
 
+    /**
+     * Obtiene el elemento de retroalimentación de validación asociado a un campo.
+     * @param {HTMLElement} input - el campo del formulario
+     * @returns {HTMLElement|null} el elemento de retroalimentación encontrado, o null si no existe
+     */
     function obtenerFeedback(input) {
         if (input.nextElementSibling && input.nextElementSibling.classList.contains('invalid-feedback')) {
             return input.nextElementSibling;
@@ -126,6 +158,13 @@ document.addEventListener('DOMContentLoaded', function () {
         return input.parentElement?.querySelector('.invalid-feedback') || null;
     }
 
+    /**
+     * Marca visualmente un campo como válido o inválido, aplicando además
+     * las reglas de formato específicas de matrícula y correo institucional
+     * (regex), o el estado especial del select2 de grupo.
+     * @param {HTMLElement} input - el campo del formulario a validar visualmente
+     * @returns {void}
+     */
     function marcarValidez(input) {
 
         if (input === selectAsignarGrupo) {
@@ -168,6 +207,12 @@ document.addEventListener('DOMContentLoaded', function () {
         feedback.style.display = 'block';
     }
 
+    /**
+     * Verifica la validez completa del formulario (campos HTML5, formato de
+     * matrícula/correo y grupo seleccionado) y habilita/deshabilita el botón
+     * de guardar en consecuencia.
+     * @returns {void}
+     */
     function verificarFormulario() {
         let esValido = true;
         inputsValidables.forEach(function (input) {
@@ -227,6 +272,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    /**
+     * Marca un campo como tocado si ya tiene un valor (útil para detectar
+     * campos autocompletados por el navegador) y aplica su validación visual.
+     * @param {HTMLElement} input - el campo a evaluar
+     * @returns {void}
+     */
     function marcarSiTieneValor(input) {
         if (input.value) {
             camposTocados.add(input);
@@ -234,6 +285,11 @@ document.addEventListener('DOMContentLoaded', function () {
         marcarValidez(input);
     }
 
+    /**
+     * Revalida visualmente todos los campos del formulario y actualiza el
+     * estado del botón de guardar; se ejecuta al cargar y periódicamente.
+     * @returns {void}
+     */
     function marcarValidezFormularioCompleto() {
         inputsValidables.forEach(marcarSiTieneValor);
         verificarFormulario();

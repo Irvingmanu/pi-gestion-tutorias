@@ -1,5 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%--
+  Autor: J4IROXD
+  Fecha de creación: 2026-07-02
+  Descripción: Vista de perfil del Coordinador. Muestra los datos personales del
+  coordinador autenticado (nombre, apellidos y demás información de cuenta) dentro
+  del layout con barra lateral de navegación del rol Coordinador.
+--%>
 <c:set var="paginaActiva" value="perfil" scope="request" />
 <!DOCTYPE html>
 <html lang="es">

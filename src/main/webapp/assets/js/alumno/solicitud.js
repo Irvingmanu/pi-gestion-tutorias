@@ -1,4 +1,11 @@
-
+/**
+ * Controla el formulario de solicitud de tutoría individual del alumno:
+ * bloquea el envío cuando no hay tutor/horarios disponibles, valida en vivo
+ * los campos del formulario y encadena los selects de fecha, duración y hora
+ * según la disponibilidad real del tutor.
+ * @author Irvingmanu
+ * @date 2026-08-07
+ */
 document.addEventListener('DOMContentLoaded', function () {
     var puedeEnviar = window.PUEDE_ENVIAR === true;
     var form = document.getElementById('formSolicitud');
@@ -31,6 +38,12 @@ document.addEventListener('DOMContentLoaded', function () {
     var inputsValidables = form.querySelectorAll('input, select, textarea');
     var MENSAJE_CAMPO_OBLIGATORIO = 'Este campo es obligatorio.';
 
+    /**
+     * Obtiene el elemento de retroalimentación de validación (`.invalid-feedback`)
+     * asociado a un campo del formulario.
+     * @param {HTMLElement} input - el campo del formulario
+     * @returns {HTMLElement|null} el elemento de retroalimentación encontrado, o null si no existe
+     */
     function obtenerFeedback(input) {
         if (input.nextElementSibling && input.nextElementSibling.classList.contains('invalid-feedback')) {
             return input.nextElementSibling;
@@ -38,6 +51,13 @@ document.addEventListener('DOMContentLoaded', function () {
         return input.parentElement ? input.parentElement.querySelector('.invalid-feedback') : null;
     }
 
+    /**
+     * Marca visualmente un campo como válido o inválido según su estado de
+     * validación HTML5, mostrando el mensaje de error correspondiente
+     * (campo obligatorio o patrón inválido) solo si el campo ya fue tocado.
+     * @param {HTMLElement} input - el campo del formulario a validar visualmente
+     * @returns {void}
+     */
     function marcarValidez(input) {
         var feedback = obtenerFeedback(input);
         var esValido = input.checkValidity();
@@ -62,6 +82,12 @@ document.addEventListener('DOMContentLoaded', function () {
         feedback.style.display = 'block';
     }
 
+    /**
+     * Verifica si todos los campos del formulario son válidos y habilita o
+     * deshabilita el botón de enviar en consecuencia (además de requerir que
+     * exista disponibilidad para enviar la solicitud).
+     * @returns {void}
+     */
     function verificarFormulario() {
         var esValido = true;
         inputsValidables.forEach(function (input) {
@@ -90,6 +116,13 @@ document.addEventListener('DOMContentLoaded', function () {
         selectDia.appendChild(opcion);
     });
 
+    /**
+     * Vacía un elemento select y le agrega una única opción deshabilitada de
+     * placeholder, dejando el select listo para poblarse de nuevo.
+     * @param {HTMLSelectElement} select - el select a reiniciar
+     * @param {string} textoPlaceholder - el texto de la opción placeholder
+     * @returns {void}
+     */
     function reiniciarSelect(select, textoPlaceholder) {
         select.innerHTML = '';
         var opcionVacia = document.createElement('option');
@@ -100,6 +133,11 @@ document.addEventListener('DOMContentLoaded', function () {
         select.appendChild(opcionVacia);
     }
 
+    /**
+     * Suma una hora a una hora dada en formato "HH:MM".
+     * @param {string} hora - la hora de partida en formato "HH:MM"
+     * @returns {string} la hora resultante en formato "HH:MM"
+     */
     function sumarUnaHora(hora) {
 
         var partes = hora.split(':');

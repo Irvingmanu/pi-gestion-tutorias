@@ -1,6 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%--
+  Autor: 20253ds074-art
+  Fecha de creación: 2026-07-30
+  Descripción: Vista de Reportes Globales del Coordinador. Presenta indicadores
+  (KPIs), gráficas con Chart.js y filtros (fechas, carrera, cuatrimestre, grupo,
+  tutor) sobre el avance general de tutorías, canalizaciones y solicitudes.
+--%>
 <!DOCTYPE html>
 <html lang="es">
 <head>

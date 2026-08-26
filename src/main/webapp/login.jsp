@@ -1,5 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-07-01
+  Descripción: Vista de inicio de sesión del sistema. Contiene el formulario de
+  autenticación (correo y contraseña) enviado a LoginServlet, y el enlace de
+  recuperación de contraseña.
+--%>
 <!DOCTYPE html>
 <html lang="es">
 <head>

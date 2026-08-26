@@ -1,12 +1,26 @@
-
+/**
+ * Muestra un overlay de carga global durante envíos de formularios y peticiones
+ * fetch, interceptando submit/fetch/pageshow para dar retroalimentación visual
+ * al usuario mientras la petición está en curso.
+ * @author Irvingmanu
+ * @date 2026-08-24
+ */
 (function () {
     'use strict';
 
+    /**
+     * Muestra el overlay de carga global agregándole la clase "mostrando".
+     * @returns {void}
+     */
     function mostrarCargando() {
         var overlay = document.getElementById('overlayCargando');
         if (overlay) overlay.classList.add('mostrando');
     }
 
+    /**
+     * Oculta el overlay de carga global quitándole la clase "mostrando".
+     * @returns {void}
+     */
     function ocultarCargando() {
         var overlay = document.getElementById('overlayCargando');
         if (overlay) overlay.classList.remove('mostrando');

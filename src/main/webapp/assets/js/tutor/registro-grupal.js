@@ -1,3 +1,13 @@
+/**
+ * Controla el formulario de registro de tutoría grupal del tutor: carga la
+ * cuadrícula de asistencia del grupo seleccionado, permite marcar el estatus
+ * (Presente/Falta/Justificado) de cada alumno por sesión mediante clics,
+ * calcula el porcentaje de asistencia y marca en riesgo a quienes caen bajo el
+ * umbral, valida fechas y campos del formulario, y decide si el guardado debe
+ * registrar una sesión nueva o solo actualizar asistencia histórica.
+ * @author 20253ds074-art
+ * @date 2026-08-09
+ */
 document.addEventListener('DOMContentLoaded', function () {
     var CICLO_ESTATUS = ['Presente', 'Falta', 'Justificado'];
     var UMBRAL_RIESGO = 80;
@@ -24,16 +34,29 @@ document.addEventListener('DOMContentLoaded', function () {
     var huboEdicionHistorica = false;
     var huboEdicionColumnaNueva = false;
 
+    /**
+     * Indica si los campos superiores del formulario (fecha, acuerdos, temas) están todos vacíos.
+     * @returns {boolean} true si ningún campo superior tiene valor capturado
+     */
     function camposSuperioresVacios() {
         return !(inputFecha && inputFecha.value)
             && !(inputAcuerdos && inputAcuerdos.value.trim())
             && !(inputTemas && inputTemas.value.trim());
     }
 
+    /**
+     * Determina si el guardado actual corresponde a una simple actualización de
+     * asistencia histórica (sin registrar una sesión nueva).
+     * @returns {boolean} true si solo se editó asistencia de sesiones pasadas y los campos superiores están vacíos
+     */
     function puedeGuardarSoloAsistencia() {
         return huboEdicionHistorica && !huboEdicionColumnaNueva && camposSuperioresVacios();
     }
 
+    /**
+     * Verifica si existe al menos una celda marcada como "Justificado" en el estado actual de la cuadrícula.
+     * @returns {boolean} true si hay alguna sesión justificada para algún alumno
+     */
     function hayAlgunaSesionJustificada() {
         if (!estadoGrid) {
             return false;
@@ -45,6 +68,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    /**
+     * Muestra u oculta el botón "Guardar lista de asistencia" según si aplica un guardado de solo asistencia.
+     * @returns {void}
+     */
     function actualizarBotonListaAsistencia() {
         if (!btnGuardarListaAsistencia) {
             return;
@@ -53,6 +80,11 @@ document.addEventListener('DOMContentLoaded', function () {
         btnGuardarListaAsistencia.style.display = mostrar ? '' : 'none';
     }
 
+    /**
+     * Formatea una fecha JavaScript como cadena ISO (yyyy-MM-dd).
+     * @param {Date} fecha la fecha a formatear
+     * @returns {string} la fecha en formato ISO
+     */
     function formatearFechaISO(fecha) {
         var yyyy = fecha.getFullYear();
         var mm = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -73,12 +105,22 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    /**
+     * Escapa un valor para insertarlo como texto seguro dentro de HTML, evitando inyección de marcado.
+     * @param {*} texto el valor a escapar (se convierte a texto; null/undefined se trata como cadena vacía)
+     * @returns {string} el texto escapado listo para insertarse en HTML
+     */
     function escaparHtml(texto) {
         var div = document.createElement('div');
         div.textContent = texto == null ? '' : String(texto);
         return div.innerHTML;
     }
 
+    /**
+     * Formatea una fecha ISO como "dd/mm" para mostrarla en el encabezado de la cuadrícula.
+     * @param {string} fechaIso la fecha en formato ISO (yyyy-MM-dd)
+     * @returns {string} la fecha corta formateada, o "--/--" si es inválida
+     */
     function formatearFechaCorta(fechaIso) {
         if (!fechaIso) {
             return '--/--';
@@ -90,6 +132,12 @@ document.addEventListener('DOMContentLoaded', function () {
         return partes[2] + '/' + partes[1];
     }
 
+    /**
+     * Genera la etiqueta "Mes Año" en español correspondiente a una fecha ISO,
+     * usada para agrupar visualmente las columnas de la cuadrícula.
+     * @param {string} fechaIso la fecha en formato ISO (yyyy-MM-dd)
+     * @returns {string} la etiqueta del mes y año, o "Sesión actual" si no hay fecha
+     */
     function etiquetaMes(fechaIso) {
         if (!fechaIso) {
             return 'Sesión actual';
@@ -100,6 +148,12 @@ document.addEventListener('DOMContentLoaded', function () {
         return nombreMes + ' ' + partes[0];
     }
 
+    /**
+     * Reemplaza el contenido de la tabla de asistencia por una única fila con un mensaje centrado.
+     * @param {string} texto el mensaje a mostrar
+     * @param {string} claseTexto clase CSS adicional para el estilo del texto
+     * @returns {void}
+     */
     function mostrarFilaMensaje(texto, claseTexto) {
         if (theadCuadricula) {
             theadCuadricula.innerHTML = '';
@@ -114,6 +168,12 @@ document.addEventListener('DOMContentLoaded', function () {
         cuerpoTablaAsistencia.appendChild(fila);
     }
 
+    /**
+     * Determina la restricción de edición de una columna de la cuadrícula según su fecha
+     * respecto al día de hoy ('pasada', 'hoy' o 'libre').
+     * @param {string} fechaIso la fecha de la columna en formato ISO, o vacía si es la columna de sesión nueva sin fecha
+     * @returns {string} 'pasada', 'hoy' o 'libre'
+     */
     function obtenerRestriccionColumna(fechaIso) {
         if (!fechaIso) {
             return 'libre';
@@ -127,11 +187,24 @@ document.addEventListener('DOMContentLoaded', function () {
         return 'libre';
     }
 
+    /**
+     * Devuelve el siguiente estatus dentro de un ciclo dado, después del estatus actual.
+     * @param {string} actual el estatus actual
+     * @param {Array<string>} ciclo la secuencia de estatus permitidos
+     * @returns {string} el siguiente estatus en el ciclo
+     */
     function siguienteEstatusEnCiclo(actual, ciclo) {
         var idx = ciclo.indexOf(actual);
         return ciclo[(idx + 1) % ciclo.length];
     }
 
+    /**
+     * Calcula el siguiente estatus permitido para una celda al hacer clic, respetando
+     * la restricción de edición de su columna (sesión pasada, de hoy o libre).
+     * @param {string} actual el estatus actual de la celda
+     * @param {string} restriccion la restricción de la columna ('pasada', 'hoy' o 'libre')
+     * @returns {string} el siguiente estatus permitido
+     */
     function siguienteEstatusPermitido(actual, restriccion) {
         if (restriccion === 'pasada') {
             return actual === 'Presente' ? 'Presente' : 'Justificado';
@@ -142,6 +215,14 @@ document.addEventListener('DOMContentLoaded', function () {
         return siguienteEstatusEnCiclo(actual, CICLO_ESTATUS);
     }
 
+    /**
+     * Construye la celda de encabezado (th) de una columna de fecha de la cuadrícula,
+     * incluyendo el botón para marcar toda la columna a la vez.
+     * @param {string} fechaTexto el texto corto de la fecha a mostrar
+     * @param {string|number} idSesion el id de la sesión de esa columna (o el marcador de columna nueva)
+     * @param {string} restriccion la restricción de edición de la columna
+     * @returns {HTMLTableCellElement} el elemento th construido
+     */
     function crearThFecha(fechaTexto, idSesion, restriccion) {
         var th = document.createElement('th');
         th.className = 'col-fecha-asist';
@@ -163,6 +244,15 @@ document.addEventListener('DOMContentLoaded', function () {
         return th;
     }
 
+    /**
+     * Construye la celda (td) con el botón de estatus y el input oculto de una
+     * asistencia individual (alumno + sesión).
+     * @param {string|number} idSesion el id de la sesión de la columna
+     * @param {string} matricula la matrícula del alumno de la fila
+     * @param {string} estatus el estatus inicial de la celda
+     * @param {string} restriccion la restricción de edición de la columna
+     * @returns {HTMLTableCellElement} el elemento td construido
+     */
     function crearCeldaAsistencia(idSesion, matricula, estatus, restriccion) {
         var td = document.createElement('td');
         td.className = 'col-fecha-asist';
@@ -185,6 +275,14 @@ document.addEventListener('DOMContentLoaded', function () {
         return td;
     }
 
+    /**
+     * Construye la fila completa (tr) de un alumno en la cuadrícula de asistencia,
+     * incluyendo matrícula, número, nombre y una celda de asistencia por cada columna.
+     * @param {Object} fila los datos del alumno y su estado de asistencia por sesión
+     * @param {number} numero el número consecutivo del alumno en la lista
+     * @param {Array<Object>} columnas las columnas (sesiones) a renderizar para esta fila
+     * @returns {HTMLTableRowElement} el elemento tr construido
+     */
     function crearFilaAlumno(fila, numero, columnas) {
         var tr = document.createElement('tr');
 
@@ -219,6 +317,11 @@ document.addEventListener('DOMContentLoaded', function () {
         return tr;
     }
 
+    /**
+     * Construye la lista ordenada de columnas de la cuadrícula (sesiones ya
+     * registradas más la columna de sesión nueva), ordenadas por fecha.
+     * @returns {Array<Object>} las columnas ordenadas, cada una con id, fechaIso y esNueva
+     */
     function obtenerColumnasOrdenadas() {
         var columnas = estadoGrid.sesionesServidor.map(function (s) {
             return { id: s.idSesionGrupal, fechaIso: s.fechaIso, esNueva: false };
@@ -242,6 +345,12 @@ document.addEventListener('DOMContentLoaded', function () {
         return columnas;
     }
 
+    /**
+     * Corrige automáticamente el estatus de la columna de sesión nueva cuando su
+     * fecha deja de ser libre (pasada u hoy), forzando Justificado o revirtiendo Falta según corresponda.
+     * @param {Array<Object>} columnas las columnas actuales de la cuadrícula
+     * @returns {void}
+     */
     function corregirEstatusColumnaNueva(columnas) {
         var columnaNueva = columnas.find(function (c) { return c.esNueva; });
         if (!columnaNueva) {
@@ -262,6 +371,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    /**
+     * Agrupa las columnas consecutivas que caen en el mismo mes, para construir
+     * la fila de encabezado superior de la cuadrícula (con colspan por mes).
+     * @param {Array<Object>} columnas las columnas ordenadas de la cuadrícula
+     * @returns {Array<Object>} los grupos por mes, cada uno con label y colspan
+     */
     function agruparPorMes(columnas) {
         var grupos = [];
         columnas.forEach(function (col) {
@@ -276,6 +391,11 @@ document.addEventListener('DOMContentLoaded', function () {
         return grupos;
     }
 
+    /**
+     * Reconstruye por completo el encabezado y el cuerpo de la tabla de asistencia
+     * a partir del estado actual (`estadoGrid`).
+     * @returns {void}
+     */
     function renderizarDesdeEstado() {
         if (!estadoGrid) {
             return;
@@ -322,6 +442,12 @@ document.addEventListener('DOMContentLoaded', function () {
         verificarFormularioGrupal();
     }
 
+    /**
+     * Inicializa el estado interno de la cuadrícula (`estadoGrid`) a partir de la
+     * respuesta del servidor con las sesiones y alumnos del grupo, y dispara el renderizado.
+     * @param {Object} data la respuesta del servidor con `sesiones` y `filas`
+     * @returns {void}
+     */
     function iniciarEstadoGrid(data) {
         var sesionesServidor = (data && data.sesiones) || [];
 
@@ -342,6 +468,13 @@ document.addEventListener('DOMContentLoaded', function () {
         actualizarBotonListaAsistencia();
     }
 
+    /**
+     * Aplica visualmente un nuevo estatus a un botón de celda y sincroniza el
+     * input oculto correspondiente que se enviará en el formulario.
+     * @param {HTMLElement} boton el botón de la celda de asistencia
+     * @param {string} estatus el nuevo estatus a aplicar
+     * @returns {void}
+     */
     function aplicarEstatus(boton, estatus) {
         boton.setAttribute('data-estatus', estatus);
 
@@ -353,6 +486,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    /**
+     * Actualiza el estatus de una celda en el estado interno (`estadoGrid`) del alumno y sesión indicados.
+     * @param {string|number} idSesion el id de la sesión (o columna nueva) a actualizar
+     * @param {string} matricula la matrícula del alumno
+     * @param {string} estatus el nuevo estatus a guardar en el estado
+     * @returns {void}
+     */
     function actualizarEstadoCelda(idSesion, matricula, estatus) {
         if (!estadoGrid) {
             return;
@@ -363,6 +503,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    /**
+     * Recalcula y actualiza en el DOM el total de sesiones, el porcentaje de
+     * asistencia y la clase de riesgo de una fila de alumno.
+     * @param {HTMLTableRowElement} fila el elemento tr de la fila del alumno
+     * @returns {void}
+     */
     function recalcularFila(fila) {
         if (!fila) {
             return;
@@ -399,10 +545,20 @@ document.addEventListener('DOMContentLoaded', function () {
         fila.classList.toggle('fila-riesgo', porcentaje < UMBRAL_RIESGO);
     }
 
+    /**
+     * Recalcula el total y porcentaje de asistencia de todas las filas de la tabla.
+     * @returns {void}
+     */
     function recalcularTodasLasFilas() {
         cuerpoTablaAsistencia.querySelectorAll('tr').forEach(recalcularFila);
     }
 
+    /**
+     * Marca que hubo una edición en la columna nueva o en una columna histórica,
+     * y refresca la visibilidad del botón de guardado y la validez del formulario.
+     * @param {string|number} idSesion el id de la sesión editada (o el marcador de columna nueva)
+     * @returns {void}
+     */
     function registrarEdicion(idSesion) {
         if (idSesion === COLUMNA_NUEVA) {
             huboEdicionColumnaNueva = true;
@@ -458,6 +614,11 @@ document.addEventListener('DOMContentLoaded', function () {
         inputFecha.addEventListener('change', renderizarDesdeEstado);
     }
 
+    /**
+     * Carga vía fetch la cuadrícula de asistencia (alumnos y sesiones) del grupo
+     * seleccionado en el select de grupo, o limpia la vista si no hay grupo seleccionado.
+     * @returns {void}
+     */
     function cargarAsistencia() {
         if (!selectGrupo) {
             return;
@@ -500,6 +661,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     var inputsRequeridos;
     var btnGuardarGrupal;
+    /**
+     * Revalida los campos obligatorios del formulario de tutoría grupal y habilita
+     * el botón de guardar si son válidos o si aplica un guardado de solo asistencia.
+     * Se reasigna con la implementación real solo cuando el formulario existe en la página.
+     * @returns {void}
+     */
     var verificarFormularioGrupal = function () {};
 
     if (formRegistroGrupal) {

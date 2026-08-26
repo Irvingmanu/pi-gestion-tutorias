@@ -1,5 +1,21 @@
+/**
+ * Controla la vista de reportes del tutor: recolecta los filtros del formulario,
+ * consulta al servidor los datos del reporte, pinta los KPIs, la gráfica de
+ * pastel de canalizaciones y la tabla de canalizaciones.
+ * @author Irvingmanu
+ * @date 2026-08-07
+ */
+
 let graficaPastelReporte = null;
 
+/**
+ * Recolecta los filtros activos del formulario, consulta el reporte al servidor
+ * vía fetch, y pinta los KPIs, la gráfica de pastel y la tabla de canalizaciones
+ * con la respuesta; delega en el callback `onDatos` de las opciones para pintar
+ * gráficas adicionales (por ejemplo, de barras).
+ * @param {Object} opciones opciones de carga: contextPath, filtros (array de ids de campos) y onDatos (callback opcional)
+ * @returns {void}
+ */
 function cargarReporte(opciones) {
     const mapaParametros = {
         filtroCarrera: 'idCarrera',
@@ -65,17 +81,35 @@ function cargarReporte(opciones) {
         });
 }
 
+/**
+ * Coloca el valor de un indicador (KPI) en el elemento con el id dado, mostrando
+ * "--" cuando el valor es nulo o indefinido.
+ * @param {string} id el id del elemento HTML donde escribir el valor
+ * @param {number|string} valor el valor del KPI a mostrar
+ * @returns {void}
+ */
 function pintarKpi(id, valor) {
     const el = document.getElementById(id);
     if (el) el.textContent = (valor !== undefined && valor !== null) ? valor : '--';
 }
 
+/**
+ * Escapa un valor para insertarlo como texto seguro dentro de HTML, evitando inyección de marcado.
+ * @param {*} texto el valor a escapar (se convierte a texto; null/undefined se trata como cadena vacía)
+ * @returns {string} el texto escapado listo para insertarse en HTML
+ */
 function escaparHtml(texto) {
     const div = document.createElement('div');
     div.textContent = texto === undefined || texto === null ? '' : String(texto);
     return div.innerHTML;
 }
 
+/**
+ * Renderiza en la tabla del reporte las filas de canalizaciones, o un mensaje de
+ * "sin canalizaciones" cuando la lista está vacía.
+ * @param {Array<Object>} lista lista de canalizaciones a pintar
+ * @returns {void}
+ */
 function pintarTablaCanalizaciones(lista) {
     const tbody = document.getElementById('tablaCanalizacionesBody');
     if (!tbody) return;
@@ -96,6 +130,12 @@ function pintarTablaCanalizaciones(lista) {
     }).join('');
 }
 
+/**
+ * Dibuja (o redibuja, destruyendo la instancia anterior) la gráfica de pastel
+ * (doughnut) con la distribución de canalizaciones por área de apoyo.
+ * @param {Array<Object>} distribucion lista de distribución, cada elemento con nombreServicio y totalAbsoluto
+ * @returns {void}
+ */
 function pintarPastelReporte(distribucion) {
     const ctx = document.getElementById('graficaPastel');
     if (!ctx) return;

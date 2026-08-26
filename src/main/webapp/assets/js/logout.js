@@ -1,3 +1,10 @@
+/**
+ * Fuerza la recarga de la página cuando se restaura desde la caché de retroceso
+ * (bfcache) tras cerrar sesión, y controla el diálogo de confirmación de cierre
+ * de sesión del botón "Cerrar sesión".
+ * @author J4IROXD
+ * @date 2026-08-10
+ */
 window.addEventListener('pageshow', function (event) {
     if (event.persisted) {
         window.location.reload();

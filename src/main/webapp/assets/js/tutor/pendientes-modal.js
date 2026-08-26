@@ -1,8 +1,19 @@
 
+/**
+ * Controla el modal de solicitudes pendientes del reporte del tutor: carga la
+ * lista vía fetch, la pinta en la tabla y muestra el detalle de una solicitud seleccionada.
+ * @author 20253ds074-art
+ * @date 2026-08-16
+ */
+
 let modalPendientesInstancia = null;
 let modalDetallePendienteInstancia = null;
 let ultimasSolicitudesPendientesTutor = [];
 
+/**
+ * Obtiene (creando si aún no existe) la instancia del modal Bootstrap de la lista de pendientes.
+ * @returns {bootstrap.Modal} la instancia del modal
+ */
 function obtenerModalPendientes() {
     if (!modalPendientesInstancia) {
         modalPendientesInstancia = new bootstrap.Modal(document.getElementById('modalSolicitudesPendientes'));
@@ -10,6 +21,10 @@ function obtenerModalPendientes() {
     return modalPendientesInstancia;
 }
 
+/**
+ * Obtiene (creando si aún no existe) la instancia del modal Bootstrap del detalle de una solicitud pendiente.
+ * @returns {bootstrap.Modal} la instancia del modal
+ */
 function obtenerModalDetallePendiente() {
     if (!modalDetallePendienteInstancia) {
         modalDetallePendienteInstancia = new bootstrap.Modal(document.getElementById('modalDetalleSolicitudPendiente'));
@@ -17,12 +32,23 @@ function obtenerModalDetallePendiente() {
     return modalDetallePendienteInstancia;
 }
 
+/**
+ * Escapa un valor para insertarlo como texto seguro dentro de HTML, evitando inyección de marcado.
+ * @param {*} texto el valor a escapar (se convierte a texto; null/undefined se trata como cadena vacía)
+ * @returns {string} el texto escapado listo para insertarse en HTML
+ */
 function escaparHtmlPendiente(texto) {
     const div = document.createElement('div');
     div.textContent = texto === undefined || texto === null ? '' : String(texto);
     return div.innerHTML;
 }
 
+/**
+ * Abre el modal de solicitudes pendientes y carga vía fetch la lista del tutor,
+ * aplicando los filtros recibidos como parámetros de consulta.
+ * @param {Object} filtros mapa clave-valor de filtros a aplicar (solo se envían las claves con valor truthy)
+ * @returns {void}
+ */
 function abrirModalPendientes(filtros) {
     const tbody = document.getElementById('tablaPendientesBody');
     tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Cargando...</td></tr>';
@@ -53,6 +79,12 @@ function abrirModalPendientes(filtros) {
         });
 }
 
+/**
+ * Renderiza en la tabla del modal las filas de solicitudes pendientes, o el
+ * aviso de "sin pendientes" cuando la lista está vacía.
+ * @param {Array<Object>} lista lista de solicitudes pendientes a pintar
+ * @returns {void}
+ */
 function pintarTablaPendientes(lista) {
     const tbody = document.getElementById('tablaPendientesBody');
     const aviso = document.getElementById('avisoSinPendientes');
@@ -79,6 +111,12 @@ function pintarTablaPendientes(lista) {
     }).join('');
 }
 
+/**
+ * Muestra el modal de detalle de la solicitud pendiente ubicada en el índice dado
+ * de la última lista cargada.
+ * @param {number} indice posición de la solicitud dentro de `ultimasSolicitudesPendientesTutor`
+ * @returns {void}
+ */
 function verDetallePendiente(indice) {
     const s = ultimasSolicitudesPendientesTutor[indice];
     if (!s) return;

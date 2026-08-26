@@ -1,5 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-07-17
+  Descripción: Formulario de coordinador para dar de alta o editar un área de
+  apoyo del catálogo de canalizaciones.
+--%>
 
 <c:set var="paginaActiva" value="areas" scope="request"/>
 <c:set var="esEdicion" value="${not empty areaEdit}" scope="page"/>

@@ -1,8 +1,20 @@
-
+/**
+ * Controla el modal de "Alumnos atendidos" del coordinador: carga las
+ * atenciones individuales según filtros desde el endpoint de reportes
+ * globales, las pinta en tabla y permite ver el detalle de cada una en un
+ * modal secundario.
+ * @author 20253ds074-art
+ * @date 2026-08-16
+ */
 let modalAlumnosAtendidosInstancia = null;
 let modalDetalleAtencionInstancia = null;
 let ultimasAtenciones = [];
 
+/**
+ * Obtiene (creando una única vez) la instancia del modal de Bootstrap de
+ * la lista de alumnos atendidos.
+ * @returns {bootstrap.Modal} la instancia del modal
+ */
 function obtenerModalAlumnosAtendidos() {
     if (!modalAlumnosAtendidosInstancia) {
         modalAlumnosAtendidosInstancia = new bootstrap.Modal(document.getElementById('modalAlumnosAtendidos'));
@@ -10,6 +22,11 @@ function obtenerModalAlumnosAtendidos() {
     return modalAlumnosAtendidosInstancia;
 }
 
+/**
+ * Obtiene (creando una única vez) la instancia del modal de Bootstrap del
+ * detalle de una atención individual.
+ * @returns {bootstrap.Modal} la instancia del modal
+ */
 function obtenerModalDetalleAtencion() {
     if (!modalDetalleAtencionInstancia) {
         modalDetalleAtencionInstancia = new bootstrap.Modal(document.getElementById('modalDetalleAtencion'));
@@ -17,12 +34,24 @@ function obtenerModalDetalleAtencion() {
     return modalDetalleAtencionInstancia;
 }
 
+/**
+ * Escapa un valor como texto seguro para insertarlo dentro de HTML,
+ * evitando inyección de marcado.
+ * @param {*} texto - el valor a escapar (se convierte a texto)
+ * @returns {string} el texto escapado listo para insertarse como HTML
+ */
 function escaparHtmlAtencion(texto) {
     const div = document.createElement('div');
     div.textContent = texto === undefined || texto === null ? '' : String(texto);
     return div.innerHTML;
 }
 
+/**
+ * Abre el modal de alumnos atendidos y carga la lista de atenciones
+ * individuales desde el servidor, aplicando los filtros indicados.
+ * @param {Object} [filtros] - pares clave/valor con los filtros a aplicar en la consulta (p.ej. carrera, cuatrimestre, fechas)
+ * @returns {void}
+ */
 function abrirModalAlumnosAtendidos(filtros) {
     const tbody = document.getElementById('tablaAlumnosAtendidosBody');
     tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Cargando...</td></tr>';
@@ -53,6 +82,12 @@ function abrirModalAlumnosAtendidos(filtros) {
         });
 }
 
+/**
+ * Pinta las filas de la tabla de alumnos atendidos a partir de la lista de
+ * atenciones recibida, o muestra el aviso de "sin atenciones" si está vacía.
+ * @param {Array<Object>} lista - la lista de atenciones a pintar
+ * @returns {void}
+ */
 function pintarTablaAlumnosAtendidos(lista) {
     const tbody = document.getElementById('tablaAlumnosAtendidosBody');
     const aviso = document.getElementById('avisoSinAtenciones');
@@ -80,6 +115,12 @@ function pintarTablaAlumnosAtendidos(lista) {
     }).join('');
 }
 
+/**
+ * Muestra el modal de detalle de una atención individual específica de la
+ * última lista cargada, ocultando el modal de la lista.
+ * @param {number} indice - el índice de la atención dentro de `ultimasAtenciones`
+ * @returns {void}
+ */
 function verDetalleAtencion(indice) {
     const a = ultimasAtenciones[indice];
     if (!a) return;

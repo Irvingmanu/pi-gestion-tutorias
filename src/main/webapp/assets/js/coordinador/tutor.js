@@ -1,3 +1,18 @@
+/**
+ * Controla las vistas de Gestión de Tutores y el formulario de tutor del coordinador:
+ * confirmación de cancelación/baja/reactivación, gestión dinámica de horarios de
+ * atención, generación automática del correo institucional, validación en vivo del
+ * formulario, filtrado de la tabla de tutores, carga masiva por Excel con su modal,
+ * y los mensajes de éxito/error tras el submit.
+ * @author Irvingmanu
+ * @date 2026-07-23
+ */
+
+/**
+ * Solicita confirmación antes de descartar los cambios del formulario y redirige
+ * a la URL de cancelación indicada en el botón.
+ * @returns {void}
+ */
 function confirmarCancelacion() {
     let boton = document.getElementById('btnCancelarFormulario');
     let urlDestino = boton ? boton.dataset.urlCancelar : '/';
@@ -13,6 +28,11 @@ function confirmarCancelacion() {
     );
 }
 
+/**
+ * Solicita confirmación (o fallback con confirm nativo) antes de dar de baja a un tutor.
+ * @param {string} nomina la nómina del tutor a eliminar
+ * @returns {void}
+ */
 function prepararEliminacion(nomina) {
     if (typeof mostrarConfirmacion === 'function') {
         mostrarConfirmacion(
@@ -31,6 +51,11 @@ function prepararEliminacion(nomina) {
     }
 }
 
+/**
+ * Coloca la nómina en el formulario oculto de eliminación y lo envía.
+ * @param {string} nomina la nómina del tutor a eliminar
+ * @returns {void}
+ */
 function ejecutarSubmitEliminar(nomina) {
     const inputNomina = document.getElementById('inputEliminarNomina');
     const formEliminar = document.getElementById('formEliminarTutor');
@@ -43,6 +68,11 @@ function ejecutarSubmitEliminar(nomina) {
     }
 }
 
+/**
+ * Solicita confirmación antes de reactivar a un tutor dado de baja.
+ * @param {string} nomina la nómina del tutor a reactivar
+ * @returns {void}
+ */
 function prepararReactivacion(nomina) {
     mostrarConfirmacion(
         'advertencia',
@@ -55,6 +85,11 @@ function prepararReactivacion(nomina) {
     );
 }
 
+/**
+ * Coloca la nómina en el formulario oculto de reactivación y lo envía.
+ * @param {string} nomina la nómina del tutor a reactivar
+ * @returns {void}
+ */
 function ejecutarSubmitReactivar(nomina) {
     const inputNomina = document.getElementById('inputReactivarNomina');
     const formReactivar = document.getElementById('formReactivarTutor');
@@ -66,6 +101,11 @@ function ejecutarSubmitReactivar(nomina) {
         console.error('No se encontró el formulario oculto formReactivarTutor o inputReactivarNomina');
     }
 }
+/**
+ * Valida y agrega un nuevo horario de atención (día, hora de inicio y fin) a la
+ * lista de horarios del formulario de tutor, evitando duplicados.
+ * @returns {void}
+ */
 function agregarHorario() {
     const selectDia = document.getElementById('selectDia');
     const inputDesde = document.getElementById('horarioDesde');
@@ -117,6 +157,11 @@ function agregarHorario() {
     }
 }
 
+/**
+ * Solicita confirmación y, si se acepta, quita un horario de la lista del formulario de tutor.
+ * @param {HTMLElement} btn el botón "eliminar" del horario, contenido dentro del elemento .horario-item
+ * @returns {void}
+ */
 function eliminarHorario(btn) {
     mostrarConfirmacion(
         'advertencia',
@@ -136,6 +181,12 @@ function eliminarHorario(btn) {
     );
 }
 
+/**
+ * Restringe la hora capturada al rango permitido (07:00–21:00) y ajusta la hora
+ * de fin para que no sea anterior a la hora de inicio seleccionada.
+ * @param {HTMLInputElement} input el campo de hora (inicio o fin) que disparó la validación
+ * @returns {void}
+ */
 function validarLimitesHora(input) {
     const minHora = '07:00';
     const maxHora = '21:00';
@@ -166,10 +217,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputCorreo = document.getElementById('correo');
     const inputsValidables = form.querySelectorAll('input, select');
 
+    /**
+     * Indica si el formulario tiene al menos un horario de atención agregado.
+     * @returns {boolean} true si hay al menos un horario en la lista
+     */
     function tieneHorarios() {
         return contenedorHorarios.querySelectorAll('input[name="horariosDispo"]').length > 0;
     }
 
+    /**
+     * Revalida todos los campos del formulario de tutor, incluyendo que exista al
+     * menos un horario agregado, y habilita/deshabilita el botón de guardar.
+     * @returns {boolean} true si el formulario completo es válido
+     */
     function verificarFormulario() {
         let esValido = true;
         inputsValidables.forEach(function (input) {
@@ -247,11 +307,22 @@ document.addEventListener('DOMContentLoaded', function () {
     const DOMINIO_CORREO = '@utez.edu.mx';
     let ultimoCorreoGenerado = inputCorreo.value || '';
 
+    /**
+     * Extrae la primera palabra de un texto, la pasa a minúsculas y le quita
+     * acentos y cualquier carácter que no sea letra a-z.
+     * @param {string} texto el texto del cual extraer la primera palabra
+     * @returns {string} la primera palabra normalizada, o cadena vacía si no hay texto
+     */
     function primeraPalabraSinAcentos(texto) {
         const primera = (texto || '').trim().split(/\s+/)[0] || '';
         return primera.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z]/g, '');
     }
 
+    /**
+     * Genera y coloca el correo institucional automáticamente a partir del primer
+     * nombre y primer apellido paterno, mientras el usuario no lo haya editado manualmente.
+     * @returns {void}
+     */
     function actualizarCorreoAutomatico() {
         if (inputCorreo.value !== ultimoCorreoGenerado) return;
 
@@ -267,6 +338,11 @@ document.addEventListener('DOMContentLoaded', function () {
     inputApellidoPaterno.addEventListener('input', actualizarCorreoAutomatico);
 });
 
+/**
+ * Filtra las filas de la tabla de tutores por nombre buscado, estado activo/inactivo
+ * y academia seleccionada, mostrando/ocultando filas y el mensaje de "sin resultados".
+ * @returns {void}
+ */
 function filtrarTutores() {
     let inputBuscar = document.getElementById('buscarTutor');
     let tabla = document.getElementById('tablaTutores');
@@ -323,15 +399,28 @@ document.addEventListener('DOMContentLoaded', function () {
     let modalCargaMasivaEl = document.getElementById('modalCargaMasivaTutores');
     if (!formCargaMasiva || !inputCargaArchivo || !modalCargaMasivaEl) return;
 
+    /**
+     * Indica si el usuario ya seleccionó un archivo en el input de carga masiva de tutores.
+     * @returns {boolean} true si hay al menos un archivo seleccionado
+     */
     function cargaMasivaTieneCambios() {
         return inputCargaArchivo.files && inputCargaArchivo.files.length > 0;
     }
 
+    /**
+     * Cierra el modal de carga masiva de tutores usando la instancia de Bootstrap.
+     * @returns {void}
+     */
     function cerrarModalCargaMasiva() {
         let instancia = bootstrap.Modal.getInstance(modalCargaMasivaEl);
         if (instancia) instancia.hide();
     }
 
+    /**
+     * Cierra el modal de carga masiva directamente si no hay archivo seleccionado,
+     * o solicita confirmación antes de cerrarlo si ya se seleccionó uno.
+     * @returns {void}
+     */
     function intentarCerrarModalCargaMasiva() {
         if (!cargaMasivaTieneCambios()) {
             cerrarModalCargaMasiva();

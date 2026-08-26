@@ -1,3 +1,10 @@
+/**
+ * Provee las funciones globales de alertas, confirmaciones y notificaciones toast
+ * basadas en modales de Bootstrap, usadas en todo el sistema para retroalimentar
+ * al usuario (éxito, error, advertencia) y para confirmar acciones destructivas.
+ * @author Irvingmanu
+ * @date 2026-07-21
+ */
 const ALERTA_RUTAS_ICONO = {
     exito: 'exito.png',
     error: 'error.png',
@@ -18,6 +25,11 @@ const ALERTA_CLASES_BOTON = {
 
 let alertaModalInstancia = null;
 
+/**
+ * Obtiene (creando una única vez) la instancia del modal de Bootstrap usado
+ * para mostrar alertas simples.
+ * @returns {bootstrap.Modal} la instancia del modal de alerta
+ */
 function obtenerModalAlerta() {
     if (!alertaModalInstancia) {
         alertaModalInstancia = new bootstrap.Modal(document.getElementById('modalAlerta'));
@@ -25,6 +37,12 @@ function obtenerModalAlerta() {
     return alertaModalInstancia;
 }
 
+/**
+ * Aplica el ícono, color de círculo y color de botón correspondientes al tipo
+ * de alerta (éxito, error o advertencia) sobre los elementos del modal de alerta.
+ * @param {string} tipo - el tipo de alerta ("exito", "error" o "advertencia")
+ * @returns {void}
+ */
 function aplicarTipoAlerta(tipo) {
     let tipoValido = ALERTA_CLASES_ICONO[tipo] ? tipo : 'exito';
 
@@ -42,6 +60,14 @@ function aplicarTipoAlerta(tipo) {
     btnAceptar.classList.add(ALERTA_CLASES_BOTON[tipoValido]);
 }
 
+/**
+ * Muestra el modal de alerta simple (solo botón "Aceptar") con el título,
+ * mensaje y tipo indicados.
+ * @param {string} tipo - el tipo de alerta ("exito", "error" o "advertencia")
+ * @param {string} titulo - el título mostrado en el modal
+ * @param {string} mensaje - el mensaje descriptivo mostrado en el modal
+ * @returns {void}
+ */
 function mostrarAlerta(tipo, titulo, mensaje) {
     document.getElementById('alertaTitulo').innerText = titulo;
     document.getElementById('alertaMensaje').innerText = mensaje;
@@ -59,6 +85,12 @@ const CONFIRMACION_RUTAS_ICONO = {
     advertencia: 'advertencia.png'
 };
 
+/**
+ * Aplica el ícono y color de círculo correspondientes al tipo de confirmación
+ * (crítica o advertencia) sobre los elementos del modal de confirmación.
+ * @param {string} tipo - el tipo de confirmación ("critica" o "advertencia")
+ * @returns {string} el tipo validado realmente aplicado ("critica" por defecto si no coincide)
+ */
 function aplicarTipoConfirmacion(tipo) {
     let tipoValido = CONFIRMACION_RUTAS_ICONO[tipo] ? tipo : 'critica';
 
@@ -74,6 +106,17 @@ function aplicarTipoConfirmacion(tipo) {
     return tipoValido;
 }
 
+/**
+ * Muestra el modal de confirmación (con botón "Aceptar" personalizado) y ejecuta
+ * el callback indicado solo si el usuario confirma la acción. Reemplaza el botón
+ * de aceptar por un clon para eliminar cualquier listener de una invocación previa.
+ * @param {string} tipo - el tipo de confirmación ("critica" o "advertencia")
+ * @param {string} titulo - el título mostrado en el modal
+ * @param {string} mensaje - el mensaje descriptivo mostrado en el modal
+ * @param {string} textoBotonAceptar - el texto a mostrar en el botón de confirmar
+ * @param {Function} callbackAccion - la función a ejecutar cuando el usuario confirma
+ * @returns {void}
+ */
 function mostrarConfirmacion(tipo, titulo, mensaje, textoBotonAceptar, callbackAccion) {
     document.getElementById('confirmacionTitulo').innerText = titulo;
     document.getElementById('confirmacionMensaje').innerText = mensaje;
@@ -118,6 +161,14 @@ const TOAST_CLASES_BARRA = {
     advertencia: 'toast-progress-bar--advertencia'
 };
 
+/**
+ * Muestra una notificación toast temporal (4 segundos) con el ícono, color de
+ * barra de progreso, título y mensaje correspondientes al tipo indicado.
+ * @param {string} tipo - el tipo de notificación ("exito", "error" o "advertencia")
+ * @param {string} titulo - el título mostrado en el toast
+ * @param {string} mensaje - el mensaje descriptivo mostrado en el toast
+ * @returns {void}
+ */
 function mostrarToast(tipo, titulo, mensaje) {
     let tipoValido = ALERTA_RUTAS_ICONO[tipo] ? tipo : 'exito';
 

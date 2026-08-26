@@ -1,3 +1,19 @@
+/**
+ * Controla la vista de Gestión de Periodos del coordinador: confirmación de baja
+ * y reactivación de periodos escolares, precarga del formulario en modo edición,
+ * filtrado de la tabla por estado activo/inactivo, y validación en vivo del
+ * formulario de alta/edición (mes de inicio permitido, rango y duración de fechas,
+ * nombre automático) junto con los mensajes de éxito/error tras el submit.
+ * @author 20253ds074-art
+ * @date 2026-08-10
+ */
+
+/**
+ * Solicita confirmación antes de dar de baja (eliminar lógicamente) un periodo escolar
+ * y, si se confirma, envía el formulario oculto de eliminación.
+ * @param {number|string} idPeriodo el id del periodo a eliminar
+ * @returns {void}
+ */
 function prepararEliminacionPeriodo(idPeriodo) {
     mostrarConfirmacion(
         'critica',
@@ -11,6 +27,12 @@ function prepararEliminacionPeriodo(idPeriodo) {
     );
 }
 
+/**
+ * Solicita confirmación antes de reactivar un periodo escolar dado de baja
+ * y, si se confirma, envía el formulario oculto de reactivación.
+ * @param {number|string} idPeriodo el id del periodo a reactivar
+ * @returns {void}
+ */
 function prepararReactivacionPeriodo(idPeriodo) {
     mostrarConfirmacion(
         'advertencia',
@@ -24,6 +46,12 @@ function prepararReactivacionPeriodo(idPeriodo) {
     );
 }
 
+/**
+ * Precarga el formulario de periodo en modo edición con los datos del periodo
+ * seleccionado, tomados de los atributos data-* del botón, y cambia a la pestaña del formulario.
+ * @param {HTMLElement} boton el botón "editar" que disparó la acción, con los datos del periodo en su dataset
+ * @returns {void}
+ */
 function prepararEdicionPeriodo(boton) {
     document.getElementById('accionPeriodo').value = 'editar';
     document.getElementById('idPeriodoEdit').value = boton.dataset.id;
@@ -42,6 +70,11 @@ function prepararEdicionPeriodo(boton) {
     if (window.verificarFormularioPeriodo) window.verificarFormularioPeriodo();
 }
 
+/**
+ * Cancela el modo edición del formulario de periodo, limpiándolo y devolviéndolo
+ * a su estado de alta de un nuevo periodo.
+ * @returns {void}
+ */
 function cancelarEdicionPeriodo() {
     document.getElementById('accionPeriodo').value = '';
     document.getElementById('idPeriodoEdit').value = '';
@@ -54,6 +87,11 @@ function cancelarEdicionPeriodo() {
     if (window.verificarFormularioPeriodo) window.verificarFormularioPeriodo();
 }
 
+/**
+ * Muestra u oculta las filas de periodos inactivos en la tabla según el estado
+ * del checkbox "mostrar inactivos".
+ * @returns {void}
+ */
 function filtrarPeriodos() {
     const mostrarInactivos = document.getElementById('mostrarInactivos');
     const incluirInactivos = mostrarInactivos ? mostrarInactivos.checked : false;
@@ -88,10 +126,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const MESES_PERMITIDOS = [1, 5, 9];
     const NOMBRES_INICIO = {1: 'Enero - Abril', 5: 'Mayo - Agosto', 9: 'Septiembre - Diciembre'};
 
+    /**
+     * Determina si el mes de una fecha ISO corresponde a uno de los meses de inicio
+     * de cuatrimestre permitidos (enero, mayo o septiembre).
+     * @param {string} fechaISO fecha en formato ISO (yyyy-MM-dd)
+     * @returns {boolean} true si el mes es válido como inicio de periodo
+     */
     function mesValido(fechaISO) {
         return MESES_PERMITIDOS.includes(parseInt(fechaISO.split('-')[1], 10));
     }
 
+    /**
+     * Ubica el elemento de retroalimentación de validación (.invalid-feedback) asociado a un input.
+     * @param {HTMLInputElement} input el campo del cual buscar su feedback
+     * @returns {HTMLElement|null} el elemento de feedback encontrado, o null si no existe
+     */
     function obtenerFeedback(input) {
         if (input.nextElementSibling && input.nextElementSibling.classList.contains('invalid-feedback')) {
             return input.nextElementSibling;
@@ -99,6 +148,12 @@ document.addEventListener('DOMContentLoaded', function () {
         return input.parentElement?.querySelector('.invalid-feedback') || null;
     }
 
+    /**
+     * Valida las fechas de inicio y fin del periodo: mes de inicio permitido, que el fin
+     * sea posterior al inicio y que la duración esté entre 91 y 123 días, marcando la
+     * validez personalizada (setCustomValidity) de cada input según corresponda.
+     * @returns {void}
+     */
     function actualizarValidezFechas() {
         if (inputInicio.value && !mesValido(inputInicio.value)) {
             inputInicio.setCustomValidity('mes_invalido');
@@ -124,6 +179,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    /**
+     * Genera automáticamente el nombre del periodo (ej. "Enero - Abril 2027") a partir
+     * de la fecha de inicio capturada, cuando su mes es válido.
+     * @returns {void}
+     */
     function actualizarNombreAutomatico() {
         if (inputInicio.value && mesValido(inputInicio.value)) {
             const [anio, mes] = inputInicio.value.split('-');
@@ -131,6 +191,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    /**
+     * Aplica el estilo visual de validación (is-invalid) y el mensaje de error
+     * correspondiente al feedback de un campo del formulario según su estado de validez.
+     * @param {HTMLInputElement} input el campo a marcar
+     * @returns {void}
+     */
     function marcarValidez(input) {
         const feedback = obtenerFeedback(input);
 
@@ -162,6 +228,11 @@ document.addEventListener('DOMContentLoaded', function () {
         feedback.style.display = 'block';
     }
 
+    /**
+     * Revalida por completo el formulario de periodo (fechas, nombre automático y
+     * campos obligatorios) y habilita o deshabilita el botón de guardar según el resultado.
+     * @returns {void}
+     */
     function verificarFormulario() {
         actualizarValidezFechas();
         actualizarNombreAutomatico();

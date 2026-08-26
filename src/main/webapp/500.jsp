@@ -1,4 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" isErrorPage="true" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-08-20
+  Descripción: Página de error genérica (error interno del servidor / 500),
+  configurada como errorPage del sitio. Muestra un mensaje de disculpa y un
+  enlace de vuelta a la página de inicio.
+--%>
 <!DOCTYPE html>
 <html lang="es">
 <head>

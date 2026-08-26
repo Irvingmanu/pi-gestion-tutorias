@@ -1,4 +1,15 @@
-
+/**
+ * Gestiona la vista de "Áreas de apoyo" del coordinador: confirmaciones para
+ * cancelar el formulario, guardar un área y eliminarla, además de mostrar
+ * los mensajes de éxito/error de la operación según el parámetro de la URL.
+ * @author Irvingmanu
+ * @date 2026-07-17
+ */
+/**
+ * Pide confirmación antes de descartar los cambios del formulario de área
+ * de apoyo y, si se confirma, redirige a la URL de cancelación.
+ * @returns {void}
+ */
 function confirmarCancelacionArea() {
     let boton = document.getElementById('btnCancelarFormularioArea');
     let urlDestino = boton ? boton.dataset.urlCancelar : '/';
@@ -14,6 +25,13 @@ function confirmarCancelacionArea() {
     );
 }
 
+/**
+ * Intercepta el envío del formulario de área de apoyo: exige al menos un
+ * motivo de canalización capturado y, si hay, pide confirmación antes de
+ * enviar el formulario al servidor.
+ * @param {Event} evento - el evento de envío del formulario
+ * @returns {boolean} false siempre, para prevenir el envío nativo del formulario
+ */
 function confirmarGuardarArea(evento) {
     evento.preventDefault();
     let formulario = evento.target;
@@ -37,6 +55,12 @@ function confirmarGuardarArea(evento) {
     return false;
 }
 
+/**
+ * Pide confirmación crítica antes de eliminar un área de apoyo y, si se
+ * confirma, envía el formulario oculto de eliminación con el id indicado.
+ * @param {number|string} idArea - el id del área de apoyo a eliminar
+ * @returns {void}
+ */
 function prepararEliminacionArea(idArea) {
     mostrarConfirmacion(
         'critica',

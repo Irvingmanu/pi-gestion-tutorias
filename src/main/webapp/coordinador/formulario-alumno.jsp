@@ -1,5 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-07-17
+  Descripción: Formulario de coordinador para dar de alta o editar un alumno,
+  incluyendo la asignación de grupo (con buscador Select2).
+--%>
 <c:set var="paginaActiva" value="grupos" scope="request"/>
 <!-- alumnoFormulario, esEdicion, tituloBanner y mensajeError ya vienen calculados desde
 AlumnoServlet (forwardAFormulario/resolverMensajeError): esta vista solo los consume. -->

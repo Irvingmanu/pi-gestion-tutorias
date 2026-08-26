@@ -1,12 +1,30 @@
-
+/**
+ * Implementa el buscador de alumnos por matrícula o nombre (autocompletado
+ * con debounce) usado en los reportes globales del coordinador para filtrar
+ * por un alumno específico.
+ * @author 20253ds074-art
+ * @date 2026-08-16
+ */
 let temporizadorBusquedaAlumno = null;
 
+/**
+ * Escapa un valor como texto seguro para insertarlo dentro de HTML,
+ * evitando inyección de marcado.
+ * @param {*} texto - el valor a escapar (se convierte a texto)
+ * @returns {string} el texto escapado listo para insertarse como HTML
+ */
 function escaparHtmlBuscador(texto) {
     const div = document.createElement('div');
     div.textContent = texto === undefined || texto === null ? '' : String(texto);
     return div.innerHTML;
 }
 
+/**
+ * Inicializa el buscador de alumnos: engancha el listener de búsqueda con
+ * debounce sobre el input, el cierre del panel de resultados al hacer clic
+ * fuera, y el botón para quitar el filtro de alumno activo.
+ * @returns {void}
+ */
 function inicializarBuscadorAlumno() {
     const input = document.getElementById('buscadorAlumno');
     const resultados = document.getElementById('resultadosBuscadorAlumno');
@@ -40,6 +58,13 @@ function inicializarBuscadorAlumno() {
     if (btnQuitar) btnQuitar.addEventListener('click', quitarFiltroAlumno);
 }
 
+/**
+ * Pinta la lista de resultados del buscador de alumnos, o un mensaje de
+ * "sin coincidencias" si la lista está vacía. Guarda los resultados en el
+ * dataset del contenedor para poder seleccionarlos después por índice.
+ * @param {Array<Object>} lista - la lista de alumnos encontrados
+ * @returns {void}
+ */
 function pintarResultadosBuscadorAlumno(lista) {
     const resultados = document.getElementById('resultadosBuscadorAlumno');
 
@@ -59,6 +84,13 @@ function pintarResultadosBuscadorAlumno(lista) {
     resultados.dataset.items = JSON.stringify(lista);
 }
 
+/**
+ * Selecciona un alumno de los resultados del buscador: fija el filtro de
+ * matrícula, muestra el chip del alumno activo y refresca la trayectoria y
+ * el reporte del coordinador con el nuevo filtro.
+ * @param {number} indice - el índice del alumno dentro de los resultados mostrados
+ * @returns {void}
+ */
 function seleccionarAlumnoBuscador(indice) {
     const resultados = document.getElementById('resultadosBuscadorAlumno');
     const lista = JSON.parse(resultados.dataset.items || '[]');
@@ -77,6 +109,11 @@ function seleccionarAlumnoBuscador(indice) {
     if (typeof buscarReporteCoordinador === 'function') buscarReporteCoordinador();
 }
 
+/**
+ * Quita el filtro de alumno activo del reporte del coordinador, ocultando el
+ * chip del alumno y refrescando la trayectoria y el reporte sin ese filtro.
+ * @returns {void}
+ */
 function quitarFiltroAlumno() {
     document.getElementById('filtroMatricula').value = '';
     document.getElementById('filtroAlumnoActivo').classList.add('d-none');

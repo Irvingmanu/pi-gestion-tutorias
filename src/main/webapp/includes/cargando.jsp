@@ -1,3 +1,10 @@
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-08-24
+  Descripción: Fragmento reutilizable del overlay global de "cargando", incluido
+  mediante <jsp:include> por las vistas de los tres roles para mostrar un spinner
+  de carga controlado desde JavaScript.
+--%>
 <link href="<%= request.getContextPath() %>/assets/css/cargando.css" rel="stylesheet">
 
 <!-- Overlay global de "cargando": lo activan/desactivan cargando.js (interceptando

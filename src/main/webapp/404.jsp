@@ -1,5 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" isErrorPage="true" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-08-20
+  Descripción: Página de error 404 (recurso no encontrado), configurada como
+  errorPage del sitio. Ofrece un enlace de regreso a la vista de inicio
+  correspondiente según el rol de la sesión activa (coordinador, tutor, alumno
+  o visitante sin sesión).
+--%>
 <c:choose>
     <c:when test="${sessionScope.rol == 'Coordinador'}">
         <c:set var="urlInicio" value="${pageContext.request.contextPath}/gestion-grupos" />

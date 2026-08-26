@@ -1,8 +1,20 @@
 
+/**
+ * Controla el modal de avance de tutorías grupales del reporte del tutor: carga
+ * el avance de cada grupo propio respecto al objetivo del periodo vigente y
+ * permite ver el detalle de las sesiones registradas de un grupo.
+ * @author 20253ds074-art
+ * @date 2026-08-16
+ */
+
 let modalTutoriasGrupalesInstancia = null;
 let modalDetalleSesionGrupalInstancia = null;
 let ultimoAvanceGrupalTutor = [];
 
+/**
+ * Obtiene (creando si aún no existe) la instancia del modal Bootstrap de avance de tutorías grupales.
+ * @returns {bootstrap.Modal} la instancia del modal
+ */
 function obtenerModalTutoriasGrupales() {
     if (!modalTutoriasGrupalesInstancia) {
         modalTutoriasGrupalesInstancia = new bootstrap.Modal(document.getElementById('modalTutoriasGrupales'));
@@ -10,6 +22,10 @@ function obtenerModalTutoriasGrupales() {
     return modalTutoriasGrupalesInstancia;
 }
 
+/**
+ * Obtiene (creando si aún no existe) la instancia del modal Bootstrap del detalle de sesiones grupales.
+ * @returns {bootstrap.Modal} la instancia del modal
+ */
 function obtenerModalDetalleSesionGrupal() {
     if (!modalDetalleSesionGrupalInstancia) {
         modalDetalleSesionGrupalInstancia = new bootstrap.Modal(document.getElementById('modalDetalleSesionGrupal'));
@@ -17,12 +33,22 @@ function obtenerModalDetalleSesionGrupal() {
     return modalDetalleSesionGrupalInstancia;
 }
 
+/**
+ * Escapa un valor para insertarlo como texto seguro dentro de HTML, evitando inyección de marcado.
+ * @param {*} texto el valor a escapar (se convierte a texto; null/undefined se trata como cadena vacía)
+ * @returns {string} el texto escapado listo para insertarse en HTML
+ */
 function escaparHtmlGrupal(texto) {
     const div = document.createElement('div');
     div.textContent = texto === undefined || texto === null ? '' : String(texto);
     return div.innerHTML;
 }
 
+/**
+ * Abre el modal de avance de tutorías grupales y carga vía fetch el avance de
+ * cada grupo del tutor respecto al objetivo del periodo escolar vigente.
+ * @returns {void}
+ */
 function abrirModalTutoriasGrupales() {
     const tbody = document.getElementById('tablaTutoriasGrupalesBody');
     tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Cargando...</td></tr>';
@@ -53,12 +79,22 @@ function abrirModalTutoriasGrupales() {
         });
 }
 
+/**
+ * Genera el HTML del badge visual correspondiente al estatus de avance grupal de un grupo.
+ * @param {string} estatus el estatus del grupo ('AL_DIA', 'RIESGO' u otro)
+ * @returns {string} el HTML del badge correspondiente
+ */
 function badgeEstatusGrupal(estatus) {
     if (estatus === 'AL_DIA') return '<span class="badge badge-al-dia">Al día</span>';
     if (estatus === 'RIESGO') return '<span class="badge badge-en-riesgo">En Riesgo</span>';
     return '<span class="badge badge-sin-objetivo">Sin objetivo</span>';
 }
 
+/**
+ * Renderiza en la tabla del modal las filas de avance grupal por grupo del tutor.
+ * @param {Array<Object>} lista lista del avance grupal de cada grupo
+ * @returns {void}
+ */
 function pintarTablaTutoriasGrupales(lista) {
     const tbody = document.getElementById('tablaTutoriasGrupalesBody');
 
@@ -81,6 +117,12 @@ function pintarTablaTutoriasGrupales(lista) {
     }).join('');
 }
 
+/**
+ * Muestra el modal de detalle de sesiones grupales del grupo en el índice dado
+ * y carga vía fetch la lista de sesiones registradas de ese grupo.
+ * @param {number} indice posición del grupo dentro de `ultimoAvanceGrupalTutor`
+ * @returns {void}
+ */
 function verDetalleSesionesGrupal(indice) {
     const fila = ultimoAvanceGrupalTutor[indice];
     if (!fila) return;
@@ -121,6 +163,12 @@ function verDetalleSesionesGrupal(indice) {
         });
 }
 
+/**
+ * Renderiza en el contenedor de detalle las tarjetas con la información de cada
+ * sesión grupal (fecha, hora, temas, acuerdos y asesorías grupales).
+ * @param {Array<Object>} sesiones lista de sesiones grupales a pintar
+ * @returns {void}
+ */
 function pintarListaSesionesGrupales(sesiones) {
     const contenedor = document.getElementById('listaSesionesGrupales');
 

@@ -1,3 +1,12 @@
+/**
+ * Controla la vista de tutoría individual del tutor: el modal para completar
+ * una sesión programada (con reglas especiales cuando el alumno faltó), la
+ * validación en vivo de ambos formularios (completar sesión y tutoria
+ * espontánea), y el buscador de alumnos por grupo (con Select2) para la
+ * tutoría espontánea.
+ * @author Irvingmanu
+ * @date 2026-08-01
+ */
 document.addEventListener('DOMContentLoaded', function () {
     var modalEl = document.getElementById('modalCompletarSesion');
     var modal = new bootstrap.Modal(modalEl);
@@ -23,6 +32,12 @@ document.addEventListener('DOMContentLoaded', function () {
         inputFechaEspontanea.setAttribute('max', yyyy + '-' + mm + '-' + dd);
     }
 
+    /**
+     * Ajusta los campos del modal de completar sesión según la asistencia marcada:
+     * si el alumno faltó, precarga y bloquea temas/acuerdos y deshabilita el motivo;
+     * si asistió, los habilita y los limpia si tenían el texto de falta.
+     * @returns {void}
+     */
     function actualizarCamposPorAsistencia() {
         if (radioFalto.checked) {
             modalTemasTratados.required = false;
@@ -64,6 +79,11 @@ document.addEventListener('DOMContentLoaded', function () {
     var btnGuardarModal = formCompletarSesion.querySelector('button[type="submit"]');
     var inputsRequeridosModal = formCompletarSesion.querySelectorAll('input[required], textarea[required]');
 
+    /**
+     * Revalida los campos visibles y requeridos del formulario de completar
+     * sesión (incluyendo que se haya marcado la asistencia) y habilita/deshabilita el botón de guardar.
+     * @returns {void}
+     */
     function verificarFormularioModal() {
         var esValido = true;
         inputsRequeridosModal.forEach(function (input) {
@@ -122,6 +142,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    /**
+     * Solicita confirmación antes de cerrar el modal de completar sesión, advirtiendo
+     * que se perderán los datos no guardados.
+     * @returns {void}
+     */
     function confirmarCierreModalCompletar() {
         mostrarConfirmacion(
             'critica',
@@ -173,6 +198,11 @@ document.addEventListener('DOMContentLoaded', function () {
         var inputTemasEspontanea = document.getElementById('temasTratados');
         var inputAcuerdosEspontanea = document.getElementById('acuerdos');
 
+        /**
+         * Habilita o deshabilita los campos de temas y acuerdos de la tutoría
+         * espontánea según si ya se seleccionaron tanto grupo como alumno.
+         * @returns {void}
+         */
         function actualizarCamposPorGrupoAlumno() {
             var hayGrupoYAlumno = !!(selectGrupo && selectGrupo.value)
                 && !!($alumnoBuscador && $alumnoBuscador.val());
@@ -197,6 +227,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         actualizarCamposPorGrupoAlumno();
 
+        /**
+         * Marca visualmente como inválido el buscador de alumnos (Select2) de la
+         * tutoría espontánea y muestra su mensaje de error.
+         * @returns {void}
+         */
         function marcarAlumnoInvalido() {
             if (!$alumnoBuscador) {
                 return;
@@ -210,6 +245,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 .css('border-color', 'var(--bs-form-invalid-border-color, #dc3545)');
         }
 
+        /**
+         * Quita la marca visual de inválido del buscador de alumnos (Select2) de la tutoría espontánea.
+         * @returns {void}
+         */
         function limpiarAlumnoInvalido() {
             if (!$alumnoBuscador) {
                 return;
@@ -222,6 +261,13 @@ document.addEventListener('DOMContentLoaded', function () {
             $alumnoBuscador.next('.select2-container').find('.select2-selection').css('border-color', '');
         }
 
+        /**
+         * Reemplaza las opciones del buscador de alumnos (Select2) con la lista dada
+         * y ajusta su estado habilitado/deshabilitado.
+         * @param {Array<Object>} opciones lista de opciones, cada una con texto y valor
+         * @param {boolean} deshabilitado true para deshabilitar el buscador
+         * @returns {void}
+         */
         function fijarOpcionesAlumno(opciones, deshabilitado) {
             if (!$alumnoBuscador) {
                 return;
@@ -295,6 +341,11 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
+        /**
+         * Revalida los campos requeridos del formulario de tutoría espontánea y
+         * habilita/deshabilita su botón de guardar.
+         * @returns {void}
+         */
         function verificarFormularioEspontanea() {
             var esValido = true;
             inputsRequeridosEspontanea.forEach(function (input) {

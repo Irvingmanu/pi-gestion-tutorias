@@ -1,5 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%--
+  Autor: 20253ds074-art
+  Fecha de creación: 2026-08-09
+  Descripción: Vista de Historial del Tutor. Muestra el historial de solicitudes,
+  sesiones y canalizaciones atendidas por el tutor autenticado, con filtros de
+  búsqueda.
+--%>
 <!--
 gdbg
 -->

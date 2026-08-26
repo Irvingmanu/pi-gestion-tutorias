@@ -1,3 +1,11 @@
+/**
+ * Controla la vista de detalle de una solicitud individual del tutor: el modal
+ * de confirmación para aceptar/rechazar la solicitud, y el panel de
+ * reprogramación con sus selects de fecha y hora poblados según la
+ * disponibilidad del tutor y la duración de la solicitud.
+ * @author Sebastian-CR7
+ * @date 2026-08-09
+ */
 document.addEventListener('DOMContentLoaded', function () {
 
     var modalEl = document.getElementById('modalConfirmacion');
@@ -12,6 +20,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         var accionPendiente = null;
 
+        /**
+         * Configura el título, mensaje, ícono y color del modal de confirmación
+         * según la acción a confirmar, y lo muestra.
+         * @param {string} accion la acción a confirmar ('aceptar' o 'rechazar')
+         * @returns {void}
+         */
         function abrirConfirmacion(accion) {
             accionPendiente = accion;
 
@@ -74,6 +88,11 @@ document.addEventListener('DOMContentLoaded', function () {
             selectDia.appendChild(opcion);
         });
 
+        /**
+         * Suma una hora a una hora dada en formato "HH:MM".
+         * @param {string} hora la hora de origen en formato "HH:MM"
+         * @returns {string} la hora resultante una hora después, en formato "HH:MM"
+         */
         function sumarUnaHora(hora) {
             var partes = hora.split(':');
             var horaSiguiente = parseInt(partes[0], 10) + 1;

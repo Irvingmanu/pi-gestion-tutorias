@@ -1,6 +1,13 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
 <%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-07-17
+  Descripción: Vista principal de coordinador para la gestión de grupos y
+  alumnos: listado, alta/edición, baja lógica y reactivación de alumnos,
+  creación de grupos y carga masiva de alumnos por Excel.
+--%>
 <%
     request.setAttribute("paginaActiva", "grupos");
 %>

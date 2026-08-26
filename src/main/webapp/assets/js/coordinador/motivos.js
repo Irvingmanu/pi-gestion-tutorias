@@ -1,4 +1,10 @@
-
+/**
+ * Gestiona los motivos de canalización de un área de apoyo: agregarlos en el
+ * formulario (localmente o vía API), editarlos y eliminarlos en línea con
+ * confirmación, tanto en el formulario de creación como en el de edición del área.
+ * @author Irvingmanu
+ * @date 2026-07-23
+ */
 var REGEX_MOTIVO = '^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\\s.,()/-]+$';
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -68,6 +74,12 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+/**
+ * Agrega localmente una fila de motivo al formulario de creación de área
+ * (sin llamar al servidor), validando que no esté vacío, que cumpla el
+ * patrón permitido y que no esté repetido en la lista actual.
+ * @returns {void}
+ */
 function agregarMotivo() {
     var inputNuevo = document.getElementById('nuevoMotivoInput');
     var container = document.getElementById('motivosContainer');
@@ -123,6 +135,13 @@ function agregarMotivo() {
     }
 }
 
+/**
+ * Crea un nuevo motivo de canalización para un área ya existente mediante
+ * una petición POST al servidor, y agrega la fila correspondiente a la lista
+ * si la operación fue exitosa.
+ * @param {HTMLFormElement} form - el formulario con los campos idArea y nuevoMotivo
+ * @returns {void}
+ */
 function crearMotivoAsync(form) {
     var idArea = form.querySelector('input[name="idArea"]').value;
     var input = form.querySelector('input[name="nuevoMotivo"]');
@@ -163,6 +182,15 @@ function crearMotivoAsync(form) {
         });
 }
 
+/**
+ * Construye y agrega a la lista la fila de un motivo existente, con su
+ * etiqueta de solo lectura, su formulario de edición inline oculto y los
+ * botones de editar/eliminar.
+ * @param {number|string} idMotivo - el id del motivo
+ * @param {number|string} idArea - el id del área de apoyo a la que pertenece
+ * @param {string} nombreMotivo - el nombre del motivo a mostrar
+ * @returns {void}
+ */
 function agregarFilaMotivo(idMotivo, idArea, nombreMotivo) {
     var lista = document.getElementById('listaMotivosArea');
     if (!lista) {
@@ -215,6 +243,12 @@ function agregarFilaMotivo(idMotivo, idArea, nombreMotivo) {
     }
 }
 
+/**
+ * Alterna entre mostrar la etiqueta de solo lectura o el formulario de
+ * edición inline de un motivo existente.
+ * @param {number|string} idMotivo - el id del motivo a alternar
+ * @returns {void}
+ */
 function toggleEditarMotivo(idMotivo) {
     var lbl = document.getElementById('lbl-motivo-' + idMotivo);
     var form = document.getElementById('form-edit-' + idMotivo);
@@ -232,6 +266,13 @@ function toggleEditarMotivo(idMotivo) {
     }
 }
 
+/**
+ * Guarda la edición de un motivo existente mediante una petición PUT al
+ * servidor, actualizando la etiqueta y volviendo al modo lectura si la
+ * operación fue exitosa.
+ * @param {HTMLFormElement} form - el formulario de edición con idMotivo, idArea y nombreMotivo
+ * @returns {void}
+ */
 function guardarEdicionMotivo(form) {
     var idMotivo = form.querySelector('input[name="idMotivo"]').value;
     var idArea = form.querySelector('input[name="idArea"]').value;
@@ -265,6 +306,14 @@ function guardarEdicionMotivo(form) {
         });
 }
 
+/**
+ * Pide confirmación crítica antes de eliminar un motivo de canalización y,
+ * si se confirma, lo elimina mediante una petición DELETE al servidor,
+ * quitando su fila de la lista si la operación fue exitosa.
+ * @param {number|string} idMotivo - el id del motivo a eliminar
+ * @param {number|string} idArea - el id del área de apoyo a la que pertenece
+ * @returns {void}
+ */
 function prepararEliminacionMotivo(idMotivo, idArea) {
     mostrarConfirmacion(
         'critica',

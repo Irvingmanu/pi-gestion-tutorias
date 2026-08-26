@@ -1,5 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-07-23
+  Descripción: Vista de Detalle de Solicitud del Tutor. Muestra la información
+  completa de una solicitud individual seleccionada y permite al tutor
+  gestionarla (aceptar, atender, canalizar, etc.).
+--%>
 
 <!DOCTYPE html>
 <html lang="es">

@@ -1,8 +1,20 @@
 
+/**
+ * Controla el modal de avance de tutorías grupales del reporte global del coordinador:
+ * carga el avance por tutor respecto al objetivo del periodo, permite ver el detalle
+ * de las sesiones de un tutor y enviar una alerta por correo a los tutores en riesgo.
+ * @author 20253ds074-art
+ * @date 2026-08-17
+ */
+
 let modalTutoriasGrupalesInstancia = null;
 let modalDetalleSesionGrupalInstancia = null;
 let ultimoAvanceGrupal = [];
 
+/**
+ * Obtiene (creando si aún no existe) la instancia del modal Bootstrap de avance de tutorías grupales.
+ * @returns {bootstrap.Modal} la instancia del modal
+ */
 function obtenerModalTutoriasGrupales() {
     if (!modalTutoriasGrupalesInstancia) {
         modalTutoriasGrupalesInstancia = new bootstrap.Modal(document.getElementById('modalTutoriasGrupales'));
@@ -10,6 +22,10 @@ function obtenerModalTutoriasGrupales() {
     return modalTutoriasGrupalesInstancia;
 }
 
+/**
+ * Obtiene (creando si aún no existe) la instancia del modal Bootstrap del detalle de sesiones grupales.
+ * @returns {bootstrap.Modal} la instancia del modal
+ */
 function obtenerModalDetalleSesionGrupal() {
     if (!modalDetalleSesionGrupalInstancia) {
         modalDetalleSesionGrupalInstancia = new bootstrap.Modal(document.getElementById('modalDetalleSesionGrupal'));
@@ -17,12 +33,22 @@ function obtenerModalDetalleSesionGrupal() {
     return modalDetalleSesionGrupalInstancia;
 }
 
+/**
+ * Escapa un valor para insertarlo como texto seguro dentro de HTML, evitando inyección de marcado.
+ * @param {*} texto el valor a escapar (se convierte a texto; null/undefined se trata como cadena vacía)
+ * @returns {string} el texto escapado listo para insertarse en HTML
+ */
 function escaparHtmlGrupal(texto) {
     const div = document.createElement('div');
     div.textContent = texto === undefined || texto === null ? '' : String(texto);
     return div.innerHTML;
 }
 
+/**
+ * Abre el modal de avance de tutorías grupales y carga vía fetch el avance de cada
+ * tutor respecto al objetivo del periodo escolar vigente.
+ * @returns {void}
+ */
 function abrirModalTutoriasGrupales() {
     const tbody = document.getElementById('tablaTutoriasGrupalesBody');
     tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Cargando...</td></tr>';
@@ -53,12 +79,22 @@ function abrirModalTutoriasGrupales() {
         });
 }
 
+/**
+ * Genera el HTML del badge visual correspondiente al estatus de avance grupal de un tutor.
+ * @param {string} estatus el estatus del tutor ('AL_DIA', 'RIESGO' u otro)
+ * @returns {string} el HTML del badge correspondiente
+ */
 function badgeEstatusGrupal(estatus) {
     if (estatus === 'AL_DIA') return '<span class="badge badge-al-dia">Al día</span>';
     if (estatus === 'RIESGO') return '<span class="badge badge-en-riesgo">En Riesgo</span>';
     return '<span class="badge badge-sin-objetivo">Sin objetivo</span>';
 }
 
+/**
+ * Renderiza en la tabla del modal las filas de avance grupal por tutor.
+ * @param {Array<Object>} lista lista del avance grupal de cada tutor
+ * @returns {void}
+ */
 function pintarTablaTutoriasGrupales(lista) {
     const tbody = document.getElementById('tablaTutoriasGrupalesBody');
 
@@ -86,6 +122,11 @@ function pintarTablaTutoriasGrupales(lista) {
     }).join('');
 }
 
+/**
+ * Muestra un diálogo de confirmación antes de enviar la alerta de avance a un tutor.
+ * @param {number} indice posición del tutor dentro de `ultimoAvanceGrupal`
+ * @returns {void}
+ */
 function confirmarAlertaTutor(indice) {
     const fila = ultimoAvanceGrupal[indice];
     if (!fila) return;
@@ -101,6 +142,12 @@ function confirmarAlertaTutor(indice) {
     );
 }
 
+/**
+ * Envía por POST al endpoint de reportes globales la alerta al tutor por su avance
+ * de tutorías grupales, y muestra un toast con el resultado.
+ * @param {Object} fila la fila de avance del tutor (debe incluir idTutor e idGrupo)
+ * @returns {void}
+ */
 function enviarAlertaTutorGrupal(fila) {
     const params = new URLSearchParams();
     params.append('accion', 'alertarTutor');
@@ -126,6 +173,12 @@ function enviarAlertaTutorGrupal(fila) {
         });
 }
 
+/**
+ * Muestra el modal de detalle de sesiones grupales del tutor en el índice dado
+ * y carga vía fetch la lista de sesiones de su grupo.
+ * @param {number} indice posición del tutor dentro de `ultimoAvanceGrupal`
+ * @returns {void}
+ */
 function verDetalleSesionesGrupal(indice) {
     const fila = ultimoAvanceGrupal[indice];
     if (!fila) return;
@@ -168,6 +221,12 @@ function verDetalleSesionesGrupal(indice) {
         });
 }
 
+/**
+ * Renderiza en el contenedor de detalle las tarjetas con la información de cada
+ * sesión grupal (fecha, hora, temas, acuerdos y asesorías grupales).
+ * @param {Array<Object>} sesiones lista de sesiones grupales a pintar
+ * @returns {void}
+ */
 function pintarListaSesionesGrupales(sesiones) {
     const contenedor = document.getElementById('listaSesionesGrupales');
 

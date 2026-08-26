@@ -1,6 +1,12 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib uri="jakarta.tags.core" prefix="c" %>
 <%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%--
+  Autor: 20253ds074-art
+  Fecha de creación: 2026-08-10
+  Descripción: Vista de coordinador para gestionar los periodos escolares
+  (alta, edición y activación/desactivación).
+--%>
 <%
     request.setAttribute("paginaActiva", "periodos");
 %>

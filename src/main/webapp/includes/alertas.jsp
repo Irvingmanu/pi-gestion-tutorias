@@ -1,3 +1,10 @@
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-07-21
+  Descripción: Fragmento reutilizable del modal de alertas (éxito, error,
+  confirmación), incluido mediante <jsp:include> por las vistas de los tres
+  roles para mostrar mensajes emergentes controlados desde JavaScript.
+--%>
 <link href="<%= request.getContextPath() %>/assets/css/alertas.css" rel="stylesheet">
 
 <div class="modal fade" id="modalAlerta" tabindex="-1" aria-labelledby="alertaTitulo" aria-hidden="true" data-bs-backdrop="static">

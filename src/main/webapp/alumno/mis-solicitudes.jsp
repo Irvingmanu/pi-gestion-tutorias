@@ -1,5 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-07-28
+  Descripción: Vista de alumno "Mis Solicitudes" que lista el historial de sus
+  solicitudes de tutoría individual junto con su estado.
+--%>
 <c:set var="paginaActiva" value="misSolicitudes" scope="request" />
 <%
     // Unico bloque Java que queda: solo construye los formateadores de fecha

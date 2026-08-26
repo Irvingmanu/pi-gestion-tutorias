@@ -1,4 +1,9 @@
-
+/**
+ * Controla el botón de mostrar/ocultar contraseña en el formulario de login,
+ * alternando el tipo del input y el ícono del ojo.
+ * @author Irvingmanu
+ * @date 2026-07-17
+ */
 document.addEventListener('DOMContentLoaded', function () {
     const toggleBtn = document.getElementById('togglePassword');
     const passwordInput = document.getElementById('password');

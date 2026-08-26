@@ -1,4 +1,11 @@
 <%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" language="java" %>
+<%--
+  Autor: Irvingmanu
+  Fecha de creación: 2026-07-28
+  Descripción: Fragmento reutilizable de la barra de navegación (superior móvil y
+  lateral) para el rol Coordinador, incluido por todas las vistas del módulo de
+  coordinación (grupos, tutores, áreas, periodos, reportes, perfil).
+--%>
 <meta name="context-path" content="${pageContext.request.contextPath}">
 
 <!-- ==================== BARRA SUPERIOR MOVIL (solo <768px) ==================== -->
