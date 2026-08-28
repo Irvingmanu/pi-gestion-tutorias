@@ -26,9 +26,9 @@ El proyecto sigue una arquitectura **MVC** clásica sobre **Jakarta EE**, organi
 
 ## Equipo de Desarrollo
 
-- **Irving Manuel Flores Torrescano** — Matrícula: 20253DS070 — Usuario: Irvingmanu
-- **Yara Ayme Pacheco Mendoza** — Matrícula: 20253DS074 — Usuario: 20253ds074-Art
-- **Edwin Sebastian Martínez Peralta** — Matrícula: 20253ds076 — Usuario: Sebastian-CR7
-- **Jairo Jesus Velazquez Ojeda** — Matrícula: 20253DS081 — Usuario: J4IROXD
-- **Arantza Saddai Hernández Martinez** — Matrícula: 20253DS071 — Usuario: ARY-BB
-- **Luis Javier Ávila Baeza** — Matrícula: 20253DS092 — Usuario: 20253DS092-star
+- **Irving** — Matrícula: 20253DS070 — Usuario: Irvingmanu
+- **Yara** — Matrícula: 20253DS074 — Usuario: 20253ds074-Art
+- **Edwin** — Matrícula: 20253ds076 — Usuario: Sebastian-CR7
+- **Jairo** — Matrícula: 20253DS081 — Usuario: J4IROXD
+- **Arantza** — Matrícula: 20253DS071 — Usuario: ARY-BB
+- **Luis** — Matrícula: 20253DS092 — Usuario: 20253DS092-star
